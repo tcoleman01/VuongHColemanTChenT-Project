@@ -71,5 +71,4 @@ npm start
 - Seed/ETL: `scripts/seed.js`
 - CLI app: `src/cli.js`
 
-## Notes
-- UML: use simple line + arrow (no crowfoot notation) per professor feedback.
+
