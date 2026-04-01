@@ -4,14 +4,9 @@ import { parse } from "csv-parse/sync";
 import bcrypt from "bcryptjs";
 import { getDb, closeDb } from "../src/db.js";
 
-const DEFAULT_DATA_DIR = "/Users/terry/Desktop/player";
-
 function resolveDataDir() {
   if (process.env.DATA_DIR && fs.existsSync(process.env.DATA_DIR)) {
     return process.env.DATA_DIR;
-  }
-  if (fs.existsSync(DEFAULT_DATA_DIR)) {
-    return DEFAULT_DATA_DIR;
   }
   const local = path.resolve(process.cwd(), "data");
   return local;
