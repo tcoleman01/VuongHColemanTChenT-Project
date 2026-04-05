@@ -18,10 +18,47 @@ function loadSchemaSql() {
   return fs.readFileSync(filePath, "utf-8");
 }
 
+function splitSqlStatements(sql) {
+  const statements = [];
+  let delimiter = ";";
+  let buffer = "";
+
+  const lines = sql.split(/\r?\n/);
+  for (const rawLine of lines) {
+    const line = rawLine.trimEnd();
+    const delimiterMatch = line.match(/^DELIMITER\s+(.+)$/i);
+    if (delimiterMatch) {
+      delimiter = delimiterMatch[1].trim();
+      continue;
+    }
+
+    buffer += rawLine + "\n";
+
+    if (buffer.trimEnd().endsWith(delimiter)) {
+      const statement = buffer.trim();
+      const trimmed = statement.slice(0, -delimiter.length).trim();
+      if (trimmed.length > 0) {
+        statements.push(trimmed);
+      }
+      buffer = "";
+    }
+  }
+
+  const remaining = buffer.trim();
+  if (remaining.length > 0) {
+    statements.push(remaining);
+  }
+
+  return statements;
+}
+
 async function main() {
   const sql = loadSchemaSql();
   const connection = await mysql.createConnection(config);
-  await connection.query(sql);
+  const statements = splitSqlStatements(sql);
+  for (const statement of statements) {
+    await connection.query(statement);
+  }
   await connection.end();
   console.log("Schema initialized.");
 }

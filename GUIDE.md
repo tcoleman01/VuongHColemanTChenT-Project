@@ -87,12 +87,17 @@ ALTER USER 'root'@'localhost' IDENTIFIED BY 'Root123';
 FLUSH PRIVILEGES;
 ```
 
-4. Create the database (optional, script also creates it).
+4. Enable the event scheduler (required for scheduled events).
+```sql
+SET GLOBAL event_scheduler = ON;
+```
+
+5. Create the database (optional, script also creates it).
 ```sql
 CREATE DATABASE IF NOT EXISTS soccer_analytics_db;
 ```
 
-5. Confirm you can connect.
+6. Confirm you can connect.
 ```bash
 mysql -u root -p
 ```
@@ -106,6 +111,7 @@ mysql -u root -p
 - Schema overview: `schema/mysql_schema.md`
 - Schema initializer: `scripts/init-schema.js`
 - Seed data: `scripts/seed.js`
+- MySQL dump script: `scripts/dump.sh`
 
 ---
 
@@ -279,7 +285,21 @@ npm run seed
 
 ---
 
-### D) Add Analytics Queries
+### D) Create a Submission Dump (DDL + DML + routines)
+File: `scripts/dump.sh`
+
+This generates a single SQL file that contains the schema, data, and database objects.
+
+Run:
+```bash
+bash scripts/dump.sh
+```
+
+The dump will be created at `dump/soccer_analytics_db_dump.sql`.
+
+---
+
+### E) Add Analytics Queries
 File: `src/cli.js`
 
 Use SQL queries:

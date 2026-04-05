@@ -1,7 +1,7 @@
 {
   "name": "soccer-player-db-cli",
   "version": "1.0.0",
-  "description": "CS 5200 MongoDB project: player database CLI",
+  "description": "CS 5200 MySQL project: player database CLI",
   "type": "module",
   "scripts": {
     "init-schema": "node scripts/init-schema.js",

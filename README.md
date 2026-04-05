@@ -42,7 +42,13 @@ npm run init-schema
 npm run seed
 ```
 
-7. Run the CLI app:
+7. (Submission) Create a self-contained MySQL dump (DDL + DML + routines):
+
+```bash
+bash scripts/dump.sh
+```
+
+8. Run the CLI app:
 
 ```bash
 npm start
@@ -72,12 +78,17 @@ ALTER USER 'root'@'localhost' IDENTIFIED BY 'Root123';
 FLUSH PRIVILEGES;
 ```
 
-4. Create the database (optional, script also creates it).
+4. Enable the event scheduler (required for scheduled events).
+```sql
+SET GLOBAL event_scheduler = ON;
+```
+
+5. Create the database (optional, script also creates it).
 ```sql
 CREATE DATABASE IF NOT EXISTS soccer_analytics_db;
 ```
 
-5. Confirm you can connect.
+6. Confirm you can connect.
 ```bash
 mysql -u root -p
 ```
@@ -90,8 +101,10 @@ mysql -u root -p
 - CLI app: `src/cli.js`
 - Database connection: `src/db.js`
 - Schema + constraints: `soccer_analytics_db.sql`
+- Schema overview: `schema/mysql_schema.md`
 - Schema initializer: `scripts/init-schema.js`
 - Seed data: `scripts/seed.js`
+- MySQL dump script: `scripts/dump.sh`
 
 ## Where to Build On (Detailed)
 If you want to extend the project, the following are the most stable and intentional extension points:

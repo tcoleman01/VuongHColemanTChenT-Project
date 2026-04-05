@@ -10,12 +10,9 @@
 - `Player`
 - `MarketValue`
 - `Match`
-- `PlayerStats`
 - `Transfer`
-- `User`
-- `Role`
-- `UserRole`
-- `ScoutReport`
+- `SeasonPerformance`
+- `MatchPerformance`
 
 ## Key Relationships (Foreign Keys)
 - `League.country_abbr` -> `Country.country_abbr`
@@ -30,15 +27,12 @@
 - `Player.club_id` -> `Club.club_id`
 - `MarketValue.player_id` -> `Player.player_id`
 - `Match.home_team_id` / `Match.away_team_id` -> `Club.club_id`
-- `PlayerStats.player_id` -> `Player.player_id`
-- `PlayerStats.match_id` -> `Match.match_id`
 - `Transfer.player_id` -> `Player.player_id`
 - `Transfer.old_club_id` / `Transfer.new_club_id` -> `Club.club_id`
-- `User.country_abbr` -> `Country.country_abbr`
-- `UserRole.user_id` -> `User.user_id`
-- `UserRole.role_id` -> `Role.role_id`
-- `ScoutReport.player_id` -> `Player.player_id`
-- `ScoutReport.scout_user_id` -> `User.user_id`
+- `SeasonPerformance.player_id` -> `Player.player_id`
+- `SeasonPerformance.league_id` -> `League.league_id`
+- `MatchPerformance.match_id` -> `Match.match_id`
+- `MatchPerformance.player_id` -> `Player.player_id`
 
 ## Primary Keys / Unique Constraints (Highlights)
 - `Country`: PK `country_abbr`, unique `country_name`
@@ -49,13 +43,11 @@
 - `Player`: PK `player_id`
 - `MarketValue`: PK (`player_id`, `market_value_date`)
 - `Match`: PK `match_id`, unique (`home_team_id`, `away_team_id`, `match_date`)
-- `PlayerStats`: PK (`player_id`, `match_id`)
 - `Transfer`: PK `transfer_id`
-- `User`: PK `user_id`, unique `username`
-- `Role`: PK `role_id`, unique `role_name`
-- `UserRole`: PK (`user_id`, `role_id`)
-- `ScoutReport`: PK `report_id`
+- `SeasonPerformance`: PK (`player_id`, `league_id`)
+- `MatchPerformance`: PK (`match_id`, `player_id`)
 
 ## Notes
 - Full DDL lives in `soccer_analytics_db.sql`.
 - `Club` and `Coach` reference each other via FKs created with `ALTER TABLE` to avoid circular dependency at creation time.
+- Server-side objects included: `fn_player_age`, `sp_record_transfer`, triggers on `Match`, and the nightly `ev_update_match_results` event.
