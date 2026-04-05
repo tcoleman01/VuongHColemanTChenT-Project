@@ -94,7 +94,7 @@ mysql -u root -p
 ```
 
 ## Role Capabilities
-- **Admin**: CRUD for players, transfers, market values
+- **Admin**: CRUD for players, transfers, market values, clubs
 - **Analyst**: Read players + analytics queries
 
 ## Core Files (Where to Look)

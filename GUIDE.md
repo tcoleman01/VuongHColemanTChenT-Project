@@ -321,6 +321,15 @@ Relationships are stored as foreign keys.
 
 ---
 
+## 11) Added CRUD Coverage
+The admin CLI now includes CRUD for:
+- `Player`
+- `Transfer`
+- `MarketValue`
+- `Club`
+
+---
+
 ## 10) Summary
 This repository is designed to be extendable through:
 - new CLI actions
