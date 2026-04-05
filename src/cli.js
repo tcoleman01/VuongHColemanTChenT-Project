@@ -81,6 +81,23 @@ async function ensureClub(db, clubName, countryAbbr, leagueId) {
   return created[0]?.club_id || null;
 }
 
+async function ensureStadium(db, stadiumName, capacity = null, city = null, country = null) {
+  const [rows] = await db.execute(
+    "SELECT stadium_id FROM Stadium WHERE stadium_name = ? ORDER BY stadium_id DESC LIMIT 1",
+    [stadiumName]
+  );
+  if (rows[0]?.stadium_id) return rows[0].stadium_id;
+  await db.execute(
+    "INSERT INTO Stadium (stadium_name, capacity, city, country) VALUES (?, ?, ?, ?)",
+    [stadiumName, capacity, city, country]
+  );
+  const [created] = await db.execute(
+    "SELECT stadium_id FROM Stadium WHERE stadium_name = ? ORDER BY stadium_id DESC LIMIT 1",
+    [stadiumName]
+  );
+  return created[0]?.stadium_id || null;
+}
+
 async function findPlayerByLastName(db, lastName) {
   const [rows] = await db.execute(
     "SELECT player_id, first_name, last_name, dob FROM Player WHERE LOWER(last_name) = LOWER(?)",
@@ -102,6 +119,31 @@ async function selectPlayer(db) {
   matches.forEach((p, i) => {
     const dob = p.dob ? new Date(p.dob).toISOString().slice(0, 10) : "";
     console.log(`${i + 1}. ${p.first_name} ${p.last_name} (${dob})`);
+  });
+  const idx = parseInt(await prompt("Choose number: "), 10) - 1;
+  return matches[idx] || null;
+}
+
+async function findClubByName(db, clubName) {
+  const [rows] = await db.execute(
+    "SELECT club_id, club_name FROM Club WHERE LOWER(club_name) = LOWER(?)",
+    [clubName]
+  );
+  return rows;
+}
+
+async function selectClub(db) {
+  const clubName = await prompt("Club name: ");
+  const matches = await findClubByName(db, clubName);
+  if (matches.length === 0) {
+    console.log("No clubs found.");
+    return null;
+  }
+  if (matches.length === 1) return matches[0];
+
+  console.log("Multiple matches:");
+  matches.forEach((c, i) => {
+    console.log(`${i + 1}. ${c.club_name} (id: ${c.club_id})`);
   });
   const idx = parseInt(await prompt("Choose number: "), 10) - 1;
   return matches[idx] || null;
@@ -220,6 +262,113 @@ async function deletePlayer(db) {
   if (!player) return;
   await db.execute("DELETE FROM Player WHERE player_id = ?", [player.player_id]);
   console.log("Player deleted.");
+}
+
+async function createClub(db) {
+  const clubName = await prompt("Club name: ");
+  const country_abbr = await prompt("Country abbr (e.g., ENG): ");
+  const country_name = await prompt("Country name: ");
+  const leagueName = await prompt("League name: ");
+  const seasonName = await prompt("Season name (e.g., 2023/24): ");
+  const stadiumName = await prompt("Stadium name (optional): ");
+  const capacityRaw = await prompt("Stadium capacity (optional): ");
+  const city = await prompt("Stadium city (optional): ");
+  const stadiumCountry = await prompt("Stadium country (optional): ");
+
+  await ensureCountry(db, country_abbr, country_name);
+  const league_id = await ensureLeague(db, leagueName, seasonName, country_abbr);
+
+  let stadium_id = null;
+  if (stadiumName) {
+    const capacity = capacityRaw ? parseInt(capacityRaw, 10) : null;
+    stadium_id = await ensureStadium(db, stadiumName, capacity, city || null, stadiumCountry || null);
+  }
+
+  await db.execute(
+    "INSERT INTO Club (club_name, country_abbr, league_id, stadium_id) VALUES (?, ?, ?, ?)",
+    [clubName, country_abbr, league_id, stadium_id]
+  );
+  console.log("Club created.");
+}
+
+async function readClub(db) {
+  const club = await selectClub(db);
+  if (!club) return;
+
+  const [rows] = await db.execute(
+    `SELECT c.club_id, c.club_name, co.country_name, l.league_name, l.season_name, s.stadium_name
+     FROM Club c
+     JOIN Country co ON c.country_abbr = co.country_abbr
+     JOIN League l ON c.league_id = l.league_id
+     LEFT JOIN Stadium s ON c.stadium_id = s.stadium_id
+     WHERE c.club_id = ?`,
+    [club.club_id]
+  );
+  console.table(rows);
+}
+
+async function updateClub(db) {
+  const club = await selectClub(db);
+  if (!club) return;
+
+  const newName = await prompt("New club name (blank to keep): ");
+  const newLeagueName = await prompt("New league name (blank to keep): ");
+  const newSeasonName = await prompt("New season name (blank to keep): ");
+  const stadiumInput = await prompt("New stadium name (blank to keep, 'none' to clear): ");
+  const capacityRaw = await prompt("New stadium capacity (optional): ");
+  const city = await prompt("New stadium city (optional): ");
+  const stadiumCountry = await prompt("New stadium country (optional): ");
+
+  let league_id = null;
+  if (newLeagueName && newSeasonName) {
+    const [clubRow] = await db.execute(
+      "SELECT country_abbr FROM Club WHERE club_id = ?",
+      [club.club_id]
+    );
+    const country_abbr = clubRow[0]?.country_abbr;
+    if (country_abbr) {
+      league_id = await ensureLeague(db, newLeagueName, newSeasonName, country_abbr);
+    }
+  }
+
+  let stadium_id = undefined;
+  if (stadiumInput.toLowerCase() === "none") {
+    stadium_id = null;
+  } else if (stadiumInput) {
+    const capacity = capacityRaw ? parseInt(capacityRaw, 10) : null;
+    stadium_id = await ensureStadium(db, stadiumInput, capacity, city || null, stadiumCountry || null);
+  }
+
+  const fields = [];
+  const params = [];
+  if (newName) {
+    fields.push("club_name = ?");
+    params.push(newName);
+  }
+  if (league_id !== null) {
+    fields.push("league_id = ?");
+    params.push(league_id);
+  }
+  if (stadium_id !== undefined) {
+    fields.push("stadium_id = ?");
+    params.push(stadium_id);
+  }
+
+  if (fields.length === 0) {
+    console.log("No changes provided.");
+    return;
+  }
+
+  params.push(club.club_id);
+  await db.execute(`UPDATE Club SET ${fields.join(", ")} WHERE club_id = ?`, params);
+  console.log("Club updated.");
+}
+
+async function deleteClub(db) {
+  const club = await selectClub(db);
+  if (!club) return;
+  await db.execute("DELETE FROM Club WHERE club_id = ?", [club.club_id]);
+  console.log("Club deleted.");
 }
 
 async function createTransfer(db) {
@@ -358,6 +507,10 @@ async function adminMenu(db) {
     console.log("7. Delete transfer");
     console.log("8. Create market value");
     console.log("9. Read market values");
+    console.log("10. Create club");
+    console.log("11. Read club");
+    console.log("12. Update club");
+    console.log("13. Delete club");
     console.log("0. Logout");
 
     const choice = await prompt("Choose: ");
@@ -371,6 +524,10 @@ async function adminMenu(db) {
     else if (choice === "7") await runSafely(() => deleteTransfer(db));
     else if (choice === "8") await runSafely(() => createMarketValue(db));
     else if (choice === "9") await runSafely(() => readMarketValues(db));
+    else if (choice === "10") await runSafely(() => createClub(db));
+    else if (choice === "11") await runSafely(() => readClub(db));
+    else if (choice === "12") await runSafely(() => updateClub(db));
+    else if (choice === "13") await runSafely(() => deleteClub(db));
   }
 }
 
