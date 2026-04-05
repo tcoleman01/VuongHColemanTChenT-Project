@@ -1,23 +1,22 @@
-# Project Guide: CS 5200 Player Database (MongoDB + Node CLI)
+# Project Guide: CS 5200 Player Database (MySQL + Node CLI)
 
 This guide is designed for teammates who are **new to JavaScript** and need a **detailed walkthrough** of how this repository works and where to extend it.
 
 ---
 
 ## 1) What This Project Is
-This is a **Node.js command-line application** that manages a **soccer player database** stored in **MongoDB**.
+This is a **Node.js command-line application** that manages a **soccer player database** stored in **MySQL**.
 
 The program flow is:
-1. Connect to MongoDB
-2. Prompt the user to log in
-3. Load user roles
-4. Show a role‑specific menu (Admin / Scout / Analyst)
-5. Run CRUD actions or analytics queries
+1. Connect to MySQL
+2. Prompt the user to choose a role
+3. Show a role-specific menu (Admin / Analyst)
+4. Run CRUD actions or analytics queries
 
 The app is intentionally simple:
 - **No web UI**
 - **No server routes**
-- Just a CLI + scripts + MongoDB
+- Just a CLI + scripts + MySQL
 
 ---
 
@@ -25,7 +24,7 @@ The app is intentionally simple:
 
 ### Prerequisites
 - Node.js (LTS)
-- MongoDB running (local or remote)
+- MySQL running (local or remote)
 
 ### Install dependencies
 ```bash
@@ -39,27 +38,22 @@ cp .env.example .env
 
 Example `.env`:
 ```
-MONGO_URI=mongodb://localhost:27017
-DB_NAME=cs5200_player_db
+MYSQL_HOST=localhost
+MYSQL_PORT=3306
+MYSQL_USER=root
+MYSQL_PASSWORD=Root123
+MYSQL_DATABASE=soccer_analytics_db
 ```
+Note: This password is for local development only. Do not commit real passwords.
 
-### Initialize schema (collections + validators + indexes)
+### Initialize schema (tables + constraints)
 ```bash
 npm run init-schema
 ```
 
-### Seed the database from CSVs
+### Seed the database with sample data
 ```bash
 npm run seed
-```
-
-Seed data is loaded from:
-- `DATA_DIR` if defined and valid
-- otherwise `./data`
-
-To point at a custom CSV folder:
-```
-DATA_DIR=/absolute/path/to/your/csvs
 ```
 
 ### Run the CLI
@@ -67,23 +61,55 @@ DATA_DIR=/absolute/path/to/your/csvs
 npm start
 ```
 
-### Demo logins
-- `admin / admin123`
-- `scout / scout123`
-- `analyst / analyst123`
+### Role selection
+- `admin`
+- `analyst`
 
 ---
 
-## 3) Core Files (Where Things Live)
+## 3) MySQL Setup Checklist
+Use this if you’re setting up MySQL on a new machine.
+
+1. Install MySQL.
+macOS (Homebrew): `brew install mysql`
+Windows: MySQL Installer
+Linux: `sudo apt-get install mysql-server`
+
+2. Start MySQL.
+macOS: `brew services start mysql`
+Linux: `sudo systemctl start mysql`
+
+3. Set or confirm the root password.
+If you can log in: `mysql -u root -p`
+Once inside MySQL:
+```sql
+ALTER USER 'root'@'localhost' IDENTIFIED BY 'Root123';
+FLUSH PRIVILEGES;
+```
+
+4. Create the database (optional, script also creates it).
+```sql
+CREATE DATABASE IF NOT EXISTS soccer_analytics_db;
+```
+
+5. Confirm you can connect.
+```bash
+mysql -u root -p
+```
+
+---
+
+## 4) Core Files (Where Things Live)
 - CLI app: `src/cli.js`
 - DB connection: `src/db.js`
-- Schema overview: `schema/mongodb_schema.md`
+- Schema: `soccer_analytics_db.sql`
+- Schema overview: `schema/mysql_schema.md`
 - Schema initializer: `scripts/init-schema.js`
-- Seed/ETL: `scripts/seed.js`
+- Seed data: `scripts/seed.js`
 
 ---
 
-## 4) JavaScript Basics (Enough to Read This Repo)
+## 5) JavaScript Basics (Enough to Read This Repo)
 
 ### Imports
 ```js
@@ -110,8 +136,8 @@ function add(a, b) {
 Most DB calls are async:
 ```js
 async function getPlayers() {
-  const players = await db.collection("players").find().toArray();
-  return players;
+  const [rows] = await db.execute("SELECT * FROM Player");
+  return rows;
 }
 ```
 
@@ -120,7 +146,7 @@ async function getPlayers() {
 const player = {
   first_name: "Lionel",
   last_name: "Messi",
-  club_id: someObjectId
+  club_id: 1
 };
 ```
 
@@ -140,7 +166,7 @@ if (choice === "1") {
 
 ---
 
-## 5) How the CLI Works (Code Walkthrough)
+## 6) How the CLI Works (Code Walkthrough)
 
 The CLI is in `src/cli.js`.
 
@@ -148,21 +174,15 @@ The CLI is in `src/cli.js`.
 ```js
 async function main() {
   const db = await getDb();
-  const session = await login(db);
+  const role = await chooseRole();
   ...
 }
 ```
 
-### Login flow
-```js
-const user = await db.collection("users").findOne({ username });
-const ok = bcrypt.compareSync(password, user.password_hash);
-```
-
 ### Role routing
 ```js
-if (hasRole(roles, "admin")) {
-  await adminMenu(db, user);
+if (role === "admin") {
+  await adminMenu(db);
 }
 ```
 
@@ -179,94 +199,78 @@ while (true) {
 
 ---
 
-## 6) MongoDB Basics (Used Everywhere)
+## 7) MySQL Basics (Used Everywhere)
 
-### Collections
-Each “table” is a collection:
+### Run a query
 ```js
-db.collection("players")
-```
-
-### Find one document
-```js
-await db.collection("players").findOne({ last_name: "Messi" })
-```
-
-### Find many documents
-```js
-await db.collection("players").find({ position: "MF" }).toArray()
+const [rows] = await db.execute("SELECT * FROM Player WHERE last_name = ?", ["Messi"]);
 ```
 
 ### Insert
 ```js
-await db.collection("players").insertOne(doc)
+await db.execute(
+  "INSERT INTO Player (first_name, last_name, dob) VALUES (?, ?, ?)",
+  ["Lionel", "Messi", "1987-06-24"]
+);
 ```
 
 ### Update
 ```js
-await db.collection("players").updateOne(
-  { _id: player._id },
-  { $set: { club_id: newClubId } }
-)
+await db.execute(
+  "UPDATE Player SET club_id = ? WHERE player_id = ?",
+  [newClubId, playerId]
+);
 ```
 
 ### Delete
 ```js
-await db.collection("players").deleteOne({ _id: player._id })
+await db.execute(
+  "DELETE FROM Player WHERE player_id = ?",
+  [playerId]
+);
 ```
 
 ---
 
-## 7) Where to Build On (Detailed)
+## 8) Where to Build On (Detailed)
 
 ### A) Add New CLI Actions (Most Common Extension)
 File: `src/cli.js`
 
 Steps:
-1. Add a new menu option (number + text)
-2. Add a handler:
-   ```js
-   else if (choice === "X") await runSafely(() => yourFunction(db, user));
-   ```
-3. Implement the function:
-   - prompt for input
-   - query or update MongoDB
-   - print output
+1. Add a new menu option (number + text).
+2. Add a handler: `else if (choice === "X") await runSafely(() => yourFunction(db));`.
+3. Implement the function to prompt for input, query or update MySQL, and print output.
 
 **Example pattern:**
 ```js
 async function createExample(db) {
   const name = await prompt("Name: ");
-  await db.collection("examples").insertOne({ name });
+  await db.execute("INSERT INTO Example (name) VALUES (?)", [name]);
   console.log("Example created.");
 }
 ```
 
 ---
 
-### B) Add a New Collection + Validation
-File: `scripts/init-schema.js`
+### B) Update the Schema
+File: `soccer_analytics_db.sql`
 
 Steps:
-1. Add collection name to `collections`
-2. Add validator under `validators`
-3. Add indexes in `ensureCollections`
-
-Run:
+1. Add or modify tables and constraints.
+2. Run:
 ```bash
 npm run init-schema
 ```
 
 ---
 
-### C) Seed New Data Sources
+### C) Seed New Data
 File: `scripts/seed.js`
 
 Steps:
-1. Add CSV path
-2. `readCsv(...)`
-3. Transform each row
-4. Use `updateOne(..., { upsert: true })`
+1. Insert rows using `db.execute(...)`.
+2. Keep inserts idempotent by checking for existing rows before insert.
 
 Run:
 ```bash
@@ -278,53 +282,30 @@ npm run seed
 ### D) Add Analytics Queries
 File: `src/cli.js`
 
-Use aggregation pipelines:
-```js
-const pipeline = [
-  { $match: { ... } },
-  { $group: { _id: "$player_id", total: { $sum: "$goal" } } },
-  { $sort: { total: -1 } }
-];
-const results = await db.collection("player_stats").aggregate(pipeline).toArray();
-```
+Use SQL queries:
+- Write a SQL query with `JOIN`, `GROUP BY`, and `ORDER BY`.
+- Call `db.execute(query, params)`.
 
 ---
 
-### E) Add or Modify Roles
-Files: `scripts/seed.js`, `src/cli.js`
-
-Steps:
-1. Add role in `seedRolesAndUsers`
-2. Create a new menu function
-3. Update `main()` to route that role
-
----
-
-## 8) Data Structure Orientation
-High‑level collections:
+## 9) Data Structure Orientation
+High-level tables:
 
 **Entities**
-- `players`, `clubs`, `leagues`, `seasons`, `countries`
+- `Country`, `League`, `Stadium`, `Club`, `Coach`, `Position`, `Player`
 
 **Stats / Events**
-- `player_stats`, `market_values`, `transfers`
+- `MarketValue`, `Transfer`, `Match`
 
-**Auth**
-- `users`, `roles`
-
-**Reports**
-- `scout_reports`
-
-Relationships are stored as `ObjectId` references.
+Relationships are stored as foreign keys.
 
 ---
 
-## 9) Summary
+## 10) Summary
 This repository is designed to be extendable through:
 - new CLI actions
-- new collections + validators
+- schema changes
 - new seed data
 - new analytics reports
-- new roles
 
 The main implementation files are `src/cli.js` and `scripts/`.

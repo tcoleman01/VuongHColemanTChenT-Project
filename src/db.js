@@ -1,24 +1,31 @@
-import { MongoClient } from "mongodb";
+import mysql from "mysql2/promise";
 import dotenv from "dotenv";
 
 dotenv.config();
 
-const uri = process.env.MONGO_URI || "mongodb://localhost:27017";
-const dbName = process.env.DB_NAME || "cs5200_player_db";
+const config = {
+  host: process.env.MYSQL_HOST || "localhost",
+  port: process.env.MYSQL_PORT ? Number(process.env.MYSQL_PORT) : 3306,
+  user: process.env.MYSQL_USER || "root",
+  password: process.env.MYSQL_PASSWORD || "",
+  database: process.env.MYSQL_DATABASE || "soccer_analytics_db"
+};
 
-let client;
+let pool;
 
 export async function getDb() {
-  if (!client) {
-    client = new MongoClient(uri);
-    await client.connect();
+  if (!pool) {
+    pool = mysql.createPool({
+      ...config,
+      connectionLimit: 10
+    });
   }
-  return client.db(dbName);
+  return pool;
 }
 
 export async function closeDb() {
-  if (client) {
-    await client.close();
-    client = null;
+  if (pool) {
+    await pool.end();
+    pool = null;
   }
 }

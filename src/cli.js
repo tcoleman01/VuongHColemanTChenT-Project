@@ -1,7 +1,5 @@
 import readline from "readline/promises";
 import { stdin as input, stdout as output } from "process";
-import bcrypt from "bcryptjs";
-import { ObjectId } from "mongodb";
 import { getDb, closeDb } from "./db.js";
 
 const rl = readline.createInterface({ input, output });
@@ -19,24 +17,76 @@ async function runSafely(fn) {
   }
 }
 
-async function login(db) {
-  const username = await prompt("Username: ");
-  const password = await prompt("Password: ");
-  const user = await db.collection("users").findOne({ username });
-  if (!user) return null;
-  const ok = bcrypt.compareSync(password, user.password_hash);
-  if (!ok) return null;
-
-  const roles = await db.collection("roles").find({ _id: { $in: user.role_ids } }).toArray();
-  return { user, roles };
+async function chooseRole() {
+  const role = await prompt("Role (admin/analyst): ");
+  const normalized = role.toLowerCase();
+  if (normalized !== "admin" && normalized !== "analyst") {
+    console.log("Unknown role. Defaulting to analyst.");
+    return "analyst";
+  }
+  return normalized;
 }
 
-function hasRole(roles, name) {
-  return roles.some(r => r.name === name);
+async function ensureCountry(db, abbr, name) {
+  await db.execute(
+    "INSERT INTO Country (country_abbr, country_name) VALUES (?, ?) ON DUPLICATE KEY UPDATE country_name = VALUES(country_name)",
+    [abbr, name]
+  );
+  return abbr;
+}
+
+async function ensureLeague(db, leagueName, seasonName, countryAbbr) {
+  await db.execute(
+    "INSERT INTO League (league_name, season_name, country_abbr) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE country_abbr = VALUES(country_abbr)",
+    [leagueName, seasonName, countryAbbr]
+  );
+  const [rows] = await db.execute(
+    "SELECT league_id FROM League WHERE league_name = ? AND season_name = ? LIMIT 1",
+    [leagueName, seasonName]
+  );
+  return rows[0]?.league_id || null;
+}
+
+async function ensurePosition(db, positionName, category = null) {
+  const [rows] = await db.execute(
+    "SELECT position_id FROM `Position` WHERE position_name = ? LIMIT 1",
+    [positionName]
+  );
+  if (rows[0]?.position_id) return rows[0].position_id;
+  await db.execute(
+    "INSERT INTO `Position` (position_name, position_category) VALUES (?, ?)",
+    [positionName, category]
+  );
+  const [created] = await db.execute(
+    "SELECT position_id FROM `Position` WHERE position_name = ? ORDER BY position_id DESC LIMIT 1",
+    [positionName]
+  );
+  return created[0]?.position_id || null;
+}
+
+async function ensureClub(db, clubName, countryAbbr, leagueId) {
+  const [rows] = await db.execute(
+    "SELECT club_id FROM Club WHERE club_name = ? ORDER BY club_id DESC LIMIT 1",
+    [clubName]
+  );
+  if (rows[0]?.club_id) return rows[0].club_id;
+  await db.execute(
+    "INSERT INTO Club (club_name, country_abbr, league_id) VALUES (?, ?, ?)",
+    [clubName, countryAbbr, leagueId]
+  );
+  const [created] = await db.execute(
+    "SELECT club_id FROM Club WHERE club_name = ? ORDER BY club_id DESC LIMIT 1",
+    [clubName]
+  );
+  return created[0]?.club_id || null;
 }
 
 async function findPlayerByLastName(db, lastName) {
-  return db.collection("players").find({ last_name: new RegExp(`^${lastName}$`, "i") }).toArray();
+  const [rows] = await db.execute(
+    "SELECT player_id, first_name, last_name, dob FROM Player WHERE LOWER(last_name) = LOWER(?)",
+    [lastName]
+  );
+  return rows;
 }
 
 async function selectPlayer(db) {
@@ -50,7 +100,7 @@ async function selectPlayer(db) {
 
   console.log("Multiple matches:");
   matches.forEach((p, i) => {
-    const dob = p.dob ? p.dob.toISOString().slice(0, 10) : "";
+    const dob = p.dob ? new Date(p.dob).toISOString().slice(0, 10) : "";
     console.log(`${i + 1}. ${p.first_name} ${p.last_name} (${dob})`);
   });
   const idx = parseInt(await prompt("Choose number: "), 10) - 1;
@@ -60,43 +110,50 @@ async function selectPlayer(db) {
 async function createPlayer(db) {
   const first_name = await prompt("First name: ");
   const last_name = await prompt("Last name: ");
-  const dobRaw = await prompt("DOB (YYYY-MM-DD): ");
-  const position = await prompt("Position: ");
+  const dob = await prompt("DOB (YYYY-MM-DD): ");
+  const positionName = await prompt("Position name: ");
+  const positionCategory = await prompt("Position category (optional): ");
+  const country_abbr = await prompt("Country abbr (e.g., ENG): ");
+  const country_name = await prompt("Country name: ");
   const clubName = await prompt("Club name: ");
+  const leagueName = await prompt("League name: ");
+  const seasonName = await prompt("Season name (e.g., 2023/24): ");
 
-  const dob = dobRaw ? new Date(dobRaw) : null;
-  const club = await db.collection("clubs").findOneAndUpdate(
-    { name: clubName },
-    { $set: { name: clubName } },
-    { upsert: true, returnDocument: "after" }
+  await ensureCountry(db, country_abbr, country_name);
+  const leagueId = await ensureLeague(db, leagueName, seasonName, country_abbr);
+  const clubId = await ensureClub(db, clubName, country_abbr, leagueId);
+  const positionId = await ensurePosition(db, positionName, positionCategory || null);
+
+  await db.execute(
+    `INSERT INTO Player
+      (first_name, last_name, dob, position_id, country_abbr, club_id)
+     VALUES (?, ?, ?, ?, ?, ?)`,
+    [first_name, last_name, dob || null, positionId, country_abbr, clubId]
   );
-
-  const doc = {
-    first_name,
-    last_name,
-    dob,
-    position,
-    club_id: club.value._id,
-    join_date: null,
-    contract_expires: null,
-    profile: { citizenships: [] }
-  };
-
-  await db.collection("players").insertOne(doc);
   console.log("Player created.");
 }
 
 async function readPlayer(db) {
   const player = await selectPlayer(db);
   if (!player) return;
-  const club = await db.collection("clubs").findOne({ _id: player.club_id });
+  const [rows] = await db.execute(
+    `SELECT p.player_id, p.first_name, p.last_name, p.dob,
+            pos.position_name, c.club_name, co.country_name
+     FROM Player p
+     LEFT JOIN \`Position\` pos ON p.position_id = pos.position_id
+     LEFT JOIN Club c ON p.club_id = c.club_id
+     LEFT JOIN Country co ON p.country_abbr = co.country_abbr
+     WHERE p.player_id = ?`,
+    [player.player_id]
+  );
+  const info = rows[0];
   console.log({
-    id: player._id,
-    name: `${player.first_name} ${player.last_name}`,
-    dob: player.dob,
-    position: player.position,
-    club: club?.name || null,
-    citizenships: player.profile?.citizenships || []
+    id: info.player_id,
+    name: `${info.first_name} ${info.last_name}`,
+    dob: info.dob,
+    position: info.position_name || null,
+    club: info.club_name || null,
+    country: info.country_name || null
   });
 }
 
@@ -104,62 +161,103 @@ async function updatePlayer(db) {
   const player = await selectPlayer(db);
   if (!player) return;
   const clubName = await prompt("New club name (leave blank to keep): ");
-  const contractRaw = await prompt("New contract expires (YYYY-MM-DD, blank to keep): ");
+  const leagueName = await prompt("New league name (leave blank to keep): ");
+  const seasonName = await prompt("New season name (leave blank to keep): ");
+  const country_abbr = await prompt("New country abbr (leave blank to keep): ");
+  const country_name = await prompt("New country name (leave blank to keep): ");
+  const positionName = await prompt("New position name (leave blank to keep): ");
+  const positionCategory = await prompt("New position category (optional): ");
+  const preferredFoot = await prompt("Preferred foot (Left/Right/Both, blank to keep): ");
 
-  const updates = {};
-  if (clubName) {
-    const club = await db.collection("clubs").findOneAndUpdate(
-      { name: clubName },
-      { $set: { name: clubName } },
-      { upsert: true, returnDocument: "after" }
-    );
-    updates.club_id = club.value._id;
+  const updates = [];
+  const params = [];
+
+  if (preferredFoot) {
+    updates.push("preferred_foot = ?");
+    params.push(preferredFoot);
   }
-  if (contractRaw) updates.contract_expires = new Date(contractRaw);
 
-  if (Object.keys(updates).length === 0) {
+  let clubId = null;
+  if (clubName || leagueName || seasonName || country_abbr) {
+    if (country_abbr && country_name) {
+      await ensureCountry(db, country_abbr, country_name);
+    }
+    if (clubName && leagueName && seasonName && country_abbr) {
+      const leagueId = await ensureLeague(db, leagueName, seasonName, country_abbr);
+      clubId = await ensureClub(db, clubName, country_abbr, leagueId);
+    } else if (clubName) {
+      const [clubRows] = await db.execute(
+        "SELECT club_id FROM Club WHERE club_name = ? ORDER BY club_id DESC LIMIT 1",
+        [clubName]
+      );
+      clubId = clubRows[0]?.club_id || null;
+    }
+  }
+
+  if (clubId) {
+    updates.push("club_id = ?");
+    params.push(clubId);
+  }
+
+  if (positionName) {
+    const positionId = await ensurePosition(db, positionName, positionCategory || null);
+    updates.push("position_id = ?");
+    params.push(positionId);
+  }
+
+  if (updates.length === 0) {
     console.log("No changes provided.");
     return;
   }
-  await db.collection("players").updateOne({ _id: player._id }, { $set: updates });
+
+  params.push(player.player_id);
+  await db.execute(`UPDATE Player SET ${updates.join(", ")} WHERE player_id = ?`, params);
   console.log("Player updated.");
 }
 
 async function deletePlayer(db) {
   const player = await selectPlayer(db);
   if (!player) return;
-  await db.collection("players").deleteOne({ _id: player._id });
+  await db.execute("DELETE FROM Player WHERE player_id = ?", [player.player_id]);
   console.log("Player deleted.");
 }
 
 async function createTransfer(db) {
   const player = await selectPlayer(db);
   if (!player) return;
-  const oldClubName = await prompt("Old club: ");
+  const oldClubName = await prompt("Old club (blank for none): ");
   const newClubName = await prompt("New club: ");
   const dateRaw = await prompt("Transfer date (YYYY-MM-DD): ");
-  const feeValueRaw = await prompt("Fee value (number): ");
+  const feeValueRaw = await prompt("Fee value (number, blank for null): ");
 
-  const oldClub = await db.collection("clubs").findOneAndUpdate(
-    { name: oldClubName },
-    { $set: { name: oldClubName } },
-    { upsert: true, returnDocument: "after" }
+  let oldClubId = null;
+  if (oldClubName) {
+    const [oldRows] = await db.execute(
+      "SELECT club_id FROM Club WHERE club_name = ? ORDER BY club_id DESC LIMIT 1",
+      [oldClubName]
+    );
+    oldClubId = oldRows[0]?.club_id || null;
+  }
+  const [newRows] = await db.execute(
+    "SELECT club_id FROM Club WHERE club_name = ? ORDER BY club_id DESC LIMIT 1",
+    [newClubName]
   );
-  const newClub = await db.collection("clubs").findOneAndUpdate(
-    { name: newClubName },
-    { $set: { name: newClubName } },
-    { upsert: true, returnDocument: "after" }
+  const newClubId = newRows[0]?.club_id || null;
+  if (!newClubId) {
+    console.log("New club not found. Create the club first.");
+    return;
+  }
+
+  await db.execute(
+    "INSERT INTO Transfer (player_id, old_club_id, new_club_id, transfer_date, transfer_fee) VALUES (?, ?, ?, ?, ?)",
+    [
+      player.player_id,
+      oldClubId,
+      newClubId,
+      dateRaw || null,
+      feeValueRaw ? parseFloat(feeValueRaw) : null
+    ]
   );
-
-  await db.collection("transfers").insertOne({
-    player_id: player._id,
-    date: new Date(dateRaw),
-    fee_value: feeValueRaw ? parseFloat(feeValueRaw) : null,
-    fee_text: feeValueRaw ? null : null,
-    old_club_id: oldClub.value._id,
-    new_club_id: newClub.value._id
-  });
-
   console.log("Transfer created.");
 }
 
@@ -169,10 +267,9 @@ async function updateTransfer(db) {
   const dateRaw = await prompt("Transfer date to update (YYYY-MM-DD): ");
   const feeValueRaw = await prompt("New fee value (number): ");
 
-  const date = new Date(dateRaw);
-  await db.collection("transfers").updateOne(
-    { player_id: player._id, date },
-    { $set: { fee_value: feeValueRaw ? parseFloat(feeValueRaw) : null } }
+  await db.execute(
+    "UPDATE Transfer SET transfer_fee = ? WHERE player_id = ? AND transfer_date = ?",
+    [feeValueRaw ? parseFloat(feeValueRaw) : null, player.player_id, dateRaw]
   );
   console.log("Transfer updated.");
 }
@@ -181,8 +278,10 @@ async function deleteTransfer(db) {
   const player = await selectPlayer(db);
   if (!player) return;
   const dateRaw = await prompt("Transfer date to delete (YYYY-MM-DD): ");
-  const date = new Date(dateRaw);
-  await db.collection("transfers").deleteOne({ player_id: player._id, date });
+  await db.execute(
+    "DELETE FROM Transfer WHERE player_id = ? AND transfer_date = ?",
+    [player.player_id, dateRaw]
+  );
   console.log("Transfer deleted.");
 }
 
@@ -191,174 +290,63 @@ async function createMarketValue(db) {
   if (!player) return;
   const dateRaw = await prompt("Market value date (YYYY-MM-DD): ");
   const valueRaw = await prompt("Market value number: ");
-  const clubName = await prompt("Club name: ");
 
-  const club = await db.collection("clubs").findOneAndUpdate(
-    { name: clubName },
-    { $set: { name: clubName } },
-    { upsert: true, returnDocument: "after" }
+  await db.execute(
+    "INSERT INTO MarketValue (player_id, market_value_date, market_value) VALUES (?, ?, ?)",
+    [player.player_id, dateRaw || null, parseFloat(valueRaw)]
   );
-
-  await db.collection("market_values").insertOne({
-    player_id: player._id,
-    mv_date: new Date(dateRaw),
-    mv_value: parseFloat(valueRaw),
-    mv_unit: "€",
-    mv_club_id: club.value._id
-  });
-
   console.log("Market value created.");
 }
 
 async function readMarketValues(db) {
   const player = await selectPlayer(db);
   if (!player) return;
-  const values = await db.collection("market_values")
-    .find({ player_id: player._id })
-    .sort({ mv_date: -1 })
-    .limit(10)
-    .toArray();
-  console.table(values.map(v => ({ date: v.mv_date, value: v.mv_value, unit: v.mv_unit })));
-}
-
-async function createScoutReport(db, user) {
-  const player = await selectPlayer(db);
-  if (!player) return;
-  const notes = await prompt("Notes: ");
-  const tagsRaw = await prompt("Tags (comma separated): ");
-  const technique = await prompt("Technique rating (1-10, blank to skip): ");
-  const speed = await prompt("Speed rating (1-10, blank to skip): ");
-  const mentality = await prompt("Mentality rating (1-10, blank to skip): ");
-
-  await db.collection("scout_reports").insertOne({
-    player_id: player._id,
-    scout_user_id: user._id,
-    notes,
-    tags: tagsRaw ? tagsRaw.split(",").map(t => t.trim()).filter(Boolean) : [],
-    ratings: {
-      technique: technique ? parseInt(technique, 10) : null,
-      speed: speed ? parseInt(speed, 10) : null,
-      mentality: mentality ? parseInt(mentality, 10) : null
-    },
-    created_at: new Date()
-  });
-
-  console.log("Scout report created.");
-}
-
-async function updateScoutReport(db, user) {
-  const reportId = await prompt("Report id: ");
-  if (!ObjectId.isValid(reportId)) {
-    console.log("Invalid report id.");
-    return;
-  }
-  const notes = await prompt("New notes: ");
-  await db.collection("scout_reports").updateOne(
-    { _id: new ObjectId(reportId), scout_user_id: user._id },
-    { $set: { notes } }
+  const [rows] = await db.execute(
+    "SELECT market_value_date, market_value FROM MarketValue WHERE player_id = ? ORDER BY market_value_date DESC LIMIT 10",
+    [player.player_id]
   );
-  console.log("Scout report updated.");
-}
-
-async function deleteScoutReport(db, user) {
-  const reportId = await prompt("Report id: ");
-  if (!ObjectId.isValid(reportId)) {
-    console.log("Invalid report id.");
-    return;
-  }
-  await db.collection("scout_reports").deleteOne({ _id: new ObjectId(reportId), scout_user_id: user._id });
-  console.log("Scout report deleted.");
-}
-
-async function readScoutReports(db) {
-  const player = await selectPlayer(db);
-  if (!player) return;
-  const reports = await db.collection("scout_reports")
-    .find({ player_id: player._id })
-    .sort({ created_at: -1 })
-    .limit(5)
-    .toArray();
-  console.table(reports.map(r => ({ id: r._id, notes: r.notes, tags: r.tags?.join(",") } )));
+  console.table(rows.map(v => ({ date: v.market_value_date, value: v.market_value })));
 }
 
 async function analystTopMarketValues(db) {
-  const pipeline = [
-    { $sort: { mv_date: -1 } },
-    {
-      $group: {
-        _id: "$player_id",
-        latest: { $first: "$mv_value" },
-        date: { $first: "$mv_date" }
-      }
-    },
-    { $sort: { latest: -1 } },
-    { $limit: 10 }
-  ];
+  const [rows] = await db.execute(
+    `SELECT p.first_name, p.last_name, mv.market_value, mv.market_value_date
+     FROM MarketValue mv
+     JOIN (
+       SELECT player_id, MAX(market_value_date) AS latest_date
+       FROM MarketValue
+       GROUP BY player_id
+     ) latest ON mv.player_id = latest.player_id AND mv.market_value_date = latest.latest_date
+     JOIN Player p ON mv.player_id = p.player_id
+     ORDER BY mv.market_value DESC
+     LIMIT 10`
+  );
 
-  const results = await db.collection("market_values").aggregate(pipeline).toArray();
-  const playerIds = results.map(r => r._id);
-  const players = await db.collection("players").find({ _id: { $in: playerIds } }).toArray();
-  const map = new Map(players.map(p => [p._id.toString(), p]));
-
-  console.table(results.map(r => {
-    const p = map.get(r._id.toString());
-    return { player: p ? `${p.first_name} ${p.last_name}` : "", value: r.latest, date: r.date };
-  }));
-}
-
-async function analystTopScorers(db) {
-  const season = await prompt("Season code (e.g., 22/23): ");
-  const league = await prompt("League name: ");
-  const leagueDoc = await db.collection("leagues").findOne({ name: league });
-  const seasonDoc = await db.collection("seasons").findOne({ code: season });
-  if (!leagueDoc || !seasonDoc) {
-    console.log("Season or league not found.");
-    return;
-  }
-
-  const pipeline = [
-    { $match: { season_id: seasonDoc._id, league_id: leagueDoc._id } },
-    { $sort: { goal: -1 } },
-    { $limit: 10 }
-  ];
-
-  const results = await db.collection("player_stats").aggregate(pipeline).toArray();
-  const playerIds = results.map(r => r.player_id);
-  const players = await db.collection("players").find({ _id: { $in: playerIds } }).toArray();
-  const map = new Map(players.map(p => [p._id.toString(), p]));
-
-  console.table(results.map(r => {
-    const p = map.get(r.player_id.toString());
-    return { player: p ? `${p.first_name} ${p.last_name}` : "", goals: r.goal };
-  }));
+  console.table(rows.map(r => ({
+    player: `${r.first_name} ${r.last_name}`,
+    value: r.market_value,
+    date: r.market_value_date
+  })));
 }
 
 async function analystTransferSpending(db) {
-  const pipeline = [
-    { $match: { fee_value: { $ne: null } } },
-    {
-      $group: {
-        _id: "$new_club_id",
-        total_spent: { $sum: "$fee_value" },
-        deals: { $sum: 1 }
-      }
-    },
-    { $sort: { total_spent: -1 } },
-    { $limit: 10 }
-  ];
-
-  const results = await db.collection("transfers").aggregate(pipeline).toArray();
-  const clubIds = results.map(r => r._id).filter(Boolean);
-  const clubs = await db.collection("clubs").find({ _id: { $in: clubIds } }).toArray();
-  const map = new Map(clubs.map(c => [c._id.toString(), c]));
-
-  console.table(results.map(r => {
-    const club = map.get(r._id?.toString?.() || "");
-    return { club: club?.name || "Unknown", total_spent: r.total_spent, deals: r.deals };
-  }));
+  const [rows] = await db.execute(
+    `SELECT c.club_name, SUM(t.transfer_fee) AS total_spent, COUNT(*) AS deals
+     FROM Transfer t
+     JOIN Club c ON t.new_club_id = c.club_id
+     WHERE t.transfer_fee IS NOT NULL
+     GROUP BY t.new_club_id
+     ORDER BY total_spent DESC
+     LIMIT 10`
+  );
+  console.table(rows.map(r => ({
+    club: r.club_name,
+    total_spent: r.total_spent,
+    deals: r.deals
+  })));
 }
 
-async function adminMenu(db, user) {
+async function adminMenu(db) {
   while (true) {
     console.log("\nAdmin Menu");
     console.log("1. Create player");
@@ -386,67 +374,32 @@ async function adminMenu(db, user) {
   }
 }
 
-async function scoutMenu(db, user) {
-  while (true) {
-    console.log("\nScout Menu");
-    console.log("1. Read player");
-    console.log("2. Create scout report");
-    console.log("3. Update scout report");
-    console.log("4. Delete scout report");
-    console.log("5. Read scout reports");
-    console.log("0. Logout");
-
-    const choice = await prompt("Choose: ");
-    if (choice === "0") break;
-    if (choice === "1") await runSafely(() => readPlayer(db));
-    else if (choice === "2") await runSafely(() => createScoutReport(db, user));
-    else if (choice === "3") await runSafely(() => updateScoutReport(db, user));
-    else if (choice === "4") await runSafely(() => deleteScoutReport(db, user));
-    else if (choice === "5") await runSafely(() => readScoutReports(db));
-  }
-}
-
 async function analystMenu(db) {
   while (true) {
     console.log("\nAnalyst Menu");
     console.log("1. Read player");
     console.log("2. Top 10 market values (latest)");
-    console.log("3. Top scorers by season/league");
-    console.log("4. Transfer spending by club");
+    console.log("3. Transfer spending by club");
     console.log("0. Logout");
 
     const choice = await prompt("Choose: ");
     if (choice === "0") break;
     if (choice === "1") await runSafely(() => readPlayer(db));
     else if (choice === "2") await runSafely(() => analystTopMarketValues(db));
-    else if (choice === "3") await runSafely(() => analystTopScorers(db));
-    else if (choice === "4") await runSafely(() => analystTransferSpending(db));
+    else if (choice === "3") await runSafely(() => analystTransferSpending(db));
   }
 }
 
 async function main() {
   const db = await getDb();
 
-  console.log("\nCS 5200 Player Database CLI");
-  console.log("Login with admin/scout/analyst.");
+  console.log("\nSoccer Analytics CLI (MySQL)");
+  const role = await chooseRole();
 
-  const session = await login(db);
-  if (!session) {
-    console.log("Invalid credentials.");
-    await closeDb();
-    rl.close();
-    return;
-  }
-
-  const { user, roles } = session;
-  if (hasRole(roles, "admin")) {
-    await adminMenu(db, user);
-  } else if (hasRole(roles, "scout")) {
-    await scoutMenu(db, user);
-  } else if (hasRole(roles, "analyst")) {
-    await analystMenu(db);
+  if (role === "admin") {
+    await adminMenu(db);
   } else {
-    console.log("No role assigned.");
+    await analystMenu(db);
   }
 
   await closeDb();
