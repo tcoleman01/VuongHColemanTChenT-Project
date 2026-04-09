@@ -5,25 +5,27 @@ This is a Java command-line application that manages admin CRUD workflows for a 
 
 ## Java Admin CLI (Current)
 1. Make sure MySQL is running and `.env` is configured.
-2. Download MySQL JDBC Driver (Connector/J) and place the jar in `lib/`.
+2. Download MySQL JDBC Driver (Connector/J). Keep the jar outside the repo (to minimize files) and reference it by path.
 3. Compile and run:
 
 ```bash
-javac -cp lib/mysql-connector-j-<version>.jar AdminCli.java
-java -cp .:lib/mysql-connector-j-<version>.jar AdminCli
+javac -cp "$HOME/Downloads/mysql-connector-j-<version>.jar" AdminCli.java
+java -cp ".:$HOME/Downloads/mysql-connector-j-<version>.jar" AdminCli
 ```
 
 On Windows:
 
 ```bash
-java -cp .;lib/mysql-connector-j-<version>.jar AdminCli
+java -cp .;%HOMEPATH%\\Downloads\\mysql-connector-j-<version>.jar AdminCli
 ```
 
-Optional admin credentials (if you want to lock login):
+Optional credentials (if you want to lock login):
 
 ```
 ADMIN_USER=admin
 ADMIN_PASS=admin123
+USER_USER=user
+USER_PASS=user123
 ```
 
 ## MySQL Setup Checklist

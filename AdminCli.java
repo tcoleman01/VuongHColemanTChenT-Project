@@ -2,9 +2,9 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.sql.CallableStatement;
 import java.sql.Connection;
 import java.sql.DriverManager;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
@@ -29,12 +29,17 @@ public class AdminCli {
         try (Connection conn = connect(config); Scanner scanner = new Scanner(System.in)) {
             System.out.println("Connected to MySQL at " + config.host + ":" + config.port + "/" + config.database);
 
-            if (!adminLogin(scanner)) {
-                System.out.println("Admin login failed. Exiting.");
+            Role role = login(scanner);
+            if (role == null) {
+                System.out.println("Login failed. Exiting.");
                 return;
             }
 
-            adminMenu(conn, scanner);
+            if (role == Role.ADMIN) {
+                adminMenu(conn, scanner);
+            } else {
+                userMenu(conn, scanner);
+            }
         } catch (SQLException e) {
             System.out.println("Database connection failed: " + e.getMessage());
         }
@@ -103,127 +108,150 @@ public class AdminCli {
         return DriverManager.getConnection(url, config.user, config.password);
     }
 
-    private static boolean adminLogin(Scanner scanner) {
+    private static Role login(Scanner scanner) {
         String adminUser = getConfig("ADMIN_USER", "");
         String adminPass = getConfig("ADMIN_PASS", "");
+        String userUser = getConfig("USER_USER", "");
+        String userPass = getConfig("USER_PASS", "");
 
-        System.out.println("Admin login");
+        System.out.println("Login");
+        String roleInput = prompt(scanner, "Role (admin|user)");
         String username = prompt(scanner, "Username");
         String password = prompt(scanner, "Password");
 
-        if (adminUser.isEmpty() || adminPass.isEmpty()) {
-            System.out.println("Warning: ADMIN_USER/ADMIN_PASS not set. Allowing login for any credentials.");
-            return true;
+        Role role = parseRole(roleInput);
+        if (role == null) {
+            System.out.println("Invalid role. Use admin or user.");
+            return null;
         }
 
-        return adminUser.equals(username) && adminPass.equals(password);
+        if (role == Role.ADMIN) {
+            if (adminUser.isEmpty() || adminPass.isEmpty()) {
+                System.out.println("Warning: ADMIN_USER/ADMIN_PASS not set. Allowing admin login for any credentials.");
+                return Role.ADMIN;
+            }
+            return adminUser.equals(username) && adminPass.equals(password) ? Role.ADMIN : null;
+        }
+
+        if (userUser.isEmpty() || userPass.isEmpty()) {
+            System.out.println("Warning: USER_USER/USER_PASS not set. Allowing user login for any credentials.");
+            return Role.USER;
+        }
+        return userUser.equals(username) && userPass.equals(password) ? Role.USER : null;
     }
 
     private static void adminMenu(Connection conn, Scanner scanner) {
-        System.out.println("Note: sp_admin_* procedure names are placeholders. Update them to match your MySQL routines.");
         while (true) {
             System.out.println("\nAdmin Menu");
-            System.out.println("1. Create player (sp_admin_create_player)");
-            System.out.println("2. Update player (sp_admin_update_player)");
-            System.out.println("3. Delete player (sp_admin_delete_player)");
-            System.out.println("4. Create club (sp_admin_create_club)");
-            System.out.println("5. Update club (sp_admin_update_club)");
-            System.out.println("6. Delete club (sp_admin_delete_club)");
-            System.out.println("7. Create league (sp_admin_create_league)");
-            System.out.println("8. Update league (sp_admin_update_league)");
-            System.out.println("9. Delete league (sp_admin_delete_league)");
-            System.out.println("10. Create match (sp_admin_create_match)");
-            System.out.println("11. Update match (sp_admin_update_match)");
-            System.out.println("12. Delete match (sp_admin_delete_match)");
-            System.out.println("13. Create market value (sp_admin_create_market_value)");
-            System.out.println("14. Update market value (sp_admin_update_market_value)");
-            System.out.println("15. Delete market value (sp_admin_delete_market_value)");
-            System.out.println("16. Create player match stat (sp_admin_create_player_match_stat)");
-            System.out.println("17. Update player match stat (sp_admin_update_player_match_stat)");
-            System.out.println("18. Delete player match stat (sp_admin_delete_player_match_stat)");
-            System.out.println("19. Add player-team relation (sp_admin_create_player_team_relation)");
-            System.out.println("20. Delete player-team relation (sp_admin_delete_player_team_relation)");
-            System.out.println("21. Create user (sp_admin_create_user)");
-            System.out.println("22. Delete user (sp_admin_delete_user)");
-            System.out.println("23. Record transfer (sp_record_transfer)");
-            System.out.println("24. Call custom procedure");
-            System.out.println("25. Exit");
+            System.out.println("1. Create player");
+            System.out.println("2. Update player");
+            System.out.println("3. Delete player");
+            System.out.println("4. Read players");
+            System.out.println("5. Create club");
+            System.out.println("6. Update club");
+            System.out.println("7. Delete club");
+            System.out.println("8. Read clubs");
+            System.out.println("9. Create league");
+            System.out.println("10. Update league");
+            System.out.println("11. Delete league");
+            System.out.println("12. Read leagues");
+            System.out.println("13. Create match");
+            System.out.println("14. Update match");
+            System.out.println("15. Delete match");
+            System.out.println("16. Read matches");
+            System.out.println("17. Create market value");
+            System.out.println("18. Update market value");
+            System.out.println("19. Delete market value");
+            System.out.println("20. Read market values");
+            System.out.println("21. Create match performance");
+            System.out.println("22. Update match performance");
+            System.out.println("23. Delete match performance");
+            System.out.println("24. Read match performances");
+            System.out.println("25. Record transfer");
+            System.out.println("26. Run read-only query");
+            System.out.println("27. Exit");
 
             String choice = prompt(scanner, "Select an option");
             switch (choice) {
                 case "1":
-                    callProcedure(conn, "sp_admin_create_player", promptPlayerParams(scanner, false));
+                    createPlayer(conn, scanner);
                     break;
                 case "2":
-                    callProcedure(conn, "sp_admin_update_player", promptPlayerParams(scanner, true));
+                    updatePlayer(conn, scanner);
                     break;
                 case "3":
-                    callProcedure(conn, "sp_admin_delete_player", promptSingleId(scanner, "player_id"));
+                    deleteById(conn, scanner, "Player", "player_id");
                     break;
                 case "4":
-                    callProcedure(conn, "sp_admin_create_club", promptClubParams(scanner, false));
+                    readPlayers(conn, scanner);
                     break;
                 case "5":
-                    callProcedure(conn, "sp_admin_update_club", promptClubParams(scanner, true));
+                    createClub(conn, scanner);
                     break;
                 case "6":
-                    callProcedure(conn, "sp_admin_delete_club", promptSingleId(scanner, "club_id"));
+                    updateClub(conn, scanner);
                     break;
                 case "7":
-                    callProcedure(conn, "sp_admin_create_league", promptLeagueParams(scanner, false));
+                    deleteById(conn, scanner, "Club", "club_id");
                     break;
                 case "8":
-                    callProcedure(conn, "sp_admin_update_league", promptLeagueParams(scanner, true));
+                    readClubs(conn, scanner);
                     break;
                 case "9":
-                    callProcedure(conn, "sp_admin_delete_league", promptSingleId(scanner, "league_id"));
+                    createLeague(conn, scanner);
                     break;
                 case "10":
-                    callProcedure(conn, "sp_admin_create_match", promptMatchParams(scanner, false));
+                    updateLeague(conn, scanner);
                     break;
                 case "11":
-                    callProcedure(conn, "sp_admin_update_match", promptMatchParams(scanner, true));
+                    deleteById(conn, scanner, "League", "league_id");
                     break;
                 case "12":
-                    callProcedure(conn, "sp_admin_delete_match", promptSingleId(scanner, "match_id"));
+                    readLeagues(conn, scanner);
                     break;
                 case "13":
-                    callProcedure(conn, "sp_admin_create_market_value", promptMarketValueParams(scanner, false));
+                    createMatch(conn, scanner);
                     break;
                 case "14":
-                    callProcedure(conn, "sp_admin_update_market_value", promptMarketValueParams(scanner, true));
+                    updateMatch(conn, scanner);
                     break;
                 case "15":
-                    callProcedure(conn, "sp_admin_delete_market_value", promptMarketValueDeleteParams(scanner));
+                    deleteById(conn, scanner, "`Match`", "match_id");
                     break;
                 case "16":
-                    callProcedure(conn, "sp_admin_create_player_match_stat", promptPlayerMatchStatParams(scanner, false));
+                    readMatches(conn, scanner);
                     break;
                 case "17":
-                    callProcedure(conn, "sp_admin_update_player_match_stat", promptPlayerMatchStatParams(scanner, true));
+                    createMarketValue(conn, scanner);
                     break;
                 case "18":
-                    callProcedure(conn, "sp_admin_delete_player_match_stat", promptPlayerMatchStatDeleteParams(scanner));
+                    updateMarketValue(conn, scanner);
                     break;
                 case "19":
-                    callProcedure(conn, "sp_admin_create_player_team_relation", promptPlayerTeamRelationParams(scanner));
+                    deleteMarketValue(conn, scanner);
                     break;
                 case "20":
-                    callProcedure(conn, "sp_admin_delete_player_team_relation", promptPlayerTeamRelationParams(scanner));
+                    readMarketValues(conn, scanner);
                     break;
                 case "21":
-                    callProcedure(conn, "sp_admin_create_user", promptUserParams(scanner, false));
+                    createMatchPerformance(conn, scanner);
                     break;
                 case "22":
-                    callProcedure(conn, "sp_admin_delete_user", promptSingleId(scanner, "user_id"));
+                    updateMatchPerformance(conn, scanner);
                     break;
                 case "23":
-                    callProcedure(conn, "sp_record_transfer", promptTransferParams(scanner));
+                    deleteMatchPerformance(conn, scanner);
                     break;
                 case "24":
-                    callCustomProcedure(conn, scanner);
+                    readMatchPerformances(conn, scanner);
                     break;
                 case "25":
+                    recordTransfer(conn, scanner);
+                    break;
+                case "26":
+                    runReadOnlyQuery(conn, scanner);
+                    break;
+                case "27":
                     System.out.println("Goodbye.");
                     return;
                 default:
@@ -232,205 +260,479 @@ public class AdminCli {
         }
     }
 
-    private static List<String> promptPlayerParams(Scanner scanner, boolean includeId) {
-        List<String> params = new ArrayList<>();
-        if (includeId) {
-            params.add(prompt(scanner, "player_id"));
-        }
-        params.add(prompt(scanner, "first_name"));
-        params.add(prompt(scanner, "last_name"));
-        params.add(prompt(scanner, "dob (YYYY-MM-DD or blank)"));
-        params.add(prompt(scanner, "place_of_birth (blank ok)"));
-        params.add(prompt(scanner, "height_cm (blank ok)"));
-        params.add(prompt(scanner, "preferred_foot [Left|Right|Both]"));
-        params.add(prompt(scanner, "position_id (blank ok)"));
-        params.add(prompt(scanner, "country_abbr (3-letter code)"));
-        params.add(prompt(scanner, "club_id (blank ok)"));
-        return params;
-    }
+    private static void userMenu(Connection conn, Scanner scanner) {
+        while (true) {
+            System.out.println("\nUser Menu (Read Only)");
+            System.out.println("1. Read players");
+            System.out.println("2. Read clubs");
+            System.out.println("3. Read leagues");
+            System.out.println("4. Read matches");
+            System.out.println("5. Read market values");
+            System.out.println("6. Read match performances");
+            System.out.println("7. Run read-only query");
+            System.out.println("8. Exit");
 
-    private static List<String> promptClubParams(Scanner scanner, boolean includeId) {
-        List<String> params = new ArrayList<>();
-        if (includeId) {
-            params.add(prompt(scanner, "club_id"));
-        }
-        params.add(prompt(scanner, "club_name"));
-        params.add(prompt(scanner, "country_abbr"));
-        params.add(prompt(scanner, "league_id"));
-        params.add(prompt(scanner, "stadium_id (blank ok)"));
-        params.add(prompt(scanner, "coach_id (blank ok)"));
-        return params;
-    }
-
-    private static List<String> promptTransferParams(Scanner scanner) {
-        List<String> params = new ArrayList<>();
-        params.add(prompt(scanner, "player_id"));
-        params.add(prompt(scanner, "new_club_id"));
-        params.add(prompt(scanner, "transfer_date (YYYY-MM-DD)"));
-        params.add(prompt(scanner, "transfer_fee"));
-        return params;
-    }
-
-    private static List<String> promptLeagueParams(Scanner scanner, boolean includeId) {
-        List<String> params = new ArrayList<>();
-        if (includeId) {
-            params.add(prompt(scanner, "league_id"));
-        }
-        params.add(prompt(scanner, "league_name"));
-        params.add(prompt(scanner, "country_abbr"));
-        return params;
-    }
-
-    private static List<String> promptMatchParams(Scanner scanner, boolean includeId) {
-        List<String> params = new ArrayList<>();
-        if (includeId) {
-            params.add(prompt(scanner, "match_id"));
-        }
-        params.add(prompt(scanner, "home_team_id"));
-        params.add(prompt(scanner, "away_team_id"));
-        params.add(prompt(scanner, "match_date (YYYY-MM-DD)"));
-        params.add(prompt(scanner, "home_score"));
-        params.add(prompt(scanner, "away_score"));
-        return params;
-    }
-
-    private static List<String> promptMarketValueParams(Scanner scanner, boolean includeId) {
-        List<String> params = new ArrayList<>();
-        params.add(prompt(scanner, "player_id"));
-        params.add(prompt(scanner, "market_value_date (YYYY-MM-DD)"));
-        if (includeId) {
-            params.add(prompt(scanner, "market_value (new)"));
-        } else {
-            params.add(prompt(scanner, "market_value"));
-        }
-        return params;
-    }
-
-    private static List<String> promptMarketValueDeleteParams(Scanner scanner) {
-        List<String> params = new ArrayList<>();
-        params.add(prompt(scanner, "player_id"));
-        params.add(prompt(scanner, "market_value_date (YYYY-MM-DD)"));
-        return params;
-    }
-
-    private static List<String> promptPlayerMatchStatParams(Scanner scanner, boolean includeId) {
-        List<String> params = new ArrayList<>();
-        params.add(prompt(scanner, "match_id"));
-        params.add(prompt(scanner, "player_id"));
-        params.add(prompt(scanner, "minutes_played"));
-        params.add(prompt(scanner, "goals"));
-        params.add(prompt(scanner, "assists"));
-        params.add(prompt(scanner, "yellow_cards"));
-        params.add(prompt(scanner, "red_cards"));
-        params.add(prompt(scanner, "shots"));
-        params.add(prompt(scanner, "passes"));
-        params.add(prompt(scanner, "tackles"));
-        if (includeId) {
-            params.add(prompt(scanner, "rating (new)"));
-        } else {
-            params.add(prompt(scanner, "rating"));
-        }
-        return params;
-    }
-
-    private static List<String> promptPlayerMatchStatDeleteParams(Scanner scanner) {
-        List<String> params = new ArrayList<>();
-        params.add(prompt(scanner, "match_id"));
-        params.add(prompt(scanner, "player_id"));
-        return params;
-    }
-
-    private static List<String> promptPlayerTeamRelationParams(Scanner scanner) {
-        List<String> params = new ArrayList<>();
-        params.add(prompt(scanner, "player_id"));
-        params.add(prompt(scanner, "club_id"));
-        params.add(prompt(scanner, "start_date (YYYY-MM-DD, blank ok)"));
-        params.add(prompt(scanner, "end_date (YYYY-MM-DD, blank ok)"));
-        return params;
-    }
-
-    private static List<String> promptUserParams(Scanner scanner, boolean includeId) {
-        List<String> params = new ArrayList<>();
-        if (includeId) {
-            params.add(prompt(scanner, "user_id"));
-        }
-        params.add(prompt(scanner, "username"));
-        params.add(prompt(scanner, "password"));
-        params.add(prompt(scanner, "role (admin|user)"));
-        return params;
-    }
-
-    private static List<String> promptSingleId(Scanner scanner, String label) {
-        List<String> params = new ArrayList<>();
-        params.add(prompt(scanner, label));
-        return params;
-    }
-
-    private static void callCustomProcedure(Connection conn, Scanner scanner) {
-        String procName = prompt(scanner, "Procedure name");
-        String raw = prompt(scanner, "Params (comma-separated, empty for none)");
-        List<String> params = splitParams(raw);
-        callProcedure(conn, procName, params);
-    }
-
-    private static List<String> splitParams(String raw) {
-        List<String> params = new ArrayList<>();
-        if (raw == null || raw.trim().isEmpty()) {
-            return params;
-        }
-        String[] parts = raw.split(",");
-        for (String part : parts) {
-            params.add(part.trim());
-        }
-        return params;
-    }
-
-    private static void callProcedure(Connection conn, String procName, List<String> params) {
-        String callSql = buildCall(procName, params.size());
-        try (CallableStatement stmt = conn.prepareCall(callSql)) {
-            for (int i = 0; i < params.size(); i++) {
-                String value = params.get(i);
-                if (value == null || value.isBlank()) {
-                    stmt.setNull(i + 1, Types.VARCHAR);
-                } else {
-                    stmt.setString(i + 1, value);
-                }
+            String choice = prompt(scanner, "Select an option");
+            switch (choice) {
+                case "1":
+                    readPlayers(conn, scanner);
+                    break;
+                case "2":
+                    readClubs(conn, scanner);
+                    break;
+                case "3":
+                    readLeagues(conn, scanner);
+                    break;
+                case "4":
+                    readMatches(conn, scanner);
+                    break;
+                case "5":
+                    readMarketValues(conn, scanner);
+                    break;
+                case "6":
+                    readMatchPerformances(conn, scanner);
+                    break;
+                case "7":
+                    runReadOnlyQuery(conn, scanner);
+                    break;
+                case "8":
+                    System.out.println("Goodbye.");
+                    return;
+                default:
+                    System.out.println("Invalid option.");
             }
+        }
+    }
 
-            boolean hasResult = stmt.execute();
-            int updateCount = stmt.getUpdateCount();
-
-            if (hasResult) {
-                try (ResultSet rs = stmt.getResultSet()) {
-                    printResultSet(rs);
-                }
-            } else {
-                System.out.println("Procedure executed. Rows affected: " + updateCount);
-            }
-
-            while (stmt.getMoreResults() || stmt.getUpdateCount() != -1) {
-                ResultSet rs = stmt.getResultSet();
-                if (rs != null) {
-                    printResultSet(rs);
-                }
-            }
+    private static void createPlayer(Connection conn, Scanner scanner) {
+        String sql = "INSERT INTO Player (first_name, last_name, dob, place_of_birth, height_cm, preferred_foot, position_id, country_abbr, club_id) "
+            + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
+        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setString(1, prompt(scanner, "first_name"));
+            stmt.setString(2, prompt(scanner, "last_name"));
+            setNullableDate(stmt, 3, prompt(scanner, "dob (YYYY-MM-DD or blank)"));
+            setNullableString(stmt, 4, prompt(scanner, "place_of_birth (blank ok)"));
+            setNullableDecimal(stmt, 5, prompt(scanner, "height_cm (blank ok)"));
+            setNullableString(stmt, 6, prompt(scanner, "preferred_foot [Left|Right|Both]"));
+            setNullableInt(stmt, 7, prompt(scanner, "position_id (blank ok)"));
+            setNullableString(stmt, 8, prompt(scanner, "country_abbr (3-letter code, blank ok)"));
+            setNullableInt(stmt, 9, prompt(scanner, "club_id (blank ok)"));
+            executeUpdate(stmt);
         } catch (SQLException e) {
-            System.out.println("Procedure call failed: " + e.getMessage());
-            System.out.println("SQLState: " + e.getSQLState());
+            printSqlError(e);
         }
     }
 
-    private static String buildCall(String procName, int paramCount) {
-        StringBuilder sb = new StringBuilder();
-        sb.append("{CALL ").append(procName).append("(");
-        for (int i = 0; i < paramCount; i++) {
-            if (i > 0) {
-                sb.append(", ");
-            }
-            sb.append("?");
+    private static void updatePlayer(Connection conn, Scanner scanner) {
+        String sql = "UPDATE Player SET first_name=?, last_name=?, dob=?, place_of_birth=?, height_cm=?, preferred_foot=?, position_id=?, country_abbr=?, club_id=? "
+            + "WHERE player_id=?";
+        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setString(1, prompt(scanner, "first_name"));
+            stmt.setString(2, prompt(scanner, "last_name"));
+            setNullableDate(stmt, 3, prompt(scanner, "dob (YYYY-MM-DD or blank)"));
+            setNullableString(stmt, 4, prompt(scanner, "place_of_birth (blank ok)"));
+            setNullableDecimal(stmt, 5, prompt(scanner, "height_cm (blank ok)"));
+            setNullableString(stmt, 6, prompt(scanner, "preferred_foot [Left|Right|Both]"));
+            setNullableInt(stmt, 7, prompt(scanner, "position_id (blank ok)"));
+            setNullableString(stmt, 8, prompt(scanner, "country_abbr (3-letter code, blank ok)"));
+            setNullableInt(stmt, 9, prompt(scanner, "club_id (blank ok)"));
+            setRequiredInt(stmt, 10, prompt(scanner, "player_id"));
+            executeUpdate(stmt);
+        } catch (SQLException e) {
+            printSqlError(e);
         }
-        sb.append(")}");
-        return sb.toString();
+    }
+
+    private static void readPlayers(Connection conn, Scanner scanner) {
+        String id = prompt(scanner, "player_id (blank for all)");
+        String sql = (id == null || id.isBlank())
+            ? "SELECT player_id, first_name, last_name, dob, place_of_birth, height_cm, preferred_foot, position_id, country_abbr, club_id FROM Player"
+            : "SELECT player_id, first_name, last_name, dob, place_of_birth, height_cm, preferred_foot, position_id, country_abbr, club_id FROM Player WHERE player_id = ?";
+        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+            if (id != null && !id.isBlank()) {
+                setRequiredInt(stmt, 1, id);
+            }
+            executeQuery(stmt);
+        } catch (SQLException e) {
+            printSqlError(e);
+        }
+    }
+
+    private static void createClub(Connection conn, Scanner scanner) {
+        String sql = "INSERT INTO Club (club_name, country_abbr, league_id, stadium_id, coach_id) VALUES (?, ?, ?, ?, ?)";
+        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setString(1, prompt(scanner, "club_name"));
+            stmt.setString(2, prompt(scanner, "country_abbr"));
+            setRequiredInt(stmt, 3, prompt(scanner, "league_id"));
+            setNullableInt(stmt, 4, prompt(scanner, "stadium_id (blank ok)"));
+            setNullableInt(stmt, 5, prompt(scanner, "coach_id (blank ok)"));
+            executeUpdate(stmt);
+        } catch (SQLException e) {
+            printSqlError(e);
+        }
+    }
+
+    private static void updateClub(Connection conn, Scanner scanner) {
+        String sql = "UPDATE Club SET club_name=?, country_abbr=?, league_id=?, stadium_id=?, coach_id=? WHERE club_id=?";
+        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setString(1, prompt(scanner, "club_name"));
+            stmt.setString(2, prompt(scanner, "country_abbr"));
+            setRequiredInt(stmt, 3, prompt(scanner, "league_id"));
+            setNullableInt(stmt, 4, prompt(scanner, "stadium_id (blank ok)"));
+            setNullableInt(stmt, 5, prompt(scanner, "coach_id (blank ok)"));
+            setRequiredInt(stmt, 6, prompt(scanner, "club_id"));
+            executeUpdate(stmt);
+        } catch (SQLException e) {
+            printSqlError(e);
+        }
+    }
+
+    private static void readClubs(Connection conn, Scanner scanner) {
+        String id = prompt(scanner, "club_id (blank for all)");
+        String sql = (id == null || id.isBlank())
+            ? "SELECT club_id, club_name, country_abbr, league_id, stadium_id, coach_id FROM Club"
+            : "SELECT club_id, club_name, country_abbr, league_id, stadium_id, coach_id FROM Club WHERE club_id = ?";
+        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+            if (id != null && !id.isBlank()) {
+                setRequiredInt(stmt, 1, id);
+            }
+            executeQuery(stmt);
+        } catch (SQLException e) {
+            printSqlError(e);
+        }
+    }
+
+    private static void createLeague(Connection conn, Scanner scanner) {
+        String sql = "INSERT INTO League (league_name, season_name, country_abbr) VALUES (?, ?, ?)";
+        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setString(1, prompt(scanner, "league_name"));
+            stmt.setString(2, prompt(scanner, "season_name"));
+            stmt.setString(3, prompt(scanner, "country_abbr"));
+            executeUpdate(stmt);
+        } catch (SQLException e) {
+            printSqlError(e);
+        }
+    }
+
+    private static void updateLeague(Connection conn, Scanner scanner) {
+        String sql = "UPDATE League SET league_name=?, season_name=?, country_abbr=? WHERE league_id=?";
+        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setString(1, prompt(scanner, "league_name"));
+            stmt.setString(2, prompt(scanner, "season_name"));
+            stmt.setString(3, prompt(scanner, "country_abbr"));
+            setRequiredInt(stmt, 4, prompt(scanner, "league_id"));
+            executeUpdate(stmt);
+        } catch (SQLException e) {
+            printSqlError(e);
+        }
+    }
+
+    private static void readLeagues(Connection conn, Scanner scanner) {
+        String id = prompt(scanner, "league_id (blank for all)");
+        String sql = (id == null || id.isBlank())
+            ? "SELECT league_id, league_name, season_name, country_abbr FROM League"
+            : "SELECT league_id, league_name, season_name, country_abbr FROM League WHERE league_id = ?";
+        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+            if (id != null && !id.isBlank()) {
+                setRequiredInt(stmt, 1, id);
+            }
+            executeQuery(stmt);
+        } catch (SQLException e) {
+            printSqlError(e);
+        }
+    }
+
+    private static void createMatch(Connection conn, Scanner scanner) {
+        String sql = "INSERT INTO `Match` (home_team_id, away_team_id, match_date, home_score, away_score) VALUES (?, ?, ?, ?, ?)";
+        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+            setRequiredInt(stmt, 1, prompt(scanner, "home_team_id"));
+            setRequiredInt(stmt, 2, prompt(scanner, "away_team_id"));
+            setRequiredDate(stmt, 3, prompt(scanner, "match_date (YYYY-MM-DD)"));
+            setNullableInt(stmt, 4, prompt(scanner, "home_score (blank ok)"));
+            setNullableInt(stmt, 5, prompt(scanner, "away_score (blank ok)"));
+            executeUpdate(stmt);
+        } catch (SQLException e) {
+            printSqlError(e);
+        }
+    }
+
+    private static void updateMatch(Connection conn, Scanner scanner) {
+        String sql = "UPDATE `Match` SET home_team_id=?, away_team_id=?, match_date=?, home_score=?, away_score=? WHERE match_id=?";
+        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+            setRequiredInt(stmt, 1, prompt(scanner, "home_team_id"));
+            setRequiredInt(stmt, 2, prompt(scanner, "away_team_id"));
+            setRequiredDate(stmt, 3, prompt(scanner, "match_date (YYYY-MM-DD)"));
+            setNullableInt(stmt, 4, prompt(scanner, "home_score (blank ok)"));
+            setNullableInt(stmt, 5, prompt(scanner, "away_score (blank ok)"));
+            setRequiredInt(stmt, 6, prompt(scanner, "match_id"));
+            executeUpdate(stmt);
+        } catch (SQLException e) {
+            printSqlError(e);
+        }
+    }
+
+    private static void readMatches(Connection conn, Scanner scanner) {
+        String id = prompt(scanner, "match_id (blank for all)");
+        String sql = (id == null || id.isBlank())
+            ? "SELECT match_id, home_team_id, away_team_id, match_date, home_score, away_score, home_result, away_result FROM `Match`"
+            : "SELECT match_id, home_team_id, away_team_id, match_date, home_score, away_score, home_result, away_result FROM `Match` WHERE match_id = ?";
+        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+            if (id != null && !id.isBlank()) {
+                setRequiredInt(stmt, 1, id);
+            }
+            executeQuery(stmt);
+        } catch (SQLException e) {
+            printSqlError(e);
+        }
+    }
+
+    private static void createMarketValue(Connection conn, Scanner scanner) {
+        String sql = "INSERT INTO MarketValue (player_id, market_value_date, market_value) VALUES (?, ?, ?)";
+        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+            setRequiredInt(stmt, 1, prompt(scanner, "player_id"));
+            setRequiredDate(stmt, 2, prompt(scanner, "market_value_date (YYYY-MM-DD)"));
+            setRequiredDecimal(stmt, 3, prompt(scanner, "market_value"));
+            executeUpdate(stmt);
+        } catch (SQLException e) {
+            printSqlError(e);
+        }
+    }
+
+    private static void updateMarketValue(Connection conn, Scanner scanner) {
+        String sql = "UPDATE MarketValue SET market_value=? WHERE player_id=? AND market_value_date=?";
+        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+            setRequiredDecimal(stmt, 1, prompt(scanner, "market_value (new)"));
+            setRequiredInt(stmt, 2, prompt(scanner, "player_id"));
+            setRequiredDate(stmt, 3, prompt(scanner, "market_value_date (YYYY-MM-DD)"));
+            executeUpdate(stmt);
+        } catch (SQLException e) {
+            printSqlError(e);
+        }
+    }
+
+    private static void deleteMarketValue(Connection conn, Scanner scanner) {
+        String sql = "DELETE FROM MarketValue WHERE player_id=? AND market_value_date=?";
+        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+            setRequiredInt(stmt, 1, prompt(scanner, "player_id"));
+            setRequiredDate(stmt, 2, prompt(scanner, "market_value_date (YYYY-MM-DD)"));
+            executeUpdate(stmt);
+        } catch (SQLException e) {
+            printSqlError(e);
+        }
+    }
+
+    private static void readMarketValues(Connection conn, Scanner scanner) {
+        String playerId = prompt(scanner, "player_id (blank for all)");
+        String sql = (playerId == null || playerId.isBlank())
+            ? "SELECT player_id, market_value_date, market_value FROM MarketValue"
+            : "SELECT player_id, market_value_date, market_value FROM MarketValue WHERE player_id = ?";
+        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+            if (playerId != null && !playerId.isBlank()) {
+                setRequiredInt(stmt, 1, playerId);
+            }
+            executeQuery(stmt);
+        } catch (SQLException e) {
+            printSqlError(e);
+        }
+    }
+
+    private static void createMatchPerformance(Connection conn, Scanner scanner) {
+        String sql = "INSERT INTO MatchPerformance (match_id, player_id, play_time, performance_rating) VALUES (?, ?, ?, ?)";
+        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+            setRequiredInt(stmt, 1, prompt(scanner, "match_id"));
+            setRequiredInt(stmt, 2, prompt(scanner, "player_id"));
+            setNullableInt(stmt, 3, prompt(scanner, "play_time (minutes, blank ok)"));
+            setNullableDecimal(stmt, 4, prompt(scanner, "performance_rating (blank ok)"));
+            executeUpdate(stmt);
+        } catch (SQLException e) {
+            printSqlError(e);
+        }
+    }
+
+    private static void updateMatchPerformance(Connection conn, Scanner scanner) {
+        String sql = "UPDATE MatchPerformance SET play_time=?, performance_rating=? WHERE match_id=? AND player_id=?";
+        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+            setNullableInt(stmt, 1, prompt(scanner, "play_time (minutes, blank ok)"));
+            setNullableDecimal(stmt, 2, prompt(scanner, "performance_rating (blank ok)"));
+            setRequiredInt(stmt, 3, prompt(scanner, "match_id"));
+            setRequiredInt(stmt, 4, prompt(scanner, "player_id"));
+            executeUpdate(stmt);
+        } catch (SQLException e) {
+            printSqlError(e);
+        }
+    }
+
+    private static void deleteMatchPerformance(Connection conn, Scanner scanner) {
+        String sql = "DELETE FROM MatchPerformance WHERE match_id=? AND player_id=?";
+        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+            setRequiredInt(stmt, 1, prompt(scanner, "match_id"));
+            setRequiredInt(stmt, 2, prompt(scanner, "player_id"));
+            executeUpdate(stmt);
+        } catch (SQLException e) {
+            printSqlError(e);
+        }
+    }
+
+    private static void readMatchPerformances(Connection conn, Scanner scanner) {
+        String matchId = prompt(scanner, "match_id (blank for all)");
+        String playerId = prompt(scanner, "player_id (blank for all)");
+        StringBuilder sql = new StringBuilder("SELECT match_id, player_id, play_time, performance_rating FROM MatchPerformance");
+        List<String> conditions = new ArrayList<>();
+        if (matchId != null && !matchId.isBlank()) {
+            conditions.add("match_id = ?");
+        }
+        if (playerId != null && !playerId.isBlank()) {
+            conditions.add("player_id = ?");
+        }
+        if (!conditions.isEmpty()) {
+            sql.append(" WHERE ").append(String.join(" AND ", conditions));
+        }
+        try (PreparedStatement stmt = conn.prepareStatement(sql.toString())) {
+            int idx = 1;
+            if (matchId != null && !matchId.isBlank()) {
+                setRequiredInt(stmt, idx++, matchId);
+            }
+            if (playerId != null && !playerId.isBlank()) {
+                setRequiredInt(stmt, idx, playerId);
+            }
+            executeQuery(stmt);
+        } catch (SQLException e) {
+            printSqlError(e);
+        }
+    }
+
+    private static void recordTransfer(Connection conn, Scanner scanner) {
+        String sql = "INSERT INTO Transfer (player_id, old_club_id, new_club_id, transfer_date, transfer_fee) "
+            + "VALUES (?, (SELECT club_id FROM Player WHERE player_id = ?), ?, ?, ?)";
+        String updateSql = "UPDATE Player SET club_id=? WHERE player_id=?";
+        try (PreparedStatement insertStmt = conn.prepareStatement(sql);
+             PreparedStatement updateStmt = conn.prepareStatement(updateSql)) {
+            String playerId = prompt(scanner, "player_id");
+            String newClubId = prompt(scanner, "new_club_id");
+            insertStmt.setString(1, playerId);
+            insertStmt.setString(2, playerId);
+            insertStmt.setString(3, newClubId);
+            setRequiredDate(insertStmt, 4, prompt(scanner, "transfer_date (YYYY-MM-DD)"));
+            setNullableDecimal(insertStmt, 5, prompt(scanner, "transfer_fee (blank ok)"));
+            executeUpdate(insertStmt);
+            updateStmt.setString(1, newClubId);
+            updateStmt.setString(2, playerId);
+            executeUpdate(updateStmt);
+        } catch (SQLException e) {
+            printSqlError(e);
+        }
+    }
+
+    private static void runReadOnlyQuery(Connection conn, Scanner scanner) {
+        System.out.println("Read-only query helper. Example: SELECT * FROM Player;");
+        String sql = prompt(scanner, "SQL (SELECT only)");
+        if (sql == null || !sql.trim().toLowerCase().startsWith("select")) {
+            System.out.println("Only SELECT statements are allowed.");
+            return;
+        }
+        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+            executeQuery(stmt);
+        } catch (SQLException e) {
+            printSqlError(e);
+        }
+    }
+
+    private static void deleteById(Connection conn, Scanner scanner, String table, String idColumn) {
+        String sql = "DELETE FROM " + table + " WHERE " + idColumn + " = ?";
+        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+            setRequiredInt(stmt, 1, prompt(scanner, idColumn));
+            executeUpdate(stmt);
+        } catch (SQLException e) {
+            printSqlError(e);
+        }
+    }
+
+    private static void executeUpdate(PreparedStatement stmt) throws SQLException {
+        int updated = stmt.executeUpdate();
+        System.out.println("Rows affected: " + updated);
+    }
+
+    private static void executeQuery(PreparedStatement stmt) throws SQLException {
+        try (ResultSet rs = stmt.executeQuery()) {
+            printResultSet(rs);
+        }
+    }
+
+    private static void setNullableString(PreparedStatement stmt, int idx, String value) throws SQLException {
+        if (value == null || value.isBlank()) {
+            stmt.setNull(idx, Types.VARCHAR);
+        } else {
+            stmt.setString(idx, value);
+        }
+    }
+
+    private static void setNullableInt(PreparedStatement stmt, int idx, String value) throws SQLException {
+        if (value == null || value.isBlank()) {
+            stmt.setNull(idx, Types.INTEGER);
+        } else {
+            try {
+                stmt.setInt(idx, Integer.parseInt(value));
+            } catch (NumberFormatException e) {
+                throw new SQLException("Invalid integer value: " + value);
+            }
+        }
+    }
+
+    private static void setRequiredInt(PreparedStatement stmt, int idx, String value) throws SQLException {
+        if (value == null || value.isBlank()) {
+            throw new SQLException("Required integer value is missing.");
+        }
+        try {
+            stmt.setInt(idx, Integer.parseInt(value));
+        } catch (NumberFormatException e) {
+            throw new SQLException("Invalid integer value: " + value);
+        }
+    }
+
+    private static void setNullableDecimal(PreparedStatement stmt, int idx, String value) throws SQLException {
+        if (value == null || value.isBlank()) {
+            stmt.setNull(idx, Types.DECIMAL);
+        } else {
+            try {
+                stmt.setBigDecimal(idx, new java.math.BigDecimal(value));
+            } catch (NumberFormatException e) {
+                throw new SQLException("Invalid decimal value: " + value);
+            }
+        }
+    }
+
+    private static void setRequiredDecimal(PreparedStatement stmt, int idx, String value) throws SQLException {
+        if (value == null || value.isBlank()) {
+            throw new SQLException("Required decimal value is missing.");
+        }
+        try {
+            stmt.setBigDecimal(idx, new java.math.BigDecimal(value));
+        } catch (NumberFormatException e) {
+            throw new SQLException("Invalid decimal value: " + value);
+        }
+    }
+
+    private static void setNullableDate(PreparedStatement stmt, int idx, String value) throws SQLException {
+        if (value == null || value.isBlank()) {
+            stmt.setNull(idx, Types.DATE);
+        } else {
+            try {
+                stmt.setDate(idx, java.sql.Date.valueOf(value));
+            } catch (IllegalArgumentException e) {
+                throw new SQLException("Invalid date value (expected YYYY-MM-DD): " + value);
+            }
+        }
+    }
+
+    private static void setRequiredDate(PreparedStatement stmt, int idx, String value) throws SQLException {
+        if (value == null || value.isBlank()) {
+            throw new SQLException("Required date value is missing.");
+        }
+        try {
+            stmt.setDate(idx, java.sql.Date.valueOf(value));
+        } catch (IllegalArgumentException e) {
+            throw new SQLException("Invalid date value (expected YYYY-MM-DD): " + value);
+        }
     }
 
     private static void printResultSet(ResultSet rs) throws SQLException {
@@ -459,6 +761,11 @@ public class AdminCli {
         }
     }
 
+    private static void printSqlError(SQLException e) {
+        System.out.println("Database error: " + e.getMessage());
+        System.out.println("SQLState: " + e.getSQLState());
+    }
+
     private static String prompt(Scanner scanner, String label) {
         System.out.print(label + ": ");
         return scanner.nextLine().trim();
@@ -478,5 +785,24 @@ public class AdminCli {
             this.password = password;
             this.database = database;
         }
+    }
+
+    private enum Role {
+        ADMIN,
+        USER
+    }
+
+    private static Role parseRole(String roleInput) {
+        if (roleInput == null) {
+            return null;
+        }
+        String normalized = roleInput.trim().toLowerCase();
+        if ("admin".equals(normalized)) {
+            return Role.ADMIN;
+        }
+        if ("user".equals(normalized)) {
+            return Role.USER;
+        }
+        return null;
     }
 }
