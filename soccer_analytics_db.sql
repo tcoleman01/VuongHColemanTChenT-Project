@@ -235,6 +235,73 @@ CREATE TABLE MatchPerformance (
                                 ON UPDATE CASCADE ON DELETE CASCADE
 );
 
+-- load excel into table, market_value.csv
+DROP TABLE IF EXISTS staging_market_value;
+
+CREATE TABLE staging_market_value (
+    row_num         INT,
+    first_name      VARCHAR(50),
+    last_name       VARCHAR(50),
+    mv_date         VARCHAR(20),
+    mv_club         VARCHAR(100),
+    mv_unit         VARCHAR(10),
+    mv_value        DECIMAL(15,2)
+);
+
+LOAD DATA LOCAL INFILE 'C:/Users/Owner/Desktop/CS5200Local/market_value.csv'
+INTO TABLE staging_market_value
+FIELDS TERMINATED BY ','
+ENCLOSED BY '"'
+LINES TERMINATED BY '\r\n'
+IGNORE 1 ROWS
+(row_num, first_name, last_name, mv_date, mv_club, mv_unit, mv_value);
+
+-- CHECKING TO SEE IF WORKED IMPORTS
+SELECT COUNT(*) AS total_staging_rows
+FROM staging_market_value;
+
+SELECT *
+FROM staging_market_value
+LIMIT 10;
+
+
+-- player 2 staging 
+DROP TABLE IF EXISTS staging_player;
+
+CREATE TABLE staging_player (
+    row_num              INT,
+    name_in_home_country VARCHAR(150),
+    dob                  VARCHAR(20),
+    place_of_birth       VARCHAR(100),
+    height               DECIMAL(5,2),
+    position             VARCHAR(100),
+    foot                 VARCHAR(20),
+    club                 VARCHAR(100),
+    join_date            VARCHAR(20),
+    contract_expires     VARCHAR(20),
+    first_name           VARCHAR(50),
+    last_name            VARCHAR(50),
+    citizenship1         VARCHAR(100),
+    citizenship2         VARCHAR(100)
+);
+
+LOAD DATA LOCAL INFILE 'C:/Users/Owner/Desktop/CS5200Local/player2.csv'
+INTO TABLE staging_player
+CHARACTER SET utf8mb4
+FIELDS TERMINATED BY ','
+ENCLOSED BY '"'
+LINES TERMINATED BY '\r\n'
+IGNORE 1 ROWS
+(@dummy, name_in_home_country, dob, place_of_birth, height, position, foot, club, join_date, contract_expires, first_name, last_name, citizenship1, citizenship2);
+
+-- CHECKING TO SEE IF IMPORT CORRECTLY 
+SELECT COUNT(*) AS total_rows
+FROM staging_player;
+
+SELECT *
+FROM staging_player
+LIMIT 10;
+
 -- ============================================================
 -- Database Programming Objects (Functions, Procedures, Triggers, Events)
 -- ============================================================
