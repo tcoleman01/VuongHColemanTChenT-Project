@@ -346,8 +346,8 @@ public class AdminCli {
     private static void readPlayers(Connection conn, Scanner scanner) {
         String id = prompt(scanner, "player_id (blank for all)");
         String sql = (id == null || id.isBlank())
-            ? "SELECT player_id, first_name, last_name, dob, place_of_birth, height_cm, preferred_foot, position_id, country_abbr, club_id FROM Player"
-            : "SELECT player_id, first_name, last_name, dob, place_of_birth, height_cm, preferred_foot, position_id, country_abbr, club_id FROM Player WHERE player_id = ?";
+            ? "SELECT player_id, first_name, last_name, dob, fn_player_age(dob) AS age, place_of_birth, height_cm, preferred_foot, position_id, country_abbr, club_id FROM Player"
+            : "SELECT player_id, first_name, last_name, dob, fn_player_age(dob) AS age, place_of_birth, height_cm, preferred_foot, position_id, country_abbr, club_id FROM Player WHERE player_id = ?";
         try (PreparedStatement stmt = conn.prepareStatement(sql)) {
             if (id != null && !id.isBlank()) {
                 setRequiredInt(stmt, 1, id);
@@ -602,22 +602,13 @@ public class AdminCli {
     }
 
     private static void recordTransfer(Connection conn, Scanner scanner) {
-        String sql = "INSERT INTO Transfer (player_id, old_club_id, new_club_id, transfer_date, transfer_fee) "
-            + "VALUES (?, (SELECT club_id FROM Player WHERE player_id = ?), ?, ?, ?)";
-        String updateSql = "UPDATE Player SET club_id=? WHERE player_id=?";
-        try (PreparedStatement insertStmt = conn.prepareStatement(sql);
-             PreparedStatement updateStmt = conn.prepareStatement(updateSql)) {
-            String playerId = prompt(scanner, "player_id");
-            String newClubId = prompt(scanner, "new_club_id");
-            insertStmt.setString(1, playerId);
-            insertStmt.setString(2, playerId);
-            insertStmt.setString(3, newClubId);
-            setRequiredDate(insertStmt, 4, prompt(scanner, "transfer_date (YYYY-MM-DD)"));
-            setNullableDecimal(insertStmt, 5, prompt(scanner, "transfer_fee (blank ok)"));
-            executeUpdate(insertStmt);
-            updateStmt.setString(1, newClubId);
-            updateStmt.setString(2, playerId);
-            executeUpdate(updateStmt);
+        String sql = "CALL sp_record_transfer(?, ?, ?, ?)";
+        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+            setRequiredInt(stmt, 1, prompt(scanner, "player_id"));
+            setRequiredInt(stmt, 2, prompt(scanner, "new_club_id"));
+            setRequiredDate(stmt, 3, prompt(scanner, "transfer_date (YYYY-MM-DD)"));
+            setNullableDecimal(stmt, 4, prompt(scanner, "transfer_fee (blank ok)"));
+            executeUpdate(stmt);
         } catch (SQLException e) {
             printSqlError(e);
         }
