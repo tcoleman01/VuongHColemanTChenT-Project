@@ -890,7 +890,7 @@ public class AdminCli {
         int cols = meta.getColumnCount();
 
         // =============================================
-        // COLLECT ALL ROWS FIRST TO CALCULATE WIDTHS
+        // COLLECT ALL ROWS FIRST TO CALCULATE WIDTHS, ALSO MAKe IT LOOK PRETTY
         // =============================================
         List<String[]> allRows = new ArrayList<>();
         int[] colWidths = new int[cols];
@@ -954,21 +954,20 @@ public class AdminCli {
         System.out.println("Database error: " + e.getMessage());
         System.out.println("SQLState: " + e.getSQLState());
     }
-
+    // bug fix for blanks
     private static String prompt(Scanner scanner, String label) {
         String value = "";
         while (value.isBlank()) {
             System.out.print(label + ": ");
             value = scanner.nextLine().trim();
             if (value.isBlank()) {
-                // LINE 957 - NEW: error message when blank input detected
                 System.out.println("Input cannot be empty. Please try again.");
             }
         }
         return value;
     }
 
-    // LINE 963 - NEW METHOD: use this for optional fields (blank ok)
+
     private static String promptOptional(Scanner scanner, String label) {
         System.out.print(label + ": ");
         return scanner.nextLine().trim();
