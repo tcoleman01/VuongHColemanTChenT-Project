@@ -854,9 +854,11 @@ public class AdminCli {
             }
             header.append(meta.getColumnLabel(i));
         }
-        System.out.println(header);
 
+        int rowCount = 0;
+        StringBuilder rows = new StringBuilder();
         while (rs.next()) {
+            rowCount++;
             StringBuilder row = new StringBuilder();
             for (int i = 1; i <= cols; i++) {
                 if (i > 1) {
@@ -865,9 +867,21 @@ public class AdminCli {
                 String value = rs.getString(i);
                 row.append(value == null ? "NULL" : value);
             }
-            System.out.println(row);
+            rows.append(row).append("\n");
+        }
+
+        // =============================================
+        // ONLY PRINT HEADER AND ROWS IF RESULTS EXIST
+        // =============================================
+        if (rowCount == 0) {
+            System.out.println("No data found for the given input. The record may exist but have no associated data, or the input may be incorrect.");
+        } else {
+            System.out.println(header);
+            System.out.print(rows);
         }
     }
+
+
 
     private static void printSqlError(SQLException e) {
         System.out.println("Database error: " + e.getMessage());
@@ -940,10 +954,46 @@ public class AdminCli {
         // =============================================
         // PROMPT USER TO ENTER PLAYER NAME
         // =============================================
+        String firstName = prompt(scanner, "\nfirst_name");
+        String lastName = prompt(scanner, "last_name");
         try (PreparedStatement stmt = conn.prepareStatement("CALL sp_player_stats(?, ?)")) {
-            stmt.setString(1, prompt(scanner, "\nfirst_name"));
-            stmt.setString(2, prompt(scanner, "last_name"));
-            executeQuery(stmt);
+            stmt.setString(1, firstName);
+            stmt.setString(2, lastName);
+            ResultSet rs = stmt.executeQuery();
+            ResultSetMetaData meta = rs.getMetaData();
+            int cols = meta.getColumnCount();
+            StringBuilder header = new StringBuilder();
+            for (int i = 1; i <= cols; i++) {
+                if (i > 1) header.append(" | ");
+                header.append(meta.getColumnLabel(i));
+            }
+            int rowCount = 0;
+            StringBuilder rows = new StringBuilder();
+            while (rs.next()) {
+                rowCount++;
+                StringBuilder row = new StringBuilder();
+                for (int i = 1; i <= cols; i++) {
+                    if (i > 1) row.append(" | ");
+                    String value = rs.getString(i);
+                    row.append(value == null ? "NULL" : value);
+                }
+                rows.append(row).append("\n");
+            }
+            if (rowCount > 0) {
+                System.out.println(header);
+                System.out.print(rows);
+            } else {
+                // =============================================
+                // FALLBACK: CHECK IF PLAYER EXISTS IN DB
+                // =============================================
+                String fallbackSql = "SELECT player_id, first_name, last_name, dob, place_of_birth, height_cm, preferred_foot FROM Player WHERE first_name = ? AND last_name = ?";
+                try (PreparedStatement fallback = conn.prepareStatement(fallbackSql)) {
+                    fallback.setString(1, firstName);
+                    fallback.setString(2, lastName);
+                    executeQuery(fallback);
+                    System.out.println("Note: Player found but has no season performance data.");
+                }
+            }
         } catch (SQLException e) {
             printSqlError(e);
         }
@@ -1089,7 +1139,7 @@ public class AdminCli {
 
     private static void viewPlayerTransfers(Connection conn, Scanner scanner) {
         // =============================================
-        // SHOW SAMPLE PLAYER NAMES BEFORE PROMPTING
+        // SHOW PLAYERS WITH MOST TRANSFERS
         // =============================================
         String listSql = "SELECT p.first_name, p.last_name, COUNT(t.transfer_id) AS transfer_count FROM Player p JOIN Transfer t ON p.player_id = t.player_id GROUP BY p.player_id ORDER BY transfer_count DESC LIMIT 20";
         try (PreparedStatement listStmt = conn.prepareStatement(listSql)) {
@@ -1101,10 +1151,46 @@ public class AdminCli {
         // =============================================
         // PROMPT USER TO ENTER PLAYER NAME
         // =============================================
+        String firstName = prompt(scanner, "\nfirst_name");
+        String lastName = prompt(scanner, "last_name");
         try (PreparedStatement stmt = conn.prepareStatement("CALL sp_player_transfers(?, ?)")) {
-            stmt.setString(1, prompt(scanner, "\nfirst_name"));
-            stmt.setString(2, prompt(scanner, "last_name"));
-            executeQuery(stmt);
+            stmt.setString(1, firstName);
+            stmt.setString(2, lastName);
+            ResultSet rs = stmt.executeQuery();
+            ResultSetMetaData meta = rs.getMetaData();
+            int cols = meta.getColumnCount();
+            StringBuilder header = new StringBuilder();
+            for (int i = 1; i <= cols; i++) {
+                if (i > 1) header.append(" | ");
+                header.append(meta.getColumnLabel(i));
+            }
+            int rowCount = 0;
+            StringBuilder rows = new StringBuilder();
+            while (rs.next()) {
+                rowCount++;
+                StringBuilder row = new StringBuilder();
+                for (int i = 1; i <= cols; i++) {
+                    if (i > 1) row.append(" | ");
+                    String value = rs.getString(i);
+                    row.append(value == null ? "NULL" : value);
+                }
+                rows.append(row).append("\n");
+            }
+            if (rowCount > 0) {
+                System.out.println(header);
+                System.out.print(rows);
+            } else {
+                // =============================================
+                // FALLBACK: CHECK IF PLAYER EXISTS IN DB
+                // =============================================
+                String fallbackSql = "SELECT player_id, first_name, last_name, dob, place_of_birth, height_cm, preferred_foot FROM Player WHERE first_name = ? AND last_name = ?";
+                try (PreparedStatement fallback = conn.prepareStatement(fallbackSql)) {
+                    fallback.setString(1, firstName);
+                    fallback.setString(2, lastName);
+                    executeQuery(fallback);
+                    System.out.println("Note: Player found but has no transfer data.");
+                }
+            }
         } catch (SQLException e) {
             printSqlError(e);
         }

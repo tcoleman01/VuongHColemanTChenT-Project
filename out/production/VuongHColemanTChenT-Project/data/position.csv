@@ -1,0 +1,14 @@
+position_id,position_name,position_category
+0,Attack - Centre-Forward,attack
+1,Attack - Left Winger,attack
+2,Attack - Right Winger,attack
+3,Attack - Second Striker,attack
+4,Defender - Centre-Back,defense
+5,Defender - Left-Back,defense
+6,Defender - Right-Back,defense
+7,Goalkeeper,goalkeeper
+8,midfield - Attacking Midfield,midfield
+9,midfield - Central Midfield,midfield
+10,midfield - Defensive Midfield,midfield
+11,midfield - Left Midfield,midfield
+12,midfield - Right Midfield,midfield
