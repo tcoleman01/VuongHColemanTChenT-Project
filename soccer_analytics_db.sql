@@ -57,7 +57,6 @@ CREATE TABLE Club (
     club_id         INT             NOT NULL AUTO_INCREMENT,
     club_name       VARCHAR(100)    NOT NULL,
     country_abbr    CHAR(3)         NOT NULL,
-    league_id       INT             NOT NULL,
     stadium_id      INT,
     coach_id        INT,
     CONSTRAINT pk_club              PRIMARY KEY (club_id),
@@ -158,15 +157,19 @@ CREATE TABLE MarketValue (
 -- ------------------------------------------------------------
 CREATE TABLE `Match` (
     match_id        INT             NOT NULL AUTO_INCREMENT,
+    league_id		INT,
     home_team_id    INT             NOT NULL,
     away_team_id    INT             NOT NULL,
     match_date      DATE            NOT NULL,
-    home_score      INT             DEFAULT 0,
-    away_score      INT             DEFAULT 0,
+    home_score      INT             ,
+    away_score      INT             ,
     home_result     ENUM('Win', 'Loss', 'Draw'),
     away_result     ENUM('Win', 'Loss', 'Draw'),
     CONSTRAINT pk_match             PRIMARY KEY (match_id),
     CONSTRAINT pak_match            UNIQUE (home_team_id, away_team_id, match_date),
+	CONSTRAINT fk_match_league      FOREIGN KEY (league_id)
+                                    REFERENCES league(league_id)
+                                    ON UPDATE CASCADE ON DELETE RESTRICT,
     CONSTRAINT fk_match_home        FOREIGN KEY (home_team_id)
                                     REFERENCES Club(club_id)
                                     ON UPDATE CASCADE ON DELETE RESTRICT,
@@ -235,6 +238,22 @@ CREATE TABLE MatchPerformance (
                                 ON UPDATE CASCADE ON DELETE CASCADE
 );
 
+CREATE TABLE user (
+    is_admin BOOL NOT NULL,
+    username VARCHAR(20) PRIMARY KEY,
+    password VARCHAR(40) NOT NULL
+);
+
+-- -------------------------------------------------
+-- -------------------------------------------------
+-- -------------------------------------------------
+-- -------------------------------------------------
+-- -------------------------------------------------
+-- -------------------------------------------------
+-- -------------------------------------------------
+-- -------------------------------------------------
+-- -------------------------------------------------
+USE soccer_analytics_db;
 -- load excel into table, market_value.csv
 DROP TABLE IF EXISTS staging_market_value;
 
@@ -248,7 +267,7 @@ CREATE TABLE staging_market_value (
     mv_value        DECIMAL(15,2)
 );
 
-LOAD DATA LOCAL INFILE 'C:/Users/Owner/Desktop/CS5200Local/market_value.csv'
+LOAD DATA LOCAL INFILE 'C:/Users/ctr20/Documents/dbdata/market_value.csv'
 INTO TABLE staging_market_value
 FIELDS TERMINATED BY ','
 ENCLOSED BY '"'
@@ -285,7 +304,7 @@ CREATE TABLE staging_player (
     citizenship2         VARCHAR(100)
 );
 
-LOAD DATA LOCAL INFILE 'C:/Users/Owner/Desktop/CS5200Local/player2.csv'
+LOAD DATA LOCAL INFILE 'C:/Users/ctr20/Documents/dbdata/player.csv'
 INTO TABLE staging_player
 CHARACTER SET utf8mb4
 FIELDS TERMINATED BY ','

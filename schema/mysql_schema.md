@@ -1,6 +1,6 @@
 # MySQL Schema Overview (CS 5200 Project)
 
-## Core Entities (Tables)
+## Tables
 - `Country`
 - `League`
 - `Stadium`
@@ -13,11 +13,11 @@
 - `Transfer`
 - `SeasonPerformance`
 - `MatchPerformance`
+- `User`
 
 ## Key Relationships (Foreign Keys)
 - `League.country_abbr` -> `Country.country_abbr`
 - `Club.country_abbr` -> `Country.country_abbr`
-- `Club.league_id` -> `League.league_id`
 - `Club.stadium_id` -> `Stadium.stadium_id`
 - `Club.coach_id` -> `Coach.coach_id`
 - `Coach.nationality` -> `Country.country_abbr`
@@ -46,6 +46,7 @@
 - `Transfer`: PK `transfer_id`
 - `SeasonPerformance`: PK (`player_id`, `league_id`)
 - `MatchPerformance`: PK (`match_id`, `player_id`)
+- `User`: PK `username`
 
 ## Notes
 - Full DDL lives in `soccer_analytics_db.sql`.

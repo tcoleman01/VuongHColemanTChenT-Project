@@ -1,0 +1,16 @@
+coach_id,first_name,last_name,dob,nationality,club_id
+1,Adi,Hutter,1969-08-08,AUT,1
+2,Sergio,Conceicao,1974-11-15,PRT,2
+3,Mikel,Arteta,1982-03-26,ESP,3
+4,Unai,Emery,1971-11-03,ESP,4
+5,Vincent,Kompany,1986-04-10,BEL,5
+6,Pep,Guardiola,1971-01-18,ESP,6
+7,Ruben,Amorim,1985-01-27,PRT,7
+8,Arne,Slot,1978-09-17,NLD,8
+9,Enzo,Maresca,1980-02-10,ITA,9
+10,Sean,Dyche,1971-06-28,ENG,10
+11,Eddie,Howe,1977-11-29,ENG,11
+12,Nuno,Espirito Santo,1974-01-25,PRT,12
+13,Carlo,Ancelotti,1959-06-10,ITA,13
+14,Ange,Postecoglou,1965-08-27,AUS,14
+15,Hansi,Flick,1965-02-24,GER,15
