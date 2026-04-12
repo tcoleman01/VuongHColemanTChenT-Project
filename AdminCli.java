@@ -169,7 +169,15 @@ public class AdminCli {
             System.out.println("24. Read match performances");
             System.out.println("25. Record transfer");
             System.out.println("26. Run read-only query");
-            System.out.println("27. Exit");
+            System.out.println("27. Create coach");
+            System.out.println("28. Update coach");
+            System.out.println("29. Delete coach");
+            System.out.println("30. Read coaches");
+            System.out.println("31. Create season performance");
+            System.out.println("32. Update season performance");
+            System.out.println("33. Delete season performance");
+            System.out.println("34. Read season performances");
+            System.out.println("35. Exit");
 
             String choice = prompt(scanner, "Select an option");
             switch (choice) {
@@ -252,6 +260,30 @@ public class AdminCli {
                     runReadOnlyQuery(conn, scanner);
                     break;
                 case "27":
+                    createCoach(conn, scanner);
+                    break;
+                case "28":
+                    updateCoach(conn, scanner);
+                    break;
+                case "29":
+                    deleteById(conn, scanner, "Coach", "coach_id");
+                    break;
+                case "30":
+                    readCoaches(conn, scanner);
+                    break;
+                case "31":
+                    createSeasonPerformance(conn, scanner);
+                    break;
+                case "32":
+                    updateSeasonPerformance(conn, scanner);
+                    break;
+                case "33":
+                    deleteSeasonPerformance(conn, scanner);
+                    break;
+                case "34":
+                    readSeasonPerformances(conn, scanner);
+                    break;
+                case "35":
                     System.out.println("Goodbye.");
                     return;
                 default:
@@ -594,6 +626,106 @@ public class AdminCli {
             }
             if (playerId != null && !playerId.isBlank()) {
                 setRequiredInt(stmt, idx, playerId);
+            }
+            executeQuery(stmt);
+        } catch (SQLException e) {
+            printSqlError(e);
+        }
+    }
+
+    private static void createCoach(Connection conn, Scanner scanner) {
+        String sql = "INSERT INTO Coach (first_name, last_name, dob, nationality, club_id) VALUES (?, ?, ?, ?, ?)";
+        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setString(1, prompt(scanner, "first_name"));
+            stmt.setString(2, prompt(scanner, "last_name"));
+            setNullableDate(stmt, 3, prompt(scanner, "dob (YYYY-MM-DD or blank)"));
+            setNullableString(stmt, 4, prompt(scanner, "nationality (3-letter code, blank ok)"));
+            setNullableInt(stmt, 5, prompt(scanner, "club_id (blank ok)"));
+            executeUpdate(stmt);
+        } catch (SQLException e) {
+            printSqlError(e);
+        }
+    }
+
+    private static void updateCoach(Connection conn, Scanner scanner) {
+        String sql = "UPDATE Coach SET first_name=?, last_name=?, dob=?, nationality=?, club_id=? WHERE coach_id=?";
+        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setString(1, prompt(scanner, "first_name"));
+            stmt.setString(2, prompt(scanner, "last_name"));
+            setNullableDate(stmt, 3, prompt(scanner, "dob (YYYY-MM-DD or blank)"));
+            setNullableString(stmt, 4, prompt(scanner, "nationality (3-letter code, blank ok)"));
+            setNullableInt(stmt, 5, prompt(scanner, "club_id (blank ok)"));
+            setRequiredInt(stmt, 6, prompt(scanner, "coach_id"));
+            executeUpdate(stmt);
+        } catch (SQLException e) {
+            printSqlError(e);
+        }
+    }
+
+    private static void readCoaches(Connection conn, Scanner scanner) {
+        String id = prompt(scanner, "coach_id (blank for all)");
+        String sql = (id == null || id.isBlank())
+            ? "SELECT coach_id, first_name, last_name, dob, nationality, club_id FROM Coach"
+            : "SELECT coach_id, first_name, last_name, dob, nationality, club_id FROM Coach WHERE coach_id = ?";
+        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+            if (id != null && !id.isBlank()) {
+                setRequiredInt(stmt, 1, id);
+            }
+            executeQuery(stmt);
+        } catch (SQLException e) {
+            printSqlError(e);
+        }
+    }
+
+    private static void createSeasonPerformance(Connection conn, Scanner scanner) {
+        String sql = "INSERT INTO SeasonPerformance (player_id, league_id, appearance_count, goal_count, assist_count, play_time) VALUES (?, ?, ?, ?, ?, ?)";
+        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+            setRequiredInt(stmt, 1, prompt(scanner, "player_id"));
+            setRequiredInt(stmt, 2, prompt(scanner, "league_id"));
+            setNullableInt(stmt, 3, prompt(scanner, "appearance_count (blank ok)"));
+            setNullableInt(stmt, 4, prompt(scanner, "goal_count (blank ok)"));
+            setNullableInt(stmt, 5, prompt(scanner, "assist_count (blank ok)"));
+            setNullableInt(stmt, 6, prompt(scanner, "play_time in minutes (blank ok)"));
+            executeUpdate(stmt);
+        } catch (SQLException e) {
+            printSqlError(e);
+        }
+    }
+
+    private static void updateSeasonPerformance(Connection conn, Scanner scanner) {
+        String sql = "UPDATE SeasonPerformance SET appearance_count=?, goal_count=?, assist_count=?, play_time=? WHERE player_id=? AND league_id=?";
+        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+            setNullableInt(stmt, 1, prompt(scanner, "appearance_count (blank ok)"));
+            setNullableInt(stmt, 2, prompt(scanner, "goal_count (blank ok)"));
+            setNullableInt(stmt, 3, prompt(scanner, "assist_count (blank ok)"));
+            setNullableInt(stmt, 4, prompt(scanner, "play_time in minutes (blank ok)"));
+            setRequiredInt(stmt, 5, prompt(scanner, "player_id"));
+            setRequiredInt(stmt, 6, prompt(scanner, "league_id"));
+            executeUpdate(stmt);
+        } catch (SQLException e) {
+            printSqlError(e);
+        }
+    }
+
+    private static void deleteSeasonPerformance(Connection conn, Scanner scanner) {
+        String sql = "DELETE FROM SeasonPerformance WHERE player_id=? AND league_id=?";
+        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+            setRequiredInt(stmt, 1, prompt(scanner, "player_id"));
+            setRequiredInt(stmt, 2, prompt(scanner, "league_id"));
+            executeUpdate(stmt);
+        } catch (SQLException e) {
+            printSqlError(e);
+        }
+    }
+
+    private static void readSeasonPerformances(Connection conn, Scanner scanner) {
+        String playerId = prompt(scanner, "player_id (blank for all)");
+        String sql = (playerId == null || playerId.isBlank())
+            ? "SELECT player_id, league_id, appearance_count, goal_count, assist_count, play_time FROM SeasonPerformance"
+            : "SELECT player_id, league_id, appearance_count, goal_count, assist_count, play_time FROM SeasonPerformance WHERE player_id = ?";
+        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+            if (playerId != null && !playerId.isBlank()) {
+                setRequiredInt(stmt, 1, playerId);
             }
             executeQuery(stmt);
         } catch (SQLException e) {

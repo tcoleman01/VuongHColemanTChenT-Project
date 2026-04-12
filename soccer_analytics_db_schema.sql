@@ -44,9 +44,12 @@ CREATE TABLE Stadium (
     street_number   VARCHAR(20),
     street_name     VARCHAR(100),
     city            VARCHAR(100),
-    country         VARCHAR(100),
+    country_abbr    CHAR(3),
     phone_number    VARCHAR(25),
-    CONSTRAINT pk_stadium PRIMARY KEY (stadium_id)
+    CONSTRAINT pk_stadium           PRIMARY KEY (stadium_id),
+    CONSTRAINT fk_stadium_country   FOREIGN KEY (country_abbr)
+                                    REFERENCES Country(country_abbr)
+                                    ON UPDATE CASCADE ON DELETE SET NULL
 );
 
 -- ------------------------------------------------------------

@@ -43,7 +43,8 @@ FIELDS TERMINATED BY ','
 ENCLOSED BY '"'
 LINES TERMINATED BY '\r\n'
 IGNORE 1 LINES
-(stadium_id, stadium_name, capacity, street_number, street_name, city, country, phone_number);
+(stadium_id, stadium_name, capacity, street_number, street_name, city, @country, @country_abbr, phone_number)
+SET country_abbr = NULLIF(@country_abbr, '');
 
 select * from Stadium;
 -- ------------------------------------------------------------
