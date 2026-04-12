@@ -22,22 +22,13 @@ CREATE TABLE Country (
 DROP TABLE IF EXISTS League;
 
 
+
 CREATE TABLE League (
     league_id       INT             NOT NULL AUTO_INCREMENT,
     league_name     VARCHAR(100)    NOT NULL,
     season_name     VARCHAR(50)     NOT NULL,
-<<<<<<< HEAD
-    country_abbr    CHAR(3),
-    CONSTRAINT pk_league            PRIMARY KEY (league_id),
-    CONSTRAINT pak_league           UNIQUE (league_name, season_name),
-    CONSTRAINT fk_league_country    FOREIGN KEY (country_abbr)
-                                    REFERENCES Country(country_abbr)
-                                    ON UPDATE CASCADE ON DELETE SET NULL
-=======
     CONSTRAINT pk_league            PRIMARY KEY (league_id),
     CONSTRAINT pak_league           UNIQUE (league_name, season_name)
-
->>>>>>> 0a5131a (johnny work changed some loader n schema to match better)
 );
 
 -- ------------------------------------------------------------
@@ -50,12 +41,9 @@ CREATE TABLE Stadium (
     street_number   VARCHAR(20),
     street_name     VARCHAR(100),
     city            VARCHAR(100),
-    country_abbr    CHAR(3),
+    country         VARCHAR(100),
     phone_number    VARCHAR(25),
-    CONSTRAINT pk_stadium           PRIMARY KEY (stadium_id),
-    CONSTRAINT fk_stadium_country   FOREIGN KEY (country_abbr)
-                                    REFERENCES Country(country_abbr)
-                                    ON UPDATE CASCADE ON DELETE SET NULL
+    CONSTRAINT pk_stadium PRIMARY KEY (stadium_id)
 );
 
 -- ------------------------------------------------------------
