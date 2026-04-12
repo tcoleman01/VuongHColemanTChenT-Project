@@ -29,10 +29,9 @@ public class AdminCli {
         try (Connection conn = connect(config); Scanner scanner = new Scanner(System.in)) {
             System.out.println("Connected to MySQL at " + config.host + ":" + config.port + "/" + config.database);
 
-            Role role = login(scanner);
-            if (role == null) {
-                System.out.println("Login failed. Exiting.");
-                return;
+            Role role = null;
+            while (role == null) {
+                role = login(conn, scanner);
             }
 
             if (role == Role.ADMIN) {
@@ -108,36 +107,72 @@ public class AdminCli {
         return DriverManager.getConnection(url, config.user, config.password);
     }
 
-    private static Role login(Scanner scanner) {
+    private static Role login(Connection conn, Scanner scanner) {
         String adminUser = getConfig("ADMIN_USER", "");
         String adminPass = getConfig("ADMIN_PASS", "");
-        String userUser = getConfig("USER_USER", "");
-        String userPass = getConfig("USER_PASS", "");
 
-        System.out.println("Login");
+        System.out.println("\nLogin (type 'q' to quit)");
         String roleInput = prompt(scanner, "Role (admin|user)");
-        String username = prompt(scanner, "Username");
-        String password = prompt(scanner, "Password");
 
+        // =============================================
+        // ALLOW USER TO QUIT AT ROLE SELECTION
+        // =============================================
+        if (roleInput.equalsIgnoreCase("q")) {
+            System.out.println("Goodbye.");
+            System.exit(0);
+        }
+
+        // =============================================
+        // VALIDATE ROLE BEFORE ASKING FOR CREDENTIALS
+        // =============================================
         Role role = parseRole(roleInput);
         if (role == null) {
             System.out.println("Invalid role. Use admin or user.");
             return null;
         }
 
+        String username = prompt(scanner, "Username");
+        String password = prompt(scanner, "Password");
+
         if (role == Role.ADMIN) {
+            // =============================================
+            // ADMIN LOGIN - CHECK AGAINST .ENV CREDENTIALS
+            // =============================================
             if (adminUser.isEmpty() || adminPass.isEmpty()) {
                 System.out.println("Warning: ADMIN_USER/ADMIN_PASS not set. Allowing admin login for any credentials.");
                 return Role.ADMIN;
             }
-            return adminUser.equals(username) && adminPass.equals(password) ? Role.ADMIN : null;
+            if (adminUser.equals(username) && adminPass.equals(password)) {
+                return Role.ADMIN;
+            } else {
+                System.out.println("Invalid username or password.");
+                return null;
+            }
         }
 
-        if (userUser.isEmpty() || userPass.isEmpty()) {
-            System.out.println("Warning: USER_USER/USER_PASS not set. Allowing user login for any credentials.");
-            return Role.USER;
+        // =============================================
+        // USER LOGIN - VALIDATE AGAINST DATABASE USER TABLE
+        // =============================================
+        String sql = "SELECT is_admin FROM user WHERE username = ? AND password = ?";
+        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setString(1, username);
+            stmt.setString(2, password);
+            ResultSet rs = stmt.executeQuery();
+            if (rs.next()) {
+                boolean isAdmin = rs.getBoolean("is_admin");
+                if (isAdmin) {
+                    System.out.println("Access denied. Use admin role for admin accounts.");
+                    return null;
+                }
+                return Role.USER;
+            } else {
+                System.out.println("Invalid username or password.");
+                return null;
+            }
+        } catch (SQLException e) {
+            System.out.println("Login error: " + e.getMessage());
+            return null;
         }
-        return userUser.equals(username) && userPass.equals(password) ? Role.USER : null;
     }
 
     private static void adminMenu(Connection conn, Scanner scanner) {

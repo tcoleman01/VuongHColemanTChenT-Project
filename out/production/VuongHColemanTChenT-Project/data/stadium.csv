@@ -1,0 +1,16 @@
+stadium_id,stadium_name,capacity,street_number,street_name,city,country,phone_number
+1,Stade Louis II,18523,1,Avenue des Castelans,Fontvieille,France,+377 92 05 74 00
+2,San Siro,75923,21,Via Piccolomini,Milan,Italy,+39 02 404 24 32
+3,Emirates Stadium,60704,75,Drayton Park,London,England,+44 20 7619 5003
+4,Villa Park,42785,,Trinity Road,Birmingham,England,+44 121 327 2299
+5,Allianz Arena,75024,25,Werner-Heisenberg-Allee,Munich,Germany,+49 89 69931 0
+6,Etihad Stadium,53400,,Sportcity Way,Manchester,England,+44 161 444 1894
+7,Old Trafford,74310,,Sir Matt Busby Way,Manchester,England,+44 161 868 8000
+8,Anfield,61276,,Anfield Road,Liverpool,England,+44 151 263 2361
+9,Stamford Bridge,40343,,Fulham Road,London,England,+44 371 811 1955
+10,Goodison Park,39414,,Goodison Road,Liverpool,England,+44 151 556 1878
+11,St. James' Park,52305,,St James' Boulevard,Newcastle upon Tyne,England,+44 191 201 8400
+12,City Ground,30445,,Pavilion Road,Nottingham,England,+44 115 982 4444
+13,Santiago Bernabeu,81044,1,Avenida de Concha Espina,Madrid,Spain,+34 91 398 43 00
+14,Tottenham Hotspur Stadium,62850,782,High Road,London,England,+44 344 499 5000
+15,Camp Nou,99354,,Carrer d'Aristides Maillol,Barcelona,Spain,+34 93 496 36 00
