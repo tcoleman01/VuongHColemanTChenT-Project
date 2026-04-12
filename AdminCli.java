@@ -23,6 +23,11 @@ public class AdminCli {
     private static Map<String, String> dotEnv = new HashMap<>();
 
     public static void main(String[] args) {
+        try { // make sure the name get display correctly w weird symbols
+            System.setOut(new java.io.PrintStream(System.out, true, "UTF-8"));
+        } catch (java.io.UnsupportedEncodingException e) {
+            // UTF-8 is always supported
+        }
         loadDotEnv();
 
         DbConfig config = loadConfig();
@@ -884,38 +889,63 @@ public class AdminCli {
         ResultSetMetaData meta = rs.getMetaData();
         int cols = meta.getColumnCount();
 
-        StringBuilder header = new StringBuilder();
-        for (int i = 1; i <= cols; i++) {
-            if (i > 1) {
-                header.append(" | ");
-            }
-            header.append(meta.getColumnLabel(i));
+        // =============================================
+        // COLLECT ALL ROWS FIRST TO CALCULATE WIDTHS
+        // =============================================
+        List<String[]> allRows = new ArrayList<>();
+        int[] colWidths = new int[cols];
+
+        // set minimum width from column headers
+        for (int i = 0; i < cols; i++) {
+            colWidths[i] = meta.getColumnLabel(i + 1).length();
         }
 
-        int rowCount = 0;
-        StringBuilder rows = new StringBuilder();
+        // collect rows and track max width per column
         while (rs.next()) {
-            rowCount++;
-            StringBuilder row = new StringBuilder();
-            for (int i = 1; i <= cols; i++) {
-                if (i > 1) {
-                    row.append(" | ");
+            String[] row = new String[cols];
+            for (int i = 0; i < cols; i++) {
+                String value = rs.getString(i + 1);
+                row[i] = value == null ? "NULL" : value;
+                if (row[i].length() > colWidths[i]) {
+                    colWidths[i] = row[i].length();
                 }
-                String value = rs.getString(i);
-                row.append(value == null ? "NULL" : value);
             }
-            rows.append(row).append("\n");
+            allRows.add(row);
         }
 
         // =============================================
-        // ONLY PRINT HEADER AND ROWS IF RESULTS EXIST
+        // ONLY PRINT IF RESULTS EXIST
         // =============================================
-        if (rowCount == 0) {
-            System.out.println("No data found for the given input. The record may exist but have no associated data, or the input may be incorrect.");
-        } else {
-            System.out.println(header);
-            System.out.print(rows);
+        if (allRows.isEmpty()) {
+            System.out.println("No data found for the given input. The input may be incorrect.");
+            return;
         }
+
+        // build separator line
+        StringBuilder separator = new StringBuilder("+");
+        for (int w : colWidths) {
+            separator.append("-".repeat(w + 2)).append("+");
+        }
+
+        // print header
+        System.out.println(separator);
+        StringBuilder header = new StringBuilder("|");
+        for (int i = 0; i < cols; i++) {
+            String label = meta.getColumnLabel(i + 1);
+            header.append(" ").append(label).append(" ".repeat(colWidths[i] - label.length())).append(" |");
+        }
+        System.out.println(header);
+        System.out.println(separator);
+
+        // print rows
+        for (String[] row : allRows) {
+            StringBuilder line = new StringBuilder("|");
+            for (int i = 0; i < cols; i++) {
+                line.append(" ").append(row[i]).append(" ".repeat(colWidths[i] - row[i].length())).append(" |");
+            }
+            System.out.println(line);
+        }
+        System.out.println(separator);
     }
 
 
@@ -926,6 +956,20 @@ public class AdminCli {
     }
 
     private static String prompt(Scanner scanner, String label) {
+        String value = "";
+        while (value.isBlank()) {
+            System.out.print(label + ": ");
+            value = scanner.nextLine().trim();
+            if (value.isBlank()) {
+                // LINE 957 - NEW: error message when blank input detected
+                System.out.println("Input cannot be empty. Please try again.");
+            }
+        }
+        return value;
+    }
+
+    // LINE 963 - NEW METHOD: use this for optional fields (blank ok)
+    private static String promptOptional(Scanner scanner, String label) {
         System.out.print(label + ": ");
         return scanner.nextLine().trim();
     }
