@@ -421,6 +421,7 @@ UNLOCK TABLES;
 DELIMITER //
 
 -- Nightly event to backfill results if scores exist but results are NULL
+DROP EVENT IF EXISTS ev_update_match_results;
 CREATE EVENT ev_update_match_results
 ON SCHEDULE EVERY 1 DAY
 DO
@@ -446,6 +447,7 @@ DELIMITER ;
 DELIMITER //
 
 -- Compute player age from DOB
+DROP FUNCTION IF EXISTS fn_player_age;
 CREATE FUNCTION fn_player_age(p_dob DATE)
 RETURNS INT
 DETERMINISTIC
@@ -457,6 +459,7 @@ BEGIN
 END//
 
 -- Record a transfer and update the player's current club
+DROP PROCEDURE IF EXISTS sp_record_transfer;
 CREATE PROCEDURE sp_record_transfer(
     IN p_player_id INT,
     IN p_new_club_id INT,
@@ -490,6 +493,7 @@ BEGIN
 END//
 
 -- Enforce that a team cannot play itself and auto-set match results on insert
+DROP TRIGGER IF EXISTS trg_match_validate_insert;
 CREATE TRIGGER trg_match_validate_insert
 BEFORE INSERT ON `Match`
 FOR EACH ROW
@@ -511,6 +515,7 @@ BEGIN
 END//
 
 -- Enforce validation and keep results in sync on updates
+DROP TRIGGER IF EXISTS trg_match_validate_update;
 CREATE TRIGGER trg_match_validate_update
 BEFORE UPDATE ON `Match`
 FOR EACH ROW
