@@ -23,7 +23,7 @@ public class AdminCli {
     private static Map<String, String> dotEnv = new HashMap<>();
 
     public static void main(String[] args) {
-        try { // make sure the name get display correctly w weird symbols
+        try { // make sure the name get display correctly w weird symbols, fix this issue (é, ü, ã)
             System.setOut(new java.io.PrintStream(System.out, true, "UTF-8"));
         } catch (java.io.UnsupportedEncodingException e) {
             // UTF-8 is always supported
@@ -112,6 +112,9 @@ public class AdminCli {
         return DriverManager.getConnection(url, config.user, config.password);
     }
 
+    // Handle Logins for both admin n user
+    // Admin checked against .ENV
+    // Users checked against .csv table
     private static Role login(Connection conn, Scanner scanner) {
         String adminUser = getConfig("ADMIN_USER", "");
         String adminPass = getConfig("ADMIN_PASS", "");
@@ -180,6 +183,7 @@ public class AdminCli {
         }
     }
 
+    // admin menu design
     private static void adminMenu(Connection conn, Scanner scanner) {
         while (true) {
             System.out.println("\nAdmin Menu");
@@ -885,6 +889,11 @@ public class AdminCli {
         }
     }
 
+    // END OF ADMIN MENU essentials and helpers
+
+    // Format and print query results, make them look pretty by aligning tabls w borders
+    // Calc width row before printing
+    // Display error msg if no result found instead of displaying empty rows of columns (not pretty)
     private static void printResultSet(ResultSet rs) throws SQLException {
         ResultSetMetaData meta = rs.getMetaData();
         int cols = meta.getColumnCount();
@@ -949,7 +958,7 @@ public class AdminCli {
     }
 
 
-
+    // Prints a readable error message when a database operation fails
     private static void printSqlError(SQLException e) {
         System.out.println("Database error: " + e.getMessage());
         System.out.println("SQLState: " + e.getSQLState());
@@ -967,12 +976,13 @@ public class AdminCli {
         return value;
     }
 
-
+    // Allows blank input for nullable fields (blank ok)
     private static String promptOptional(Scanner scanner, String label) {
         System.out.print(label + ": ");
         return scanner.nextLine().trim();
     }
 
+    // Holds database connection config loaded from .env file
     private static class DbConfig {
         final String host;
         final int port;
@@ -980,6 +990,7 @@ public class AdminCli {
         final String password;
         final String database;
 
+        // Two roles: ADMIN has full CRUD access, USER has read-only view access
         DbConfig(String host, int port, String user, String password, String database) {
             this.host = host;
             this.port = port;
@@ -999,7 +1010,9 @@ public class AdminCli {
     // ============================================================
 
     private static void viewPlayersInLeague(Connection conn, Scanner scanner) {
-//        show sample first
+//       // =============================================
+//       // SHOW SAMPLE FIRST
+//       // =============================================
         String listSql = "SELECT l.league_name, l.season_name, COUNT(DISTINCT sp.player_id) AS player_count " +
                 "FROM League l JOIN SeasonPerformance sp ON l.league_id = sp.league_id " +
                 "GROUP BY l.league_id, l.league_name, l.season_name " +
@@ -1011,6 +1024,9 @@ public class AdminCli {
             printSqlError(e);
         }
 
+        // =============================================
+//       // USER PROMPT
+//       // =============================================
         try (PreparedStatement stmt = conn.prepareStatement("CALL sp_players_in_league(?, ?)")) {
             stmt.setString(1, prompt(scanner, "league_name (e.g. Premier League)"));
             stmt.setString(2, prompt(scanner, "season_name (e.g. 22/23)"));
