@@ -178,151 +178,138 @@ public class AdminCli {
     private static void adminMenu(Connection conn, Scanner scanner) {
         while (true) {
             System.out.println("\nAdmin Menu");
-            System.out.println("1. Create player");
-            System.out.println("2. Update player");
-            System.out.println("3. Delete player");
-            System.out.println("4. Read players");
-            System.out.println("5. Create club");
-            System.out.println("6. Update club");
-            System.out.println("7. Delete club");
-            System.out.println("8. Read clubs");
-            System.out.println("9. Create league");
-            System.out.println("10. Update league");
-            System.out.println("11. Delete league");
-            System.out.println("12. Read leagues");
-            System.out.println("13. Create match");
-            System.out.println("14. Update match");
-            System.out.println("15. Delete match");
-            System.out.println("16. Read matches");
-            System.out.println("17. Create market value");
-            System.out.println("18. Update market value");
-            System.out.println("19. Delete market value");
-            System.out.println("20. Read market values");
-            System.out.println("21. Create match performance");
-            System.out.println("22. Update match performance");
-            System.out.println("23. Delete match performance");
-            System.out.println("24. Read match performances");
-            System.out.println("25. Record transfer");
-            System.out.println("26. Run read-only query");
-            System.out.println("27. Create coach");
-            System.out.println("28. Update coach");
-            System.out.println("29. Delete coach");
-            System.out.println("30. Read coaches");
-            System.out.println("31. Create season performance");
-            System.out.println("32. Update season performance");
-            System.out.println("33. Delete season performance");
-            System.out.println("34. Read season performances");
-            System.out.println("35. Exit");
+            System.out.println("1. Player");
+            System.out.println("2. League");
+            System.out.println("3. Match");
+            System.out.println("4. Market Value");
+            System.out.println("5. Match Performance");
+            System.out.println("6. Transfer");
+            System.out.println("7. User View");
+            System.out.println("8. Exit");
 
             String choice = prompt(scanner, "Select an option");
             switch (choice) {
-                case "1":
-                    createPlayer(conn, scanner);
-                    break;
-                case "2":
-                    updatePlayer(conn, scanner);
-                    break;
-                case "3":
-                    deleteById(conn, scanner, "Player", "player_id");
-                    break;
-                case "4":
-                    readPlayers(conn, scanner);
-                    break;
-                case "5":
-                    createClub(conn, scanner);
-                    break;
-                case "6":
-                    updateClub(conn, scanner);
-                    break;
-                case "7":
-                    deleteById(conn, scanner, "Club", "club_id");
-                    break;
-                case "8":
-                    readClubs(conn, scanner);
-                    break;
-                case "9":
-                    createLeague(conn, scanner);
-                    break;
-                case "10":
-                    updateLeague(conn, scanner);
-                    break;
-                case "11":
-                    deleteById(conn, scanner, "League", "league_id");
-                    break;
-                case "12":
-                    readLeagues(conn, scanner);
-                    break;
-                case "13":
-                    createMatch(conn, scanner);
-                    break;
-                case "14":
-                    updateMatch(conn, scanner);
-                    break;
-                case "15":
-                    deleteById(conn, scanner, "`Match`", "match_id");
-                    break;
-                case "16":
-                    readMatches(conn, scanner);
-                    break;
-                case "17":
-                    createMarketValue(conn, scanner);
-                    break;
-                case "18":
-                    updateMarketValue(conn, scanner);
-                    break;
-                case "19":
-                    deleteMarketValue(conn, scanner);
-                    break;
-                case "20":
-                    readMarketValues(conn, scanner);
-                    break;
-                case "21":
-                    createMatchPerformance(conn, scanner);
-                    break;
-                case "22":
-                    updateMatchPerformance(conn, scanner);
-                    break;
-                case "23":
-                    deleteMatchPerformance(conn, scanner);
-                    break;
-                case "24":
-                    readMatchPerformances(conn, scanner);
-                    break;
-                case "25":
-                    recordTransfer(conn, scanner);
-                    break;
-                case "26":
-                    runReadOnlyQuery(conn, scanner);
-                    break;
-                case "27":
-                    createCoach(conn, scanner);
-                    break;
-                case "28":
-                    updateCoach(conn, scanner);
-                    break;
-                case "29":
-                    deleteById(conn, scanner, "Coach", "coach_id");
-                    break;
-                case "30":
-                    readCoaches(conn, scanner);
-                    break;
-                case "31":
-                    createSeasonPerformance(conn, scanner);
-                    break;
-                case "32":
-                    updateSeasonPerformance(conn, scanner);
-                    break;
-                case "33":
-                    deleteSeasonPerformance(conn, scanner);
-                    break;
-                case "34":
-                    readSeasonPerformances(conn, scanner);
-                    break;
-                case "35":
-                    System.out.println("Goodbye.");
-                    return;
-                default:
-                    System.out.println("Invalid option.");
+                case "1": playerMenu(conn, scanner); break;
+                case "2": leagueMenu(conn, scanner); break;
+                case "3": matchMenu(conn, scanner); break;
+                case "4": marketValueMenu(conn, scanner); break;
+                case "5": matchPerformanceMenu(conn, scanner); break;
+                case "6": transferMenu(conn, scanner); break;
+                case "7": userMenu(conn, scanner); break;
+                case "8": System.out.println("Goodbye."); return;
+                default: System.out.println("Invalid option.");
+            }
+        }
+    }
+
+    private static void playerMenu(Connection conn, Scanner scanner) {
+        while (true) {
+            System.out.println("\nPlayer Menu");
+            System.out.println("1. Create");
+            System.out.println("2. Update");
+            System.out.println("3. Delete");
+            System.out.println("4. Read");
+            System.out.println("5. Back");
+            String choice = prompt(scanner, "Select an option");
+            switch (choice) {
+                case "1": createPlayer(conn, scanner); break;
+                case "2": updatePlayer(conn, scanner); break;
+                case "3": deleteById(conn, scanner, "Player", "player_id"); break;
+                case "4": readPlayers(conn, scanner); break;
+                case "5": return;
+                default: System.out.println("Invalid option.");
+            }
+        }
+    }
+
+    private static void leagueMenu(Connection conn, Scanner scanner) {
+        while (true) {
+            System.out.println("\nLeague Menu");
+            System.out.println("1. Create");
+            System.out.println("2. Delete");
+            System.out.println("3. Read");
+            System.out.println("4. Back");
+            String choice = prompt(scanner, "Select an option");
+            switch (choice) {
+                case "1": createLeague(conn, scanner); break;
+                case "2": deleteById(conn, scanner, "League", "league_id"); break;
+                case "3": readLeagues(conn, scanner); break;
+                case "4": return;
+                default: System.out.println("Invalid option.");
+            }
+        }
+    }
+
+    private static void matchMenu(Connection conn, Scanner scanner) {
+        while (true) {
+            System.out.println("\nMatch Menu");
+            System.out.println("1. Create");
+            System.out.println("2. Update");
+            System.out.println("3. Delete");
+            System.out.println("4. Read");
+            System.out.println("5. Back");
+            String choice = prompt(scanner, "Select an option");
+            switch (choice) {
+                case "1": createMatch(conn, scanner); break;
+                case "2": updateMatch(conn, scanner); break;
+                case "3": deleteById(conn, scanner, "`Match`", "match_id"); break;
+                case "4": readMatches(conn, scanner); break;
+                case "5": return;
+                default: System.out.println("Invalid option.");
+            }
+        }
+    }
+
+    private static void marketValueMenu(Connection conn, Scanner scanner) {
+        while (true) {
+            System.out.println("\nMarket Value Menu");
+            System.out.println("1. Create");
+            System.out.println("2. Delete");
+            System.out.println("3. Read");
+            System.out.println("4. Back");
+            String choice = prompt(scanner, "Select an option");
+            switch (choice) {
+                case "1": createMarketValue(conn, scanner); break;
+                case "2": deleteMarketValue(conn, scanner); break;
+                case "3": readMarketValues(conn, scanner); break;
+                case "4": return;
+                default: System.out.println("Invalid option.");
+            }
+        }
+    }
+
+    private static void matchPerformanceMenu(Connection conn, Scanner scanner) {
+        while (true) {
+            System.out.println("\nMatch Performance Menu");
+            System.out.println("1. Create");
+            System.out.println("2. Delete");
+            System.out.println("3. Read");
+            System.out.println("4. Back");
+            String choice = prompt(scanner, "Select an option");
+            switch (choice) {
+                case "1": createMatchPerformance(conn, scanner); break;
+                case "2": deleteMatchPerformance(conn, scanner); break;
+                case "3": readMatchPerformances(conn, scanner); break;
+                case "4": return;
+                default: System.out.println("Invalid option.");
+            }
+        }
+    }
+
+    private static void transferMenu(Connection conn, Scanner scanner) {
+        while (true) {
+            System.out.println("\nTransfer Menu");
+            System.out.println("1. Create");
+            System.out.println("2. Delete");
+            System.out.println("3. Read");
+            System.out.println("4. Back");
+            String choice = prompt(scanner, "Select an option");
+            switch (choice) {
+                case "1": recordTransfer(conn, scanner); break;
+                case "2": deleteById(conn, scanner, "Transfer", "transfer_id"); break;
+                case "3": readTransfers(conn, scanner); break;
+                case "4": return;
+                default: System.out.println("Invalid option.");
             }
         }
     }
@@ -360,7 +347,7 @@ public class AdminCli {
 
     private static void createPlayer(Connection conn, Scanner scanner) {
         String sql = "INSERT INTO Player (first_name, last_name, dob, place_of_birth, height_cm, preferred_foot, position_id, country_abbr, club_id) "
-            + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
+                + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
         try (PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setString(1, prompt(scanner, "first_name"));
             stmt.setString(2, prompt(scanner, "last_name"));
@@ -379,7 +366,7 @@ public class AdminCli {
 
     private static void updatePlayer(Connection conn, Scanner scanner) {
         String sql = "UPDATE Player SET first_name=?, last_name=?, dob=?, place_of_birth=?, height_cm=?, preferred_foot=?, position_id=?, country_abbr=?, club_id=? "
-            + "WHERE player_id=?";
+                + "WHERE player_id=?";
         try (PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setString(1, prompt(scanner, "first_name"));
             stmt.setString(2, prompt(scanner, "last_name"));
@@ -400,8 +387,8 @@ public class AdminCli {
     private static void readPlayers(Connection conn, Scanner scanner) {
         String id = prompt(scanner, "player_id (blank for all)");
         String sql = (id == null || id.isBlank())
-            ? "SELECT player_id, first_name, last_name, dob, fn_player_age(dob) AS age, place_of_birth, height_cm, preferred_foot, position_id, country_abbr, club_id FROM Player"
-            : "SELECT player_id, first_name, last_name, dob, fn_player_age(dob) AS age, place_of_birth, height_cm, preferred_foot, position_id, country_abbr, club_id FROM Player WHERE player_id = ?";
+                ? "SELECT player_id, first_name, last_name, dob, fn_player_age(dob) AS age, place_of_birth, height_cm, preferred_foot, position_id, country_abbr, club_id FROM Player"
+                : "SELECT player_id, first_name, last_name, dob, fn_player_age(dob) AS age, place_of_birth, height_cm, preferred_foot, position_id, country_abbr, club_id FROM Player WHERE player_id = ?";
         try (PreparedStatement stmt = conn.prepareStatement(sql)) {
             if (id != null && !id.isBlank()) {
                 setRequiredInt(stmt, 1, id);
@@ -444,8 +431,8 @@ public class AdminCli {
     private static void readClubs(Connection conn, Scanner scanner) {
         String id = prompt(scanner, "club_id (blank for all)");
         String sql = (id == null || id.isBlank())
-            ? "SELECT club_id, club_name, country_abbr, league_id, stadium_id, coach_id FROM Club"
-            : "SELECT club_id, club_name, country_abbr, league_id, stadium_id, coach_id FROM Club WHERE club_id = ?";
+                ? "SELECT club_id, club_name, country_abbr, league_id, stadium_id, coach_id FROM Club"
+                : "SELECT club_id, club_name, country_abbr, league_id, stadium_id, coach_id FROM Club WHERE club_id = ?";
         try (PreparedStatement stmt = conn.prepareStatement(sql)) {
             if (id != null && !id.isBlank()) {
                 setRequiredInt(stmt, 1, id);
@@ -482,8 +469,8 @@ public class AdminCli {
     private static void readLeagues(Connection conn, Scanner scanner) {
         String id = prompt(scanner, "league_id (blank for all)");
         String sql = (id == null || id.isBlank())
-            ? "SELECT league_id, league_name, season_name FROM League"
-            : "SELECT league_id, league_name, season_name FROM League WHERE league_id = ?";
+                ? "SELECT league_id, league_name, season_name FROM League"
+                : "SELECT league_id, league_name, season_name FROM League WHERE league_id = ?";
         try (PreparedStatement stmt = conn.prepareStatement(sql)) {
             if (id != null && !id.isBlank()) {
                 setRequiredInt(stmt, 1, id);
@@ -526,8 +513,8 @@ public class AdminCli {
     private static void readMatches(Connection conn, Scanner scanner) {
         String id = prompt(scanner, "match_id (blank for all)");
         String sql = (id == null || id.isBlank())
-            ? "SELECT match_id, home_team_id, away_team_id, match_date, home_score, away_score, home_result, away_result FROM `Match`"
-            : "SELECT match_id, home_team_id, away_team_id, match_date, home_score, away_score, home_result, away_result FROM `Match` WHERE match_id = ?";
+                ? "SELECT match_id, home_team_id, away_team_id, match_date, home_score, away_score, home_result, away_result FROM `Match`"
+                : "SELECT match_id, home_team_id, away_team_id, match_date, home_score, away_score, home_result, away_result FROM `Match` WHERE match_id = ?";
         try (PreparedStatement stmt = conn.prepareStatement(sql)) {
             if (id != null && !id.isBlank()) {
                 setRequiredInt(stmt, 1, id);
@@ -576,8 +563,8 @@ public class AdminCli {
     private static void readMarketValues(Connection conn, Scanner scanner) {
         String playerId = prompt(scanner, "player_id (blank for all)");
         String sql = (playerId == null || playerId.isBlank())
-            ? "SELECT player_id, market_value_date, market_value FROM MarketValue"
-            : "SELECT player_id, market_value_date, market_value FROM MarketValue WHERE player_id = ?";
+                ? "SELECT player_id, market_value_date, market_value FROM MarketValue"
+                : "SELECT player_id, market_value_date, market_value FROM MarketValue WHERE player_id = ?";
         try (PreparedStatement stmt = conn.prepareStatement(sql)) {
             if (playerId != null && !playerId.isBlank()) {
                 setRequiredInt(stmt, 1, playerId);
@@ -685,8 +672,8 @@ public class AdminCli {
     private static void readCoaches(Connection conn, Scanner scanner) {
         String id = prompt(scanner, "coach_id (blank for all)");
         String sql = (id == null || id.isBlank())
-            ? "SELECT coach_id, first_name, last_name, dob, nationality, club_id FROM Coach"
-            : "SELECT coach_id, first_name, last_name, dob, nationality, club_id FROM Coach WHERE coach_id = ?";
+                ? "SELECT coach_id, first_name, last_name, dob, nationality, club_id FROM Coach"
+                : "SELECT coach_id, first_name, last_name, dob, nationality, club_id FROM Coach WHERE coach_id = ?";
         try (PreparedStatement stmt = conn.prepareStatement(sql)) {
             if (id != null && !id.isBlank()) {
                 setRequiredInt(stmt, 1, id);
@@ -741,11 +728,26 @@ public class AdminCli {
     private static void readSeasonPerformances(Connection conn, Scanner scanner) {
         String playerId = prompt(scanner, "player_id (blank for all)");
         String sql = (playerId == null || playerId.isBlank())
-            ? "SELECT player_id, league_id, appearance_count, goal_count, assist_count, play_time FROM SeasonPerformance"
-            : "SELECT player_id, league_id, appearance_count, goal_count, assist_count, play_time FROM SeasonPerformance WHERE player_id = ?";
+                ? "SELECT player_id, league_id, appearance_count, goal_count, assist_count, play_time FROM SeasonPerformance"
+                : "SELECT player_id, league_id, appearance_count, goal_count, assist_count, play_time FROM SeasonPerformance WHERE player_id = ?";
         try (PreparedStatement stmt = conn.prepareStatement(sql)) {
             if (playerId != null && !playerId.isBlank()) {
                 setRequiredInt(stmt, 1, playerId);
+            }
+            executeQuery(stmt);
+        } catch (SQLException e) {
+            printSqlError(e);
+        }
+    }
+
+    private static void readTransfers(Connection conn, Scanner scanner) {
+        String id = prompt(scanner, "player_id (blank for all)");
+        String sql = (id == null || id.isBlank())
+                ? "SELECT transfer_id, player_id, old_club_id, new_club_id, transfer_date, transfer_fee FROM Transfer"
+                : "SELECT transfer_id, player_id, old_club_id, new_club_id, transfer_date, transfer_fee FROM Transfer WHERE player_id = ?";
+        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+            if (id != null && !id.isBlank()) {
+                setRequiredInt(stmt, 1, id);
             }
             executeQuery(stmt);
         } catch (SQLException e) {
@@ -1246,7 +1248,3 @@ public class AdminCli {
     }
 }
 
-//
-//& "C:\Users\Owner\.jdks\openjdk-26\bin\javac.exe" -cp "C:\Users\Owner\Desktop\mysql-connector-j-9.6.0\mysql-connector-j-9.6.0.jar;." AdminCli.java
-//
-//& "C:\Users\Owner\.jdks\openjdk-26\bin\java.exe" -cp "C:\Users\Owner\Desktop\mysql-connector-j-9.6.0\mysql-connector-j-9.6.0.jar;." AdminCli
