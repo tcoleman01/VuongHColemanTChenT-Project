@@ -29,7 +29,8 @@ FIELDS TERMINATED BY ','
 ENCLOSED BY '"'
 LINES TERMINATED BY '\r\n'
 IGNORE 1 LINES
-(league_id, league_name, season_name);
+(league_id, league_name, season_name, @country_abbr)
+SET country_abbr = NULLIF(@country_abbr, '');
 
 select * from league;
 -- ------------------------------------------------------------
@@ -82,8 +83,9 @@ FIELDS TERMINATED BY ','
 ENCLOSED BY '"'
 LINES TERMINATED BY '\r\n'
 IGNORE 1 LINES
-(club_id, club_name, country_abbr, @stadium_id, @coach_id)
-SET stadium_id = NULLIF(@stadium_id, ''),
+(club_id, club_name, country_abbr, @league_id, @stadium_id, @coach_id)
+SET league_id  = NULLIF(@league_id, ''),
+    stadium_id = NULLIF(@stadium_id, ''),
     coach_id   = NULLIF(@coach_id, '');
 
 select * from club;

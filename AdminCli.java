@@ -363,7 +363,7 @@ public class AdminCli {
         try (PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setString(1, prompt(scanner, "club_name"));
             stmt.setString(2, prompt(scanner, "country_abbr"));
-            setRequiredInt(stmt, 3, prompt(scanner, "league_id"));
+            setNullableInt(stmt, 3, prompt(scanner, "league_id (blank ok)"));
             setNullableInt(stmt, 4, prompt(scanner, "stadium_id (blank ok)"));
             setNullableInt(stmt, 5, prompt(scanner, "coach_id (blank ok)"));
             executeUpdate(stmt);
@@ -377,7 +377,7 @@ public class AdminCli {
         try (PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setString(1, prompt(scanner, "club_name"));
             stmt.setString(2, prompt(scanner, "country_abbr"));
-            setRequiredInt(stmt, 3, prompt(scanner, "league_id"));
+            setNullableInt(stmt, 3, prompt(scanner, "league_id (blank ok)"));
             setNullableInt(stmt, 4, prompt(scanner, "stadium_id (blank ok)"));
             setNullableInt(stmt, 5, prompt(scanner, "coach_id (blank ok)"));
             setRequiredInt(stmt, 6, prompt(scanner, "club_id"));
@@ -407,7 +407,7 @@ public class AdminCli {
         try (PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setString(1, prompt(scanner, "league_name"));
             stmt.setString(2, prompt(scanner, "season_name"));
-            stmt.setString(3, prompt(scanner, "country_abbr"));
+            setNullableString(stmt, 3, prompt(scanner, "country_abbr (3-letter code, blank ok)"));
             executeUpdate(stmt);
         } catch (SQLException e) {
             printSqlError(e);
@@ -419,7 +419,7 @@ public class AdminCli {
         try (PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setString(1, prompt(scanner, "league_name"));
             stmt.setString(2, prompt(scanner, "season_name"));
-            stmt.setString(3, prompt(scanner, "country_abbr"));
+            setNullableString(stmt, 3, prompt(scanner, "country_abbr (3-letter code, blank ok)"));
             setRequiredInt(stmt, 4, prompt(scanner, "league_id"));
             executeUpdate(stmt);
         } catch (SQLException e) {

@@ -1,5 +1,3 @@
-USE soccer_analytics_db;
-
 -- ============================================================
 -- Football Analytics Database - MySQL Schema
 -- ============================================================
@@ -28,12 +26,12 @@ CREATE TABLE League (
     league_id       INT             NOT NULL AUTO_INCREMENT,
     league_name     VARCHAR(100)    NOT NULL,
     season_name     VARCHAR(50)     NOT NULL,
---     country_abbr    CHAR(3)         NOT NULL,
+    country_abbr    CHAR(3),
     CONSTRAINT pk_league            PRIMARY KEY (league_id),
-    CONSTRAINT pak_league           UNIQUE (league_name, season_name)
-  --   CONSTRAINT fk_league_country    FOREIGN KEY (country_abbr)
---                                     REFERENCES Country(country_abbr)
---                                     ON UPDATE CASCADE ON DELETE RESTRICT
+    CONSTRAINT pak_league           UNIQUE (league_name, season_name),
+    CONSTRAINT fk_league_country    FOREIGN KEY (country_abbr)
+                                    REFERENCES Country(country_abbr)
+                                    ON UPDATE CASCADE ON DELETE SET NULL
 );
 
 -- ------------------------------------------------------------
@@ -60,12 +58,16 @@ CREATE TABLE Club (
     club_id         INT             NOT NULL AUTO_INCREMENT,
     club_name       VARCHAR(100)    NOT NULL,
     country_abbr    CHAR(3)         NOT NULL,
+    league_id       INT,
     stadium_id      INT,
     coach_id        INT,
     CONSTRAINT pk_club              PRIMARY KEY (club_id),
     CONSTRAINT fk_club_country      FOREIGN KEY (country_abbr)
                                     REFERENCES Country(country_abbr)
                                     ON UPDATE CASCADE ON DELETE RESTRICT,
+    CONSTRAINT fk_club_league       FOREIGN KEY (league_id)
+                                    REFERENCES League(league_id)
+                                    ON UPDATE CASCADE ON DELETE SET NULL,
     CONSTRAINT fk_club_stadium      FOREIGN KEY (stadium_id)
                                     REFERENCES Stadium(stadium_id)
                                     ON UPDATE CASCADE ON DELETE SET NULL
