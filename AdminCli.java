@@ -295,43 +295,30 @@ public class AdminCli {
     private static void userMenu(Connection conn, Scanner scanner) {
         while (true) {
             System.out.println("\nUser Menu (Read Only)");
-            System.out.println("1. Read players");
-            System.out.println("2. Read clubs");
-            System.out.println("3. Read leagues");
-            System.out.println("4. Read matches");
-            System.out.println("5. Read market values");
-            System.out.println("6. Read match performances");
-            System.out.println("7. Run read-only query");
-            System.out.println("8. Exit");
+            System.out.println("1.  View all players in a league");
+            System.out.println("2.  View statistics for a player");
+            System.out.println("3.  View top scorers for a season");
+            System.out.println("4.  View teams in a league");
+            System.out.println("5.  View match results");
+            System.out.println("6.  View coach info");
+            System.out.println("7.  View stadium info");
+            System.out.println("8.  View player market value");
+            System.out.println("9.  View player transfer history");
+            System.out.println("10. Exit");
 
             String choice = prompt(scanner, "Select an option");
             switch (choice) {
-                case "1":
-                    readPlayers(conn, scanner);
-                    break;
-                case "2":
-                    readClubs(conn, scanner);
-                    break;
-                case "3":
-                    readLeagues(conn, scanner);
-                    break;
-                case "4":
-                    readMatches(conn, scanner);
-                    break;
-                case "5":
-                    readMarketValues(conn, scanner);
-                    break;
-                case "6":
-                    readMatchPerformances(conn, scanner);
-                    break;
-                case "7":
-                    runReadOnlyQuery(conn, scanner);
-                    break;
-                case "8":
-                    System.out.println("Goodbye.");
-                    return;
-                default:
-                    System.out.println("Invalid option.");
+                case "1": viewPlayersInLeague(conn, scanner); break;
+                case "2": viewPlayerStats(conn, scanner); break;
+                case "3": viewTopScorers(conn, scanner); break;
+                case "4": viewTeamsInLeague(conn, scanner); break;
+                case "5": viewMatchResults(conn, scanner); break;
+                case "6": viewCoachStats(conn, scanner); break;
+                case "7": viewStadiumStats(conn, scanner); break;
+                case "8": viewPlayerMarketValue(conn, scanner); break;
+                case "9": viewPlayerTransfers(conn, scanner); break;
+                case "10": System.out.println("Goodbye."); return;
+                default: System.out.println("Invalid option.");
             }
         }
     }
@@ -435,11 +422,10 @@ public class AdminCli {
     }
 
     private static void createLeague(Connection conn, Scanner scanner) {
-        String sql = "INSERT INTO League (league_name, season_name, country_abbr) VALUES (?, ?, ?)";
+        String sql = "INSERT INTO League (league_name, season_name) VALUES (?, ?)";
         try (PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setString(1, prompt(scanner, "league_name"));
             stmt.setString(2, prompt(scanner, "season_name"));
-            setNullableString(stmt, 3, prompt(scanner, "country_abbr (3-letter code, blank ok)"));
             executeUpdate(stmt);
         } catch (SQLException e) {
             printSqlError(e);
@@ -447,12 +433,11 @@ public class AdminCli {
     }
 
     private static void updateLeague(Connection conn, Scanner scanner) {
-        String sql = "UPDATE League SET league_name=?, season_name=?, country_abbr=? WHERE league_id=?";
+        String sql = "UPDATE League SET league_name=?, season_name=? WHERE league_id=?";
         try (PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setString(1, prompt(scanner, "league_name"));
             stmt.setString(2, prompt(scanner, "season_name"));
-            setNullableString(stmt, 3, prompt(scanner, "country_abbr (3-letter code, blank ok)"));
-            setRequiredInt(stmt, 4, prompt(scanner, "league_id"));
+            setRequiredInt(stmt, 3, prompt(scanner, "league_id"));
             executeUpdate(stmt);
         } catch (SQLException e) {
             printSqlError(e);
@@ -462,8 +447,8 @@ public class AdminCli {
     private static void readLeagues(Connection conn, Scanner scanner) {
         String id = prompt(scanner, "league_id (blank for all)");
         String sql = (id == null || id.isBlank())
-            ? "SELECT league_id, league_name, season_name, country_abbr FROM League"
-            : "SELECT league_id, league_name, season_name, country_abbr FROM League WHERE league_id = ?";
+            ? "SELECT league_id, league_name, season_name FROM League"
+            : "SELECT league_id, league_name, season_name FROM League WHERE league_id = ?";
         try (PreparedStatement stmt = conn.prepareStatement(sql)) {
             if (id != null && !id.isBlank()) {
                 setRequiredInt(stmt, 1, id);
@@ -913,6 +898,100 @@ public class AdminCli {
     private enum Role {
         ADMIN,
         USER
+    }
+
+    // ============================================================
+    // USER VIEW METHODS
+    // ============================================================
+
+    private static void viewPlayersInLeague(Connection conn, Scanner scanner) {
+        try (PreparedStatement stmt = conn.prepareStatement("CALL sp_players_in_league(?, ?)")) {
+            stmt.setString(1, prompt(scanner, "league_name (e.g. Premier League)"));
+            stmt.setString(2, prompt(scanner, "season_name (e.g. 22/23)"));
+            executeQuery(stmt);
+        } catch (SQLException e) {
+            printSqlError(e);
+        }
+    }
+
+    private static void viewPlayerStats(Connection conn, Scanner scanner) {
+        try (PreparedStatement stmt = conn.prepareStatement("CALL sp_player_stats(?, ?)")) {
+            stmt.setString(1, prompt(scanner, "first_name"));
+            stmt.setString(2, prompt(scanner, "last_name"));
+            executeQuery(stmt);
+        } catch (SQLException e) {
+            printSqlError(e);
+        }
+    }
+
+    private static void viewTopScorers(Connection conn, Scanner scanner) {
+        try (PreparedStatement stmt = conn.prepareStatement("CALL sp_top_scorers(?, ?, ?)")) {
+            stmt.setString(1, prompt(scanner, "league_name (e.g. Premier League)"));
+            stmt.setString(2, prompt(scanner, "season_name (e.g. 22/23)"));
+            setRequiredInt(stmt, 3, prompt(scanner, "how many results (e.g. 10)"));
+            executeQuery(stmt);
+        } catch (SQLException e) {
+            printSqlError(e);
+        }
+    }
+
+    private static void viewTeamsInLeague(Connection conn, Scanner scanner) {
+        try (PreparedStatement stmt = conn.prepareStatement("CALL sp_teams_in_league(?, ?)")) {
+            stmt.setString(1, prompt(scanner, "league_name (e.g. Premier League)"));
+            stmt.setString(2, prompt(scanner, "season_name (e.g. 22/23)"));
+            executeQuery(stmt);
+        } catch (SQLException e) {
+            printSqlError(e);
+        }
+    }
+
+    private static void viewMatchResults(Connection conn, Scanner scanner) {
+        try (PreparedStatement stmt = conn.prepareStatement("CALL sp_match_results(?, ?)")) {
+            stmt.setString(1, prompt(scanner, "league_name (e.g. Premier League)"));
+            stmt.setString(2, prompt(scanner, "season_name (e.g. 22/23)"));
+            executeQuery(stmt);
+        } catch (SQLException e) {
+            printSqlError(e);
+        }
+    }
+
+    private static void viewCoachStats(Connection conn, Scanner scanner) {
+        try (PreparedStatement stmt = conn.prepareStatement("CALL sp_coach_stats(?, ?)")) {
+            stmt.setString(1, prompt(scanner, "first_name"));
+            stmt.setString(2, prompt(scanner, "last_name"));
+            executeQuery(stmt);
+        } catch (SQLException e) {
+            printSqlError(e);
+        }
+    }
+
+    private static void viewStadiumStats(Connection conn, Scanner scanner) {
+        try (PreparedStatement stmt = conn.prepareStatement("CALL sp_stadium_stats(?)")) {
+            stmt.setString(1, prompt(scanner, "stadium_name"));
+            executeQuery(stmt);
+        } catch (SQLException e) {
+            printSqlError(e);
+        }
+    }
+
+    private static void viewPlayerMarketValue(Connection conn, Scanner scanner) {
+        try (PreparedStatement stmt = conn.prepareStatement("CALL sp_player_market_value(?, ?)")) {
+            stmt.setString(1, prompt(scanner, "first_name"));
+            stmt.setString(2, prompt(scanner, "last_name"));
+            executeQuery(stmt);
+        } catch (SQLException e) {
+            printSqlError(e);
+        }
+    }
+
+    private static void viewPlayerTransfers(Connection conn, Scanner scanner) {
+        try (PreparedStatement stmt = conn.prepareStatement("CALL sp_player_transfers(?, ?)")) {
+            stmt.setString(1, prompt(scanner, "first_name"));
+            stmt.setString(2, prompt(scanner, "last_name"));
+            executeQuery(stmt);
+        } catch (SQLException e) {
+            printSqlError(e);
+        }
     }
 
     private static Role parseRole(String roleInput) {
