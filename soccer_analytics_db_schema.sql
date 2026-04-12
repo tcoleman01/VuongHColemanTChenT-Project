@@ -26,12 +26,18 @@ CREATE TABLE League (
     league_id       INT             NOT NULL AUTO_INCREMENT,
     league_name     VARCHAR(100)    NOT NULL,
     season_name     VARCHAR(50)     NOT NULL,
+<<<<<<< HEAD
     country_abbr    CHAR(3),
     CONSTRAINT pk_league            PRIMARY KEY (league_id),
     CONSTRAINT pak_league           UNIQUE (league_name, season_name),
     CONSTRAINT fk_league_country    FOREIGN KEY (country_abbr)
                                     REFERENCES Country(country_abbr)
                                     ON UPDATE CASCADE ON DELETE SET NULL
+=======
+    CONSTRAINT pk_league            PRIMARY KEY (league_id),
+    CONSTRAINT pak_league           UNIQUE (league_name, season_name)
+
+>>>>>>> 0a5131a (johnny work changed some loader n schema to match better)
 );
 
 -- ------------------------------------------------------------
@@ -160,6 +166,7 @@ CREATE TABLE MarketValue (
 -- PAK: (home_team_id, away_team_id, match_date)
 -- CHECK ensures a team can't play itself
 -- ------------------------------------------------------------
+DROP TABLE IF EXISTS `Match`;
 CREATE TABLE `Match` (
     match_id        INT             NOT NULL AUTO_INCREMENT,
     league_id		INT,
