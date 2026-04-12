@@ -905,6 +905,18 @@ public class AdminCli {
     // ============================================================
 
     private static void viewPlayersInLeague(Connection conn, Scanner scanner) {
+//        show sample first
+        String listSql = "SELECT l.league_name, l.season_name, COUNT(DISTINCT sp.player_id) AS player_count " +
+                "FROM League l JOIN SeasonPerformance sp ON l.league_id = sp.league_id " +
+                "GROUP BY l.league_id, l.league_name, l.season_name " +
+                "ORDER BY player_count DESC LIMIT 20";
+        try (PreparedStatement listStmt = conn.prepareStatement(listSql)) {
+            System.out.println("\nAvailable Leagues (sample):");
+            executeQuery(listStmt);
+        } catch (SQLException e) {
+            printSqlError(e);
+        }
+
         try (PreparedStatement stmt = conn.prepareStatement("CALL sp_players_in_league(?, ?)")) {
             stmt.setString(1, prompt(scanner, "league_name (e.g. Premier League)"));
             stmt.setString(2, prompt(scanner, "season_name (e.g. 22/23)"));
@@ -915,8 +927,21 @@ public class AdminCli {
     }
 
     private static void viewPlayerStats(Connection conn, Scanner scanner) {
+        // =============================================
+        // SHOW SAMPLE PLAYER NAMES BEFORE PROMPTING
+        // =============================================
+        String listSql = "SELECT first_name, last_name FROM Player ORDER BY last_name LIMIT 20";
+        try (PreparedStatement listStmt = conn.prepareStatement(listSql)) {
+            System.out.println("\nSample Players:");
+            executeQuery(listStmt);
+        } catch (SQLException e) {
+            printSqlError(e);
+        }
+        // =============================================
+        // PROMPT USER TO ENTER PLAYER NAME
+        // =============================================
         try (PreparedStatement stmt = conn.prepareStatement("CALL sp_player_stats(?, ?)")) {
-            stmt.setString(1, prompt(scanner, "first_name"));
+            stmt.setString(1, prompt(scanner, "\nfirst_name"));
             stmt.setString(2, prompt(scanner, "last_name"));
             executeQuery(stmt);
         } catch (SQLException e) {
@@ -925,8 +950,21 @@ public class AdminCli {
     }
 
     private static void viewTopScorers(Connection conn, Scanner scanner) {
+        // =============================================
+        // SHOW AVAILABLE LEAGUES BEFORE PROMPTING USER
+        // =============================================
+        String listSql = "SELECT l.league_name, l.season_name, COUNT(DISTINCT sp.player_id) AS player_count FROM League l JOIN SeasonPerformance sp ON l.league_id = sp.league_id GROUP BY l.league_id, l.league_name, l.season_name ORDER BY player_count DESC LIMIT 20";
+        try (PreparedStatement listStmt = conn.prepareStatement(listSql)) {
+            System.out.println("\nAvailable Leagues (sample):");
+            executeQuery(listStmt);
+        } catch (SQLException e) {
+            printSqlError(e);
+        }
+        // =============================================
+        // PROMPT USER TO ENTER LEAGUE, SEASON, LIMIT
+        // =============================================
         try (PreparedStatement stmt = conn.prepareStatement("CALL sp_top_scorers(?, ?, ?)")) {
-            stmt.setString(1, prompt(scanner, "league_name (e.g. Premier League)"));
+            stmt.setString(1, prompt(scanner, "\nleague_name"));
             stmt.setString(2, prompt(scanner, "season_name (e.g. 22/23)"));
             setRequiredInt(stmt, 3, prompt(scanner, "how many results (e.g. 10)"));
             executeQuery(stmt);
@@ -936,8 +974,21 @@ public class AdminCli {
     }
 
     private static void viewTeamsInLeague(Connection conn, Scanner scanner) {
+        // =============================================
+        // SHOW AVAILABLE LEAGUES BEFORE PROMPTING USER
+        // =============================================
+        String listSql = "SELECT l.league_name, l.season_name, COUNT(DISTINCT sp.player_id) AS player_count FROM League l JOIN SeasonPerformance sp ON l.league_id = sp.league_id GROUP BY l.league_id, l.league_name, l.season_name ORDER BY player_count DESC LIMIT 20";
+        try (PreparedStatement listStmt = conn.prepareStatement(listSql)) {
+            System.out.println("\nAvailable Leagues (sample):");
+            executeQuery(listStmt);
+        } catch (SQLException e) {
+            printSqlError(e);
+        }
+        // =============================================
+        // PROMPT USER TO ENTER LEAGUE AND SEASON
+        // =============================================
         try (PreparedStatement stmt = conn.prepareStatement("CALL sp_teams_in_league(?, ?)")) {
-            stmt.setString(1, prompt(scanner, "league_name (e.g. Premier League)"));
+            stmt.setString(1, prompt(scanner, "\nleague_name"));
             stmt.setString(2, prompt(scanner, "season_name (e.g. 22/23)"));
             executeQuery(stmt);
         } catch (SQLException e) {
@@ -946,9 +997,22 @@ public class AdminCli {
     }
 
     private static void viewMatchResults(Connection conn, Scanner scanner) {
+        // =============================================
+        // SHOW ONLY LEAGUES THAT HAVE MATCH DATA
+        // =============================================
+        String listSql = "SELECT DISTINCT l.league_name, l.season_name, COUNT(m.match_id) AS match_count FROM League l JOIN `Match` m ON l.league_id = m.league_id GROUP BY l.league_id, l.league_name, l.season_name ORDER BY match_count DESC";
+        try (PreparedStatement listStmt = conn.prepareStatement(listSql)) {
+            System.out.println("\nLeagues with match data:");
+            executeQuery(listStmt);
+        } catch (SQLException e) {
+            printSqlError(e);
+        }
+        // =============================================
+        // PROMPT USER TO ENTER LEAGUE AND SEASON
+        // =============================================
         try (PreparedStatement stmt = conn.prepareStatement("CALL sp_match_results(?, ?)")) {
-            stmt.setString(1, prompt(scanner, "league_name (e.g. Premier League)"));
-            stmt.setString(2, prompt(scanner, "season_name (e.g. 22/23)"));
+            stmt.setString(1, prompt(scanner, "\nleague_name"));
+            stmt.setString(2, prompt(scanner, "season_name (e.g. 25/26)"));
             executeQuery(stmt);
         } catch (SQLException e) {
             printSqlError(e);
@@ -956,8 +1020,21 @@ public class AdminCli {
     }
 
     private static void viewCoachStats(Connection conn, Scanner scanner) {
+        // =============================================
+        // SHOW ALL COACH NAMES BEFORE PROMPTING
+        // =============================================
+        String listSql = "SELECT first_name, last_name FROM Coach ORDER BY last_name";
+        try (PreparedStatement listStmt = conn.prepareStatement(listSql)) {
+            System.out.println("\nAvailable Coaches:");
+            executeQuery(listStmt);
+        } catch (SQLException e) {
+            printSqlError(e);
+        }
+        // =============================================
+        // PROMPT USER TO ENTER COACH NAME
+        // =============================================
         try (PreparedStatement stmt = conn.prepareStatement("CALL sp_coach_stats(?, ?)")) {
-            stmt.setString(1, prompt(scanner, "first_name"));
+            stmt.setString(1, prompt(scanner, "\nfirst_name"));
             stmt.setString(2, prompt(scanner, "last_name"));
             executeQuery(stmt);
         } catch (SQLException e) {
@@ -966,8 +1043,21 @@ public class AdminCli {
     }
 
     private static void viewStadiumStats(Connection conn, Scanner scanner) {
+        // =============================================
+        // SHOW ALL STADIUM NAMES BEFORE PROMPTING
+        // =============================================
+        String listSql = "SELECT stadium_name, city FROM Stadium ORDER BY stadium_name";
+        try (PreparedStatement listStmt = conn.prepareStatement(listSql)) {
+            System.out.println("\nAvailable Stadiums:");
+            executeQuery(listStmt);
+        } catch (SQLException e) {
+            printSqlError(e);
+        }
+        // =============================================
+        // PROMPT USER TO ENTER STADIUM NAME
+        // =============================================
         try (PreparedStatement stmt = conn.prepareStatement("CALL sp_stadium_stats(?)")) {
-            stmt.setString(1, prompt(scanner, "stadium_name"));
+            stmt.setString(1, prompt(scanner, "\nstadium_name"));
             executeQuery(stmt);
         } catch (SQLException e) {
             printSqlError(e);
@@ -975,8 +1065,21 @@ public class AdminCli {
     }
 
     private static void viewPlayerMarketValue(Connection conn, Scanner scanner) {
+        // =============================================
+        // SHOW SAMPLE PLAYER NAMES BEFORE PROMPTING
+        // =============================================
+        String listSql = "SELECT p.first_name, p.last_name FROM Player p JOIN MarketValue mv ON p.player_id = mv.player_id GROUP BY p.player_id ORDER BY COUNT(mv.market_value_date) DESC LIMIT 20";
+        try (PreparedStatement listStmt = conn.prepareStatement(listSql)) {
+            System.out.println("\nPlayers with market value data (top 20):");
+            executeQuery(listStmt);
+        } catch (SQLException e) {
+            printSqlError(e);
+        }
+        // =============================================
+        // PROMPT USER TO ENTER PLAYER NAME
+        // =============================================
         try (PreparedStatement stmt = conn.prepareStatement("CALL sp_player_market_value(?, ?)")) {
-            stmt.setString(1, prompt(scanner, "first_name"));
+            stmt.setString(1, prompt(scanner, "\nfirst_name"));
             stmt.setString(2, prompt(scanner, "last_name"));
             executeQuery(stmt);
         } catch (SQLException e) {
@@ -985,8 +1088,21 @@ public class AdminCli {
     }
 
     private static void viewPlayerTransfers(Connection conn, Scanner scanner) {
+        // =============================================
+        // SHOW SAMPLE PLAYER NAMES BEFORE PROMPTING
+        // =============================================
+        String listSql = "SELECT p.first_name, p.last_name, COUNT(t.transfer_id) AS transfer_count FROM Player p JOIN Transfer t ON p.player_id = t.player_id GROUP BY p.player_id ORDER BY transfer_count DESC LIMIT 20";
+        try (PreparedStatement listStmt = conn.prepareStatement(listSql)) {
+            System.out.println("\nPlayers with most transfers:");
+            executeQuery(listStmt);
+        } catch (SQLException e) {
+            printSqlError(e);
+        }
+        // =============================================
+        // PROMPT USER TO ENTER PLAYER NAME
+        // =============================================
         try (PreparedStatement stmt = conn.prepareStatement("CALL sp_player_transfers(?, ?)")) {
-            stmt.setString(1, prompt(scanner, "first_name"));
+            stmt.setString(1, prompt(scanner, "\nfirst_name"));
             stmt.setString(2, prompt(scanner, "last_name"));
             executeQuery(stmt);
         } catch (SQLException e) {
@@ -1008,3 +1124,8 @@ public class AdminCli {
         return null;
     }
 }
+
+//
+//& "C:\Users\Owner\.jdks\openjdk-26\bin\javac.exe" -cp "C:\Users\Owner\Desktop\mysql-connector-j-9.6.0\mysql-connector-j-9.6.0.jar;." AdminCli.java
+//
+//& "C:\Users\Owner\.jdks\openjdk-26\bin\java.exe" -cp "C:\Users\Owner\Desktop\mysql-connector-j-9.6.0\mysql-connector-j-9.6.0.jar;." AdminCli
