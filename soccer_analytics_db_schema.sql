@@ -66,9 +66,6 @@ CREATE TABLE Club (
     CONSTRAINT fk_club_country      FOREIGN KEY (country_abbr)
                                     REFERENCES Country(country_abbr)
                                     ON UPDATE CASCADE ON DELETE RESTRICT,
-    CONSTRAINT fk_club_league       FOREIGN KEY (league_id)
-                                    REFERENCES League(league_id)
-                                    ON UPDATE CASCADE ON DELETE RESTRICT,
     CONSTRAINT fk_club_stadium      FOREIGN KEY (stadium_id)
                                     REFERENCES Stadium(stadium_id)
                                     ON UPDATE CASCADE ON DELETE SET NULL
