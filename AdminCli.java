@@ -1,4 +1,8 @@
+import java.awt.*;
+import java.awt.geom.*;
+import java.awt.image.BufferedImage;
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -9,11 +13,15 @@ import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.sql.Types;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Scanner;
+import javax.imageio.ImageIO;
+import javax.swing.*;
 
 public class AdminCli {
     private static final String DEFAULT_HOST = "localhost";
@@ -23,7 +31,7 @@ public class AdminCli {
     private static Map<String, String> dotEnv = new HashMap<>();
 
     public static void main(String[] args) {
-        try { // make sure the name get display correctly w weird symbols, fix this issue (é, ü, ã)
+        try {
             System.setOut(new java.io.PrintStream(System.out, true, "UTF-8"));
         } catch (java.io.UnsupportedEncodingException e) {
             // UTF-8 is always supported
@@ -112,9 +120,15 @@ public class AdminCli {
         return DriverManager.getConnection(url, config.user, config.password);
     }
 
-    // Handle Logins for both admin n user
-    // Admin checked against .ENV
-    // Users checked against .csv table
+    // ============================================================
+    // FIX 2: Press Enter to continue helper
+    // ============================================================
+    private static void pauseForEnter(Scanner scanner) {
+        System.out.print("\nPress Enter to continue...");
+        scanner.nextLine();
+    }
+
+    // Handle Logins for both admin and user
     private static Role login(Connection conn, Scanner scanner) {
         String adminUser = getConfig("ADMIN_USER", "");
         String adminPass = getConfig("ADMIN_PASS", "");
@@ -122,17 +136,11 @@ public class AdminCli {
         System.out.println("\nLogin (type 'q' to quit)");
         String roleInput = prompt(scanner, "Role (admin|user)");
 
-        // =============================================
-        // ALLOW USER TO QUIT AT ROLE SELECTION
-        // =============================================
         if (roleInput.equalsIgnoreCase("q")) {
             System.out.println("Goodbye.");
             System.exit(0);
         }
 
-        // =============================================
-        // VALIDATE ROLE BEFORE ASKING FOR CREDENTIALS
-        // =============================================
         Role role = parseRole(roleInput);
         if (role == null) {
             System.out.println("Invalid role. Use admin or user.");
@@ -143,9 +151,6 @@ public class AdminCli {
         String password = prompt(scanner, "Password");
 
         if (role == Role.ADMIN) {
-            // =============================================
-            // ADMIN LOGIN - CHECK AGAINST .ENV CREDENTIALS
-            // =============================================
             if (adminUser.isEmpty() || adminPass.isEmpty()) {
                 System.out.println("Warning: ADMIN_USER/ADMIN_PASS not set. Allowing admin login for any credentials.");
                 return Role.ADMIN;
@@ -158,9 +163,6 @@ public class AdminCli {
             }
         }
 
-        // =============================================
-        // USER LOGIN - VALIDATE AGAINST DATABASE USER TABLE
-        // =============================================
         String sql = "SELECT is_admin FROM user WHERE username = ? AND password = ?";
         try (PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setString(1, username);
@@ -183,7 +185,9 @@ public class AdminCli {
         }
     }
 
-    // admin menu design
+    // ============================================================
+    // ADMIN MENU
+    // ============================================================
     private static void adminMenu(Connection conn, Scanner scanner) {
         while (true) {
             System.out.println("\nAdmin Menu");
@@ -221,10 +225,10 @@ public class AdminCli {
             System.out.println("5. Back");
             String choice = prompt(scanner, "Select an option");
             switch (choice) {
-                case "1": createPlayer(conn, scanner); break;
-                case "2": updatePlayer(conn, scanner); break;
-                case "3": deleteById(conn, scanner, "Player", "player_id"); break;
-                case "4": readPlayers(conn, scanner); break;
+                case "1": createPlayer(conn, scanner); pauseForEnter(scanner); break;
+                case "2": updatePlayer(conn, scanner); pauseForEnter(scanner); break;
+                case "3": deleteById(conn, scanner, "Player", "player_id"); pauseForEnter(scanner); break;
+                case "4": readPlayers(conn, scanner); pauseForEnter(scanner); break;
                 case "5": return;
                 default: System.out.println("Invalid option.");
             }
@@ -240,9 +244,9 @@ public class AdminCli {
             System.out.println("4. Back");
             String choice = prompt(scanner, "Select an option");
             switch (choice) {
-                case "1": createLeague(conn, scanner); break;
-                case "2": deleteById(conn, scanner, "League", "league_id"); break;
-                case "3": readLeagues(conn, scanner); break;
+                case "1": createLeague(conn, scanner); pauseForEnter(scanner); break;
+                case "2": deleteById(conn, scanner, "League", "league_id"); pauseForEnter(scanner); break;
+                case "3": readLeagues(conn, scanner); pauseForEnter(scanner); break;
                 case "4": return;
                 default: System.out.println("Invalid option.");
             }
@@ -259,16 +263,19 @@ public class AdminCli {
             System.out.println("5. Back");
             String choice = prompt(scanner, "Select an option");
             switch (choice) {
-                case "1": createMatch(conn, scanner); break;
-                case "2": updateMatch(conn, scanner); break;
-                case "3": deleteById(conn, scanner, "`Match`", "match_id"); break;
-                case "4": readMatches(conn, scanner); break;
+                case "1": createMatch(conn, scanner); pauseForEnter(scanner); break;
+                case "2": updateMatch(conn, scanner); pauseForEnter(scanner); break;
+                case "3": deleteById(conn, scanner, "`Match`", "match_id"); pauseForEnter(scanner); break;
+                case "4": readMatches(conn, scanner); pauseForEnter(scanner); break;
                 case "5": return;
                 default: System.out.println("Invalid option.");
             }
         }
     }
 
+    // ============================================================
+    // FIX 4: Removed "Update" option from Market Value menu
+    // ============================================================
     private static void marketValueMenu(Connection conn, Scanner scanner) {
         while (true) {
             System.out.println("\nMarket Value Menu");
@@ -278,9 +285,9 @@ public class AdminCli {
             System.out.println("4. Back");
             String choice = prompt(scanner, "Select an option");
             switch (choice) {
-                case "1": createMarketValue(conn, scanner); break;
-                case "2": deleteMarketValue(conn, scanner); break;
-                case "3": readMarketValues(conn, scanner); break;
+                case "1": createMarketValue(conn, scanner); pauseForEnter(scanner); break;
+                case "2": deleteMarketValue(conn, scanner); pauseForEnter(scanner); break;
+                case "3": readMarketValues(conn, scanner); pauseForEnter(scanner); break;
                 case "4": return;
                 default: System.out.println("Invalid option.");
             }
@@ -296,9 +303,9 @@ public class AdminCli {
             System.out.println("4. Back");
             String choice = prompt(scanner, "Select an option");
             switch (choice) {
-                case "1": createMatchPerformance(conn, scanner); break;
-                case "2": deleteMatchPerformance(conn, scanner); break;
-                case "3": readMatchPerformances(conn, scanner); break;
+                case "1": createMatchPerformance(conn, scanner); pauseForEnter(scanner); break;
+                case "2": deleteMatchPerformance(conn, scanner); pauseForEnter(scanner); break;
+                case "3": readMatchPerformances(conn, scanner); pauseForEnter(scanner); break;
                 case "4": return;
                 default: System.out.println("Invalid option.");
             }
@@ -314,9 +321,9 @@ public class AdminCli {
             System.out.println("4. Back");
             String choice = prompt(scanner, "Select an option");
             switch (choice) {
-                case "1": recordTransfer(conn, scanner); break;
-                case "2": deleteById(conn, scanner, "Transfer", "transfer_id"); break;
-                case "3": readTransfers(conn, scanner); break;
+                case "1": recordTransfer(conn, scanner); pauseForEnter(scanner); break;
+                case "2": deleteById(conn, scanner, "Transfer", "transfer_id"); pauseForEnter(scanner); break;
+                case "3": readTransfers(conn, scanner); pauseForEnter(scanner); break;
                 case "4": return;
                 default: System.out.println("Invalid option.");
             }
@@ -339,34 +346,38 @@ public class AdminCli {
 
             String choice = prompt(scanner, "Select an option");
             switch (choice) {
-                case "1": viewPlayersInLeague(conn, scanner); break;
-                case "2": viewPlayerStats(conn, scanner); break;
-                case "3": viewTopScorers(conn, scanner); break;
-                case "4": viewTeamsInLeague(conn, scanner); break;
-                case "5": viewMatchResults(conn, scanner); break;
-                case "6": viewCoachStats(conn, scanner); break;
-                case "7": viewStadiumStats(conn, scanner); break;
-                case "8": viewPlayerMarketValue(conn, scanner); break;
-                case "9": viewPlayerTransfers(conn, scanner); break;
+                case "1":  viewPlayersInLeague(conn, scanner);    pauseForEnter(scanner); break;
+                case "2":  viewPlayerStats(conn, scanner);        pauseForEnter(scanner); break;
+                case "3":  viewTopScorers(conn, scanner);         pauseForEnter(scanner); break;
+                case "4":  viewTeamsInLeague(conn, scanner);      pauseForEnter(scanner); break;
+                case "5":  viewMatchResults(conn, scanner);       pauseForEnter(scanner); break;
+                case "6":  viewCoachStats(conn, scanner);         pauseForEnter(scanner); break;
+                case "7":  viewStadiumStats(conn, scanner);       pauseForEnter(scanner); break;
+                case "8":  viewPlayerMarketValue(conn, scanner);  pauseForEnter(scanner); break;
+                case "9":  viewPlayerTransfers(conn, scanner);    pauseForEnter(scanner); break;
                 case "10": System.out.println("Goodbye."); return;
-                default: System.out.println("Invalid option.");
+                default:   System.out.println("Invalid option.");
             }
         }
     }
 
+    // ============================================================
+    // PLAYER CRUD
+    // ============================================================
     private static void createPlayer(Connection conn, Scanner scanner) {
         String sql = "INSERT INTO Player (first_name, last_name, dob, place_of_birth, height_cm, preferred_foot, position_id, country_abbr, club_id) "
                 + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
         try (PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setString(1, prompt(scanner, "first_name"));
             stmt.setString(2, prompt(scanner, "last_name"));
-            setNullableDate(stmt, 3, prompt(scanner, "dob (YYYY-MM-DD or blank)"));
-            setNullableString(stmt, 4, prompt(scanner, "place_of_birth (blank ok)"));
-            setNullableDecimal(stmt, 5, prompt(scanner, "height_cm (blank ok)"));
-            setNullableString(stmt, 6, prompt(scanner, "preferred_foot [Left|Right|Both]"));
-            setNullableInt(stmt, 7, prompt(scanner, "position_id (blank ok)"));
-            setNullableString(stmt, 8, prompt(scanner, "country_abbr (3-letter code, blank ok)"));
-            setNullableInt(stmt, 9, prompt(scanner, "club_id (blank ok)"));
+            // FIX 1: use promptOptional for nullable fields
+            setNullableDate(stmt, 3, promptOptional(scanner, "dob (YYYY-MM-DD or blank)"));
+            setNullableString(stmt, 4, promptOptional(scanner, "place_of_birth (blank ok)"));
+            setNullableDecimal(stmt, 5, promptOptional(scanner, "height_cm (blank ok)"));
+            setNullableString(stmt, 6, promptOptional(scanner, "preferred_foot [Left|Right|Both] (blank ok)"));
+            setNullableInt(stmt, 7, promptOptional(scanner, "position_id (blank ok)"));
+            setNullableString(stmt, 8, promptOptional(scanner, "country_abbr (3-letter code, blank ok)"));
+            setNullableInt(stmt, 9, promptOptional(scanner, "club_id (blank ok)"));
             executeUpdate(stmt);
         } catch (SQLException e) {
             printSqlError(e);
@@ -379,13 +390,13 @@ public class AdminCli {
         try (PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setString(1, prompt(scanner, "first_name"));
             stmt.setString(2, prompt(scanner, "last_name"));
-            setNullableDate(stmt, 3, prompt(scanner, "dob (YYYY-MM-DD or blank)"));
-            setNullableString(stmt, 4, prompt(scanner, "place_of_birth (blank ok)"));
-            setNullableDecimal(stmt, 5, prompt(scanner, "height_cm (blank ok)"));
-            setNullableString(stmt, 6, prompt(scanner, "preferred_foot [Left|Right|Both]"));
-            setNullableInt(stmt, 7, prompt(scanner, "position_id (blank ok)"));
-            setNullableString(stmt, 8, prompt(scanner, "country_abbr (3-letter code, blank ok)"));
-            setNullableInt(stmt, 9, prompt(scanner, "club_id (blank ok)"));
+            setNullableDate(stmt, 3, promptOptional(scanner, "dob (YYYY-MM-DD or blank)"));
+            setNullableString(stmt, 4, promptOptional(scanner, "place_of_birth (blank ok)"));
+            setNullableDecimal(stmt, 5, promptOptional(scanner, "height_cm (blank ok)"));
+            setNullableString(stmt, 6, promptOptional(scanner, "preferred_foot [Left|Right|Both] (blank ok)"));
+            setNullableInt(stmt, 7, promptOptional(scanner, "position_id (blank ok)"));
+            setNullableString(stmt, 8, promptOptional(scanner, "country_abbr (3-letter code, blank ok)"));
+            setNullableInt(stmt, 9, promptOptional(scanner, "club_id (blank ok)"));
             setRequiredInt(stmt, 10, prompt(scanner, "player_id"));
             executeUpdate(stmt);
         } catch (SQLException e) {
@@ -394,7 +405,7 @@ public class AdminCli {
     }
 
     private static void readPlayers(Connection conn, Scanner scanner) {
-        String id = prompt(scanner, "player_id (blank for all)");
+        String id = promptOptional(scanner, "player_id (blank for all)");
         String sql = (id == null || id.isBlank())
                 ? "SELECT player_id, first_name, last_name, dob, fn_player_age(dob) AS age, place_of_birth, height_cm, preferred_foot, position_id, country_abbr, club_id FROM Player"
                 : "SELECT player_id, first_name, last_name, dob, fn_player_age(dob) AS age, place_of_birth, height_cm, preferred_foot, position_id, country_abbr, club_id FROM Player WHERE player_id = ?";
@@ -408,14 +419,17 @@ public class AdminCli {
         }
     }
 
+    // ============================================================
+    // CLUB CRUD (defined but kept for internal use)
+    // ============================================================
     private static void createClub(Connection conn, Scanner scanner) {
         String sql = "INSERT INTO Club (club_name, country_abbr, league_id, stadium_id, coach_id) VALUES (?, ?, ?, ?, ?)";
         try (PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setString(1, prompt(scanner, "club_name"));
             stmt.setString(2, prompt(scanner, "country_abbr"));
-            setNullableInt(stmt, 3, prompt(scanner, "league_id (blank ok)"));
-            setNullableInt(stmt, 4, prompt(scanner, "stadium_id (blank ok)"));
-            setNullableInt(stmt, 5, prompt(scanner, "coach_id (blank ok)"));
+            setNullableInt(stmt, 3, promptOptional(scanner, "league_id (blank ok)"));
+            setNullableInt(stmt, 4, promptOptional(scanner, "stadium_id (blank ok)"));
+            setNullableInt(stmt, 5, promptOptional(scanner, "coach_id (blank ok)"));
             executeUpdate(stmt);
         } catch (SQLException e) {
             printSqlError(e);
@@ -427,9 +441,9 @@ public class AdminCli {
         try (PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setString(1, prompt(scanner, "club_name"));
             stmt.setString(2, prompt(scanner, "country_abbr"));
-            setNullableInt(stmt, 3, prompt(scanner, "league_id (blank ok)"));
-            setNullableInt(stmt, 4, prompt(scanner, "stadium_id (blank ok)"));
-            setNullableInt(stmt, 5, prompt(scanner, "coach_id (blank ok)"));
+            setNullableInt(stmt, 3, promptOptional(scanner, "league_id (blank ok)"));
+            setNullableInt(stmt, 4, promptOptional(scanner, "stadium_id (blank ok)"));
+            setNullableInt(stmt, 5, promptOptional(scanner, "coach_id (blank ok)"));
             setRequiredInt(stmt, 6, prompt(scanner, "club_id"));
             executeUpdate(stmt);
         } catch (SQLException e) {
@@ -438,7 +452,7 @@ public class AdminCli {
     }
 
     private static void readClubs(Connection conn, Scanner scanner) {
-        String id = prompt(scanner, "club_id (blank for all)");
+        String id = promptOptional(scanner, "club_id (blank for all)");
         String sql = (id == null || id.isBlank())
                 ? "SELECT club_id, club_name, country_abbr, league_id, stadium_id, coach_id FROM Club"
                 : "SELECT club_id, club_name, country_abbr, league_id, stadium_id, coach_id FROM Club WHERE club_id = ?";
@@ -452,6 +466,9 @@ public class AdminCli {
         }
     }
 
+    // ============================================================
+    // LEAGUE CRUD
+    // ============================================================
     private static void createLeague(Connection conn, Scanner scanner) {
         String sql = "INSERT INTO League (league_name, season_name) VALUES (?, ?)";
         try (PreparedStatement stmt = conn.prepareStatement(sql)) {
@@ -463,20 +480,8 @@ public class AdminCli {
         }
     }
 
-    private static void updateLeague(Connection conn, Scanner scanner) {
-        String sql = "UPDATE League SET league_name=?, season_name=? WHERE league_id=?";
-        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
-            stmt.setString(1, prompt(scanner, "league_name"));
-            stmt.setString(2, prompt(scanner, "season_name"));
-            setRequiredInt(stmt, 3, prompt(scanner, "league_id"));
-            executeUpdate(stmt);
-        } catch (SQLException e) {
-            printSqlError(e);
-        }
-    }
-
     private static void readLeagues(Connection conn, Scanner scanner) {
-        String id = prompt(scanner, "league_id (blank for all)");
+        String id = promptOptional(scanner, "league_id (blank for all)");
         String sql = (id == null || id.isBlank())
                 ? "SELECT league_id, league_name, season_name FROM League"
                 : "SELECT league_id, league_name, season_name FROM League WHERE league_id = ?";
@@ -490,14 +495,17 @@ public class AdminCli {
         }
     }
 
+    // ============================================================
+    // MATCH CRUD
+    // ============================================================
     private static void createMatch(Connection conn, Scanner scanner) {
         String sql = "INSERT INTO `Match` (home_team_id, away_team_id, match_date, home_score, away_score) VALUES (?, ?, ?, ?, ?)";
         try (PreparedStatement stmt = conn.prepareStatement(sql)) {
             setRequiredInt(stmt, 1, prompt(scanner, "home_team_id"));
             setRequiredInt(stmt, 2, prompt(scanner, "away_team_id"));
             setRequiredDate(stmt, 3, prompt(scanner, "match_date (YYYY-MM-DD)"));
-            setNullableInt(stmt, 4, prompt(scanner, "home_score (blank ok)"));
-            setNullableInt(stmt, 5, prompt(scanner, "away_score (blank ok)"));
+            setNullableInt(stmt, 4, promptOptional(scanner, "home_score (blank ok)"));
+            setNullableInt(stmt, 5, promptOptional(scanner, "away_score (blank ok)"));
             executeUpdate(stmt);
         } catch (SQLException e) {
             printSqlError(e);
@@ -510,8 +518,8 @@ public class AdminCli {
             setRequiredInt(stmt, 1, prompt(scanner, "home_team_id"));
             setRequiredInt(stmt, 2, prompt(scanner, "away_team_id"));
             setRequiredDate(stmt, 3, prompt(scanner, "match_date (YYYY-MM-DD)"));
-            setNullableInt(stmt, 4, prompt(scanner, "home_score (blank ok)"));
-            setNullableInt(stmt, 5, prompt(scanner, "away_score (blank ok)"));
+            setNullableInt(stmt, 4, promptOptional(scanner, "home_score (blank ok)"));
+            setNullableInt(stmt, 5, promptOptional(scanner, "away_score (blank ok)"));
             setRequiredInt(stmt, 6, prompt(scanner, "match_id"));
             executeUpdate(stmt);
         } catch (SQLException e) {
@@ -520,7 +528,7 @@ public class AdminCli {
     }
 
     private static void readMatches(Connection conn, Scanner scanner) {
-        String id = prompt(scanner, "match_id (blank for all)");
+        String id = promptOptional(scanner, "match_id (blank for all)");
         String sql = (id == null || id.isBlank())
                 ? "SELECT match_id, home_team_id, away_team_id, match_date, home_score, away_score, home_result, away_result FROM `Match`"
                 : "SELECT match_id, home_team_id, away_team_id, match_date, home_score, away_score, home_result, away_result FROM `Match` WHERE match_id = ?";
@@ -534,24 +542,15 @@ public class AdminCli {
         }
     }
 
+    // ============================================================
+    // MARKET VALUE CRUD
+    // ============================================================
     private static void createMarketValue(Connection conn, Scanner scanner) {
         String sql = "INSERT INTO MarketValue (player_id, market_value_date, market_value) VALUES (?, ?, ?)";
         try (PreparedStatement stmt = conn.prepareStatement(sql)) {
             setRequiredInt(stmt, 1, prompt(scanner, "player_id"));
             setRequiredDate(stmt, 2, prompt(scanner, "market_value_date (YYYY-MM-DD)"));
             setRequiredDecimal(stmt, 3, prompt(scanner, "market_value"));
-            executeUpdate(stmt);
-        } catch (SQLException e) {
-            printSqlError(e);
-        }
-    }
-
-    private static void updateMarketValue(Connection conn, Scanner scanner) {
-        String sql = "UPDATE MarketValue SET market_value=? WHERE player_id=? AND market_value_date=?";
-        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
-            setRequiredDecimal(stmt, 1, prompt(scanner, "market_value (new)"));
-            setRequiredInt(stmt, 2, prompt(scanner, "player_id"));
-            setRequiredDate(stmt, 3, prompt(scanner, "market_value_date (YYYY-MM-DD)"));
             executeUpdate(stmt);
         } catch (SQLException e) {
             printSqlError(e);
@@ -570,40 +569,59 @@ public class AdminCli {
     }
 
     private static void readMarketValues(Connection conn, Scanner scanner) {
-        String playerId = prompt(scanner, "player_id (blank for all)");
+        String playerId = promptOptional(scanner, "player_id (blank for all)");
         String sql = (playerId == null || playerId.isBlank())
-                ? "SELECT player_id, market_value_date, market_value FROM MarketValue"
-                : "SELECT player_id, market_value_date, market_value FROM MarketValue WHERE player_id = ?";
+                ? "SELECT player_id, market_value_date, market_value FROM MarketValue ORDER BY market_value_date"
+                : "SELECT player_id, market_value_date, market_value FROM MarketValue WHERE player_id = ? ORDER BY market_value_date";
         try (PreparedStatement stmt = conn.prepareStatement(sql)) {
             if (playerId != null && !playerId.isBlank()) {
                 setRequiredInt(stmt, 1, playerId);
             }
-            executeQuery(stmt);
+            // Collect data for chart too
+            ResultSet rs = stmt.executeQuery();
+            List<String> dates = new ArrayList<>();
+            List<Double> values = new ArrayList<>();
+            List<String[]> rows = new ArrayList<>();
+            ResultSetMetaData meta = rs.getMetaData();
+            int cols = meta.getColumnCount();
+            int[] colWidths = new int[cols];
+            for (int i = 0; i < cols; i++) colWidths[i] = meta.getColumnLabel(i + 1).length();
+            while (rs.next()) {
+                String[] row = new String[cols];
+                for (int i = 0; i < cols; i++) {
+                    String v = rs.getString(i + 1);
+                    row[i] = v == null ? "NULL" : v;
+                    if (row[i].length() > colWidths[i]) colWidths[i] = row[i].length();
+                }
+                rows.add(row);
+                // Collect date (col index 1) and value (col index 2) for chart
+                try {
+                    dates.add(rs.getString(2) != null ? rs.getString(2) : row[1]);
+                    String valStr = row[2].replace(",", "");
+                    values.add(Double.parseDouble(valStr));
+                } catch (Exception ignored) {}
+            }
+            // Print table
+            printCollectedRows(rows, colWidths, meta);
+            // FIX 3: Show chart if we have data for a specific player
+            if (!values.isEmpty() && playerId != null && !playerId.isBlank()) {
+                showMarketValueChart(dates, values, "Player ID " + playerId);
+            }
         } catch (SQLException e) {
             printSqlError(e);
         }
     }
 
+    // ============================================================
+    // MATCH PERFORMANCE CRUD
+    // ============================================================
     private static void createMatchPerformance(Connection conn, Scanner scanner) {
         String sql = "INSERT INTO MatchPerformance (match_id, player_id, play_time, performance_rating) VALUES (?, ?, ?, ?)";
         try (PreparedStatement stmt = conn.prepareStatement(sql)) {
             setRequiredInt(stmt, 1, prompt(scanner, "match_id"));
             setRequiredInt(stmt, 2, prompt(scanner, "player_id"));
-            setNullableInt(stmt, 3, prompt(scanner, "play_time (minutes, blank ok)"));
-            setNullableDecimal(stmt, 4, prompt(scanner, "performance_rating (blank ok)"));
-            executeUpdate(stmt);
-        } catch (SQLException e) {
-            printSqlError(e);
-        }
-    }
-
-    private static void updateMatchPerformance(Connection conn, Scanner scanner) {
-        String sql = "UPDATE MatchPerformance SET play_time=?, performance_rating=? WHERE match_id=? AND player_id=?";
-        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
-            setNullableInt(stmt, 1, prompt(scanner, "play_time (minutes, blank ok)"));
-            setNullableDecimal(stmt, 2, prompt(scanner, "performance_rating (blank ok)"));
-            setRequiredInt(stmt, 3, prompt(scanner, "match_id"));
-            setRequiredInt(stmt, 4, prompt(scanner, "player_id"));
+            setNullableInt(stmt, 3, promptOptional(scanner, "play_time (minutes, blank ok)"));
+            setNullableDecimal(stmt, 4, promptOptional(scanner, "performance_rating (blank ok)"));
             executeUpdate(stmt);
         } catch (SQLException e) {
             printSqlError(e);
@@ -622,41 +640,34 @@ public class AdminCli {
     }
 
     private static void readMatchPerformances(Connection conn, Scanner scanner) {
-        String matchId = prompt(scanner, "match_id (blank for all)");
-        String playerId = prompt(scanner, "player_id (blank for all)");
+        String matchId = promptOptional(scanner, "match_id (blank for all)");
+        String playerId = promptOptional(scanner, "player_id (blank for all)");
         StringBuilder sql = new StringBuilder("SELECT match_id, player_id, play_time, performance_rating FROM MatchPerformance");
         List<String> conditions = new ArrayList<>();
-        if (matchId != null && !matchId.isBlank()) {
-            conditions.add("match_id = ?");
-        }
-        if (playerId != null && !playerId.isBlank()) {
-            conditions.add("player_id = ?");
-        }
-        if (!conditions.isEmpty()) {
-            sql.append(" WHERE ").append(String.join(" AND ", conditions));
-        }
+        if (matchId != null && !matchId.isBlank()) conditions.add("match_id = ?");
+        if (playerId != null && !playerId.isBlank()) conditions.add("player_id = ?");
+        if (!conditions.isEmpty()) sql.append(" WHERE ").append(String.join(" AND ", conditions));
         try (PreparedStatement stmt = conn.prepareStatement(sql.toString())) {
             int idx = 1;
-            if (matchId != null && !matchId.isBlank()) {
-                setRequiredInt(stmt, idx++, matchId);
-            }
-            if (playerId != null && !playerId.isBlank()) {
-                setRequiredInt(stmt, idx, playerId);
-            }
+            if (matchId != null && !matchId.isBlank()) setRequiredInt(stmt, idx++, matchId);
+            if (playerId != null && !playerId.isBlank()) setRequiredInt(stmt, idx, playerId);
             executeQuery(stmt);
         } catch (SQLException e) {
             printSqlError(e);
         }
     }
 
+    // ============================================================
+    // COACH CRUD (defined, available for future menu wiring)
+    // ============================================================
     private static void createCoach(Connection conn, Scanner scanner) {
         String sql = "INSERT INTO Coach (first_name, last_name, dob, nationality, club_id) VALUES (?, ?, ?, ?, ?)";
         try (PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setString(1, prompt(scanner, "first_name"));
             stmt.setString(2, prompt(scanner, "last_name"));
-            setNullableDate(stmt, 3, prompt(scanner, "dob (YYYY-MM-DD or blank)"));
-            setNullableString(stmt, 4, prompt(scanner, "nationality (3-letter code, blank ok)"));
-            setNullableInt(stmt, 5, prompt(scanner, "club_id (blank ok)"));
+            setNullableDate(stmt, 3, promptOptional(scanner, "dob (YYYY-MM-DD or blank)"));
+            setNullableString(stmt, 4, promptOptional(scanner, "nationality (3-letter code, blank ok)"));
+            setNullableInt(stmt, 5, promptOptional(scanner, "club_id (blank ok)"));
             executeUpdate(stmt);
         } catch (SQLException e) {
             printSqlError(e);
@@ -668,9 +679,9 @@ public class AdminCli {
         try (PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setString(1, prompt(scanner, "first_name"));
             stmt.setString(2, prompt(scanner, "last_name"));
-            setNullableDate(stmt, 3, prompt(scanner, "dob (YYYY-MM-DD or blank)"));
-            setNullableString(stmt, 4, prompt(scanner, "nationality (3-letter code, blank ok)"));
-            setNullableInt(stmt, 5, prompt(scanner, "club_id (blank ok)"));
+            setNullableDate(stmt, 3, promptOptional(scanner, "dob (YYYY-MM-DD or blank)"));
+            setNullableString(stmt, 4, promptOptional(scanner, "nationality (3-letter code, blank ok)"));
+            setNullableInt(stmt, 5, promptOptional(scanner, "club_id (blank ok)"));
             setRequiredInt(stmt, 6, prompt(scanner, "coach_id"));
             executeUpdate(stmt);
         } catch (SQLException e) {
@@ -679,29 +690,30 @@ public class AdminCli {
     }
 
     private static void readCoaches(Connection conn, Scanner scanner) {
-        String id = prompt(scanner, "coach_id (blank for all)");
+        String id = promptOptional(scanner, "coach_id (blank for all)");
         String sql = (id == null || id.isBlank())
                 ? "SELECT coach_id, first_name, last_name, dob, nationality, club_id FROM Coach"
                 : "SELECT coach_id, first_name, last_name, dob, nationality, club_id FROM Coach WHERE coach_id = ?";
         try (PreparedStatement stmt = conn.prepareStatement(sql)) {
-            if (id != null && !id.isBlank()) {
-                setRequiredInt(stmt, 1, id);
-            }
+            if (id != null && !id.isBlank()) setRequiredInt(stmt, 1, id);
             executeQuery(stmt);
         } catch (SQLException e) {
             printSqlError(e);
         }
     }
 
+    // ============================================================
+    // SEASON PERFORMANCE CRUD (defined, available for future menu wiring)
+    // ============================================================
     private static void createSeasonPerformance(Connection conn, Scanner scanner) {
         String sql = "INSERT INTO SeasonPerformance (player_id, league_id, appearance_count, goal_count, assist_count, play_time) VALUES (?, ?, ?, ?, ?, ?)";
         try (PreparedStatement stmt = conn.prepareStatement(sql)) {
             setRequiredInt(stmt, 1, prompt(scanner, "player_id"));
             setRequiredInt(stmt, 2, prompt(scanner, "league_id"));
-            setNullableInt(stmt, 3, prompt(scanner, "appearance_count (blank ok)"));
-            setNullableInt(stmt, 4, prompt(scanner, "goal_count (blank ok)"));
-            setNullableInt(stmt, 5, prompt(scanner, "assist_count (blank ok)"));
-            setNullableInt(stmt, 6, prompt(scanner, "play_time in minutes (blank ok)"));
+            setNullableInt(stmt, 3, promptOptional(scanner, "appearance_count (blank ok)"));
+            setNullableInt(stmt, 4, promptOptional(scanner, "goal_count (blank ok)"));
+            setNullableInt(stmt, 5, promptOptional(scanner, "assist_count (blank ok)"));
+            setNullableInt(stmt, 6, promptOptional(scanner, "play_time in minutes (blank ok)"));
             executeUpdate(stmt);
         } catch (SQLException e) {
             printSqlError(e);
@@ -711,10 +723,10 @@ public class AdminCli {
     private static void updateSeasonPerformance(Connection conn, Scanner scanner) {
         String sql = "UPDATE SeasonPerformance SET appearance_count=?, goal_count=?, assist_count=?, play_time=? WHERE player_id=? AND league_id=?";
         try (PreparedStatement stmt = conn.prepareStatement(sql)) {
-            setNullableInt(stmt, 1, prompt(scanner, "appearance_count (blank ok)"));
-            setNullableInt(stmt, 2, prompt(scanner, "goal_count (blank ok)"));
-            setNullableInt(stmt, 3, prompt(scanner, "assist_count (blank ok)"));
-            setNullableInt(stmt, 4, prompt(scanner, "play_time in minutes (blank ok)"));
+            setNullableInt(stmt, 1, promptOptional(scanner, "appearance_count (blank ok)"));
+            setNullableInt(stmt, 2, promptOptional(scanner, "goal_count (blank ok)"));
+            setNullableInt(stmt, 3, promptOptional(scanner, "assist_count (blank ok)"));
+            setNullableInt(stmt, 4, promptOptional(scanner, "play_time in minutes (blank ok)"));
             setRequiredInt(stmt, 5, prompt(scanner, "player_id"));
             setRequiredInt(stmt, 6, prompt(scanner, "league_id"));
             executeUpdate(stmt);
@@ -734,30 +746,16 @@ public class AdminCli {
         }
     }
 
-    private static void readSeasonPerformances(Connection conn, Scanner scanner) {
-        String playerId = prompt(scanner, "player_id (blank for all)");
-        String sql = (playerId == null || playerId.isBlank())
-                ? "SELECT player_id, league_id, appearance_count, goal_count, assist_count, play_time FROM SeasonPerformance"
-                : "SELECT player_id, league_id, appearance_count, goal_count, assist_count, play_time FROM SeasonPerformance WHERE player_id = ?";
-        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
-            if (playerId != null && !playerId.isBlank()) {
-                setRequiredInt(stmt, 1, playerId);
-            }
-            executeQuery(stmt);
-        } catch (SQLException e) {
-            printSqlError(e);
-        }
-    }
-
+    // ============================================================
+    // TRANSFER CRUD
+    // ============================================================
     private static void readTransfers(Connection conn, Scanner scanner) {
-        String id = prompt(scanner, "player_id (blank for all)");
+        String id = promptOptional(scanner, "player_id (blank for all)");
         String sql = (id == null || id.isBlank())
                 ? "SELECT transfer_id, player_id, old_club_id, new_club_id, transfer_date, transfer_fee FROM Transfer"
                 : "SELECT transfer_id, player_id, old_club_id, new_club_id, transfer_date, transfer_fee FROM Transfer WHERE player_id = ?";
         try (PreparedStatement stmt = conn.prepareStatement(sql)) {
-            if (id != null && !id.isBlank()) {
-                setRequiredInt(stmt, 1, id);
-            }
+            if (id != null && !id.isBlank()) setRequiredInt(stmt, 1, id);
             executeQuery(stmt);
         } catch (SQLException e) {
             printSqlError(e);
@@ -770,22 +768,8 @@ public class AdminCli {
             setRequiredInt(stmt, 1, prompt(scanner, "player_id"));
             setRequiredInt(stmt, 2, prompt(scanner, "new_club_id"));
             setRequiredDate(stmt, 3, prompt(scanner, "transfer_date (YYYY-MM-DD)"));
-            setNullableDecimal(stmt, 4, prompt(scanner, "transfer_fee (blank ok)"));
+            setNullableDecimal(stmt, 4, promptOptional(scanner, "transfer_fee (blank ok)"));
             executeUpdate(stmt);
-        } catch (SQLException e) {
-            printSqlError(e);
-        }
-    }
-
-    private static void runReadOnlyQuery(Connection conn, Scanner scanner) {
-        System.out.println("Read-only query helper. Example: SELECT * FROM Player;");
-        String sql = prompt(scanner, "SQL (SELECT only)");
-        if (sql == null || !sql.trim().toLowerCase().startsWith("select")) {
-            System.out.println("Only SELECT statements are allowed.");
-            return;
-        }
-        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
-            executeQuery(stmt);
         } catch (SQLException e) {
             printSqlError(e);
         }
@@ -801,232 +785,19 @@ public class AdminCli {
         }
     }
 
-    private static void executeUpdate(PreparedStatement stmt) throws SQLException {
-        int updated = stmt.executeUpdate();
-        System.out.println("Rows affected: " + updated);
-    }
-
-    private static void executeQuery(PreparedStatement stmt) throws SQLException {
-        try (ResultSet rs = stmt.executeQuery()) {
-            printResultSet(rs);
-        }
-    }
-
-    private static void setNullableString(PreparedStatement stmt, int idx, String value) throws SQLException {
-        if (value == null || value.isBlank()) {
-            stmt.setNull(idx, Types.VARCHAR);
-        } else {
-            stmt.setString(idx, value);
-        }
-    }
-
-    private static void setNullableInt(PreparedStatement stmt, int idx, String value) throws SQLException {
-        if (value == null || value.isBlank()) {
-            stmt.setNull(idx, Types.INTEGER);
-        } else {
-            try {
-                stmt.setInt(idx, Integer.parseInt(value));
-            } catch (NumberFormatException e) {
-                throw new SQLException("Invalid integer value: " + value);
-            }
-        }
-    }
-
-    private static void setRequiredInt(PreparedStatement stmt, int idx, String value) throws SQLException {
-        if (value == null || value.isBlank()) {
-            throw new SQLException("Required integer value is missing.");
-        }
-        try {
-            stmt.setInt(idx, Integer.parseInt(value));
-        } catch (NumberFormatException e) {
-            throw new SQLException("Invalid integer value: " + value);
-        }
-    }
-
-    private static void setNullableDecimal(PreparedStatement stmt, int idx, String value) throws SQLException {
-        if (value == null || value.isBlank()) {
-            stmt.setNull(idx, Types.DECIMAL);
-        } else {
-            try {
-                stmt.setBigDecimal(idx, new java.math.BigDecimal(value));
-            } catch (NumberFormatException e) {
-                throw new SQLException("Invalid decimal value: " + value);
-            }
-        }
-    }
-
-    private static void setRequiredDecimal(PreparedStatement stmt, int idx, String value) throws SQLException {
-        if (value == null || value.isBlank()) {
-            throw new SQLException("Required decimal value is missing.");
-        }
-        try {
-            stmt.setBigDecimal(idx, new java.math.BigDecimal(value));
-        } catch (NumberFormatException e) {
-            throw new SQLException("Invalid decimal value: " + value);
-        }
-    }
-
-    private static void setNullableDate(PreparedStatement stmt, int idx, String value) throws SQLException {
-        if (value == null || value.isBlank()) {
-            stmt.setNull(idx, Types.DATE);
-        } else {
-            try {
-                stmt.setDate(idx, java.sql.Date.valueOf(value));
-            } catch (IllegalArgumentException e) {
-                throw new SQLException("Invalid date value (expected YYYY-MM-DD): " + value);
-            }
-        }
-    }
-
-    private static void setRequiredDate(PreparedStatement stmt, int idx, String value) throws SQLException {
-        if (value == null || value.isBlank()) {
-            throw new SQLException("Required date value is missing.");
-        }
-        try {
-            stmt.setDate(idx, java.sql.Date.valueOf(value));
-        } catch (IllegalArgumentException e) {
-            throw new SQLException("Invalid date value (expected YYYY-MM-DD): " + value);
-        }
-    }
-
-    // END OF ADMIN MENU essentials and helpers
-
-    // Format and print query results, make them look pretty by aligning tabls w borders
-    // Calc width row before printing
-    // Display error msg if no result found instead of displaying empty rows of columns (not pretty)
-    private static void printResultSet(ResultSet rs) throws SQLException {
-        ResultSetMetaData meta = rs.getMetaData();
-        int cols = meta.getColumnCount();
-
-        // =============================================
-        // COLLECT ALL ROWS FIRST TO CALCULATE WIDTHS, ALSO MAKe IT LOOK PRETTY
-        // =============================================
-        List<String[]> allRows = new ArrayList<>();
-        int[] colWidths = new int[cols];
-
-        // set minimum width from column headers
-        for (int i = 0; i < cols; i++) {
-            colWidths[i] = meta.getColumnLabel(i + 1).length();
-        }
-
-        // collect rows and track max width per column
-        while (rs.next()) {
-            String[] row = new String[cols];
-            for (int i = 0; i < cols; i++) {
-                String value = rs.getString(i + 1);
-                row[i] = value == null ? "NULL" : value;
-                if (row[i].length() > colWidths[i]) {
-                    colWidths[i] = row[i].length();
-                }
-            }
-            allRows.add(row);
-        }
-
-        // =============================================
-        // ONLY PRINT IF RESULTS EXIST
-        // =============================================
-        if (allRows.isEmpty()) {
-            System.out.println("No data found for the given input. The input may be incorrect.");
-            return;
-        }
-
-        // build separator line
-        StringBuilder separator = new StringBuilder("+");
-        for (int w : colWidths) {
-            separator.append("-".repeat(w + 2)).append("+");
-        }
-
-        // print header
-        System.out.println(separator);
-        StringBuilder header = new StringBuilder("|");
-        for (int i = 0; i < cols; i++) {
-            String label = meta.getColumnLabel(i + 1);
-            header.append(" ").append(label).append(" ".repeat(colWidths[i] - label.length())).append(" |");
-        }
-        System.out.println(header);
-        System.out.println(separator);
-
-        // print rows
-        for (String[] row : allRows) {
-            StringBuilder line = new StringBuilder("|");
-            for (int i = 0; i < cols; i++) {
-                line.append(" ").append(row[i]).append(" ".repeat(colWidths[i] - row[i].length())).append(" |");
-            }
-            System.out.println(line);
-        }
-        System.out.println(separator);
-    }
-
-
-    // Prints a readable error message when a database operation fails
-    private static void printSqlError(SQLException e) {
-        System.out.println("Database error: " + e.getMessage());
-        System.out.println("SQLState: " + e.getSQLState());
-    }
-    // bug fix for blanks
-    private static String prompt(Scanner scanner, String label) {
-        String value = "";
-        while (value.isBlank()) {
-            System.out.print(label + ": ");
-            value = scanner.nextLine().trim();
-            if (value.isBlank()) {
-                System.out.println("Input cannot be empty. Please try again.");
-            }
-        }
-        return value;
-    }
-
-    // Allows blank input for nullable fields (blank ok)
-    private static String promptOptional(Scanner scanner, String label) {
-        System.out.print(label + ": ");
-        return scanner.nextLine().trim();
-    }
-
-    // Holds database connection config loaded from .env file
-    private static class DbConfig {
-        final String host;
-        final int port;
-        final String user;
-        final String password;
-        final String database;
-
-        // Two roles: ADMIN has full CRUD access, USER has read-only view access
-        DbConfig(String host, int port, String user, String password, String database) {
-            this.host = host;
-            this.port = port;
-            this.user = user;
-            this.password = password;
-            this.database = database;
-        }
-    }
-
-    private enum Role {
-        ADMIN,
-        USER
-    }
-
     // ============================================================
     // USER VIEW METHODS
     // ============================================================
-
     private static void viewPlayersInLeague(Connection conn, Scanner scanner) {
-//       // =============================================
-//       // SHOW SAMPLE FIRST
-//       // =============================================
         String listSql = "SELECT l.league_name, l.season_name, COUNT(DISTINCT sp.player_id) AS player_count " +
                 "FROM League l JOIN SeasonPerformance sp ON l.league_id = sp.league_id " +
-                "GROUP BY l.league_id, l.league_name, l.season_name " +
-                "ORDER BY player_count DESC LIMIT 20";
+                "GROUP BY l.league_id, l.league_name, l.season_name ORDER BY player_count DESC LIMIT 20";
         try (PreparedStatement listStmt = conn.prepareStatement(listSql)) {
             System.out.println("\nAvailable Leagues (sample):");
             executeQuery(listStmt);
         } catch (SQLException e) {
             printSqlError(e);
         }
-
-        // =============================================
-//       // USER PROMPT
-//       // =============================================
         try (PreparedStatement stmt = conn.prepareStatement("CALL sp_players_in_league(?, ?)")) {
             stmt.setString(1, prompt(scanner, "league_name (e.g. Premier League)"));
             stmt.setString(2, prompt(scanner, "season_name (e.g. 22/23)"));
@@ -1037,9 +808,6 @@ public class AdminCli {
     }
 
     private static void viewPlayerStats(Connection conn, Scanner scanner) {
-        // =============================================
-        // SHOW SAMPLE PLAYER NAMES BEFORE PROMPTING
-        // =============================================
         String listSql = "SELECT first_name, last_name FROM Player ORDER BY last_name LIMIT 20";
         try (PreparedStatement listStmt = conn.prepareStatement(listSql)) {
             System.out.println("\nSample Players:");
@@ -1047,9 +815,6 @@ public class AdminCli {
         } catch (SQLException e) {
             printSqlError(e);
         }
-        // =============================================
-        // PROMPT USER TO ENTER PLAYER NAME
-        // =============================================
         String firstName = prompt(scanner, "\nfirst_name");
         String lastName = prompt(scanner, "last_name");
         try (PreparedStatement stmt = conn.prepareStatement("CALL sp_player_stats(?, ?)")) {
@@ -1079,9 +844,6 @@ public class AdminCli {
                 System.out.println(header);
                 System.out.print(rows);
             } else {
-                // =============================================
-                // FALLBACK: CHECK IF PLAYER EXISTS IN DB
-                // =============================================
                 String fallbackSql = "SELECT player_id, first_name, last_name, dob, place_of_birth, height_cm, preferred_foot FROM Player WHERE first_name = ? AND last_name = ?";
                 try (PreparedStatement fallback = conn.prepareStatement(fallbackSql)) {
                     fallback.setString(1, firstName);
@@ -1096,9 +858,6 @@ public class AdminCli {
     }
 
     private static void viewTopScorers(Connection conn, Scanner scanner) {
-        // =============================================
-        // SHOW AVAILABLE LEAGUES BEFORE PROMPTING USER
-        // =============================================
         String listSql = "SELECT l.league_name, l.season_name, COUNT(DISTINCT sp.player_id) AS player_count FROM League l JOIN SeasonPerformance sp ON l.league_id = sp.league_id GROUP BY l.league_id, l.league_name, l.season_name ORDER BY player_count DESC LIMIT 20";
         try (PreparedStatement listStmt = conn.prepareStatement(listSql)) {
             System.out.println("\nAvailable Leagues (sample):");
@@ -1106,9 +865,6 @@ public class AdminCli {
         } catch (SQLException e) {
             printSqlError(e);
         }
-        // =============================================
-        // PROMPT USER TO ENTER LEAGUE, SEASON, LIMIT
-        // =============================================
         try (PreparedStatement stmt = conn.prepareStatement("CALL sp_top_scorers(?, ?, ?)")) {
             stmt.setString(1, prompt(scanner, "\nleague_name"));
             stmt.setString(2, prompt(scanner, "season_name (e.g. 22/23)"));
@@ -1120,9 +876,6 @@ public class AdminCli {
     }
 
     private static void viewTeamsInLeague(Connection conn, Scanner scanner) {
-        // =============================================
-        // SHOW AVAILABLE LEAGUES BEFORE PROMPTING USER
-        // =============================================
         String listSql = "SELECT l.league_name, l.season_name, COUNT(DISTINCT sp.player_id) AS player_count FROM League l JOIN SeasonPerformance sp ON l.league_id = sp.league_id GROUP BY l.league_id, l.league_name, l.season_name ORDER BY player_count DESC LIMIT 20";
         try (PreparedStatement listStmt = conn.prepareStatement(listSql)) {
             System.out.println("\nAvailable Leagues (sample):");
@@ -1130,9 +883,6 @@ public class AdminCli {
         } catch (SQLException e) {
             printSqlError(e);
         }
-        // =============================================
-        // PROMPT USER TO ENTER LEAGUE AND SEASON
-        // =============================================
         try (PreparedStatement stmt = conn.prepareStatement("CALL sp_teams_in_league(?, ?)")) {
             stmt.setString(1, prompt(scanner, "\nleague_name"));
             stmt.setString(2, prompt(scanner, "season_name (e.g. 22/23)"));
@@ -1143,9 +893,6 @@ public class AdminCli {
     }
 
     private static void viewMatchResults(Connection conn, Scanner scanner) {
-        // =============================================
-        // SHOW ONLY LEAGUES THAT HAVE MATCH DATA
-        // =============================================
         String listSql = "SELECT DISTINCT l.league_name, l.season_name, COUNT(m.match_id) AS match_count FROM League l JOIN `Match` m ON l.league_id = m.league_id GROUP BY l.league_id, l.league_name, l.season_name ORDER BY match_count DESC";
         try (PreparedStatement listStmt = conn.prepareStatement(listSql)) {
             System.out.println("\nLeagues with match data:");
@@ -1153,9 +900,6 @@ public class AdminCli {
         } catch (SQLException e) {
             printSqlError(e);
         }
-        // =============================================
-        // PROMPT USER TO ENTER LEAGUE AND SEASON
-        // =============================================
         try (PreparedStatement stmt = conn.prepareStatement("CALL sp_match_results(?, ?)")) {
             stmt.setString(1, prompt(scanner, "\nleague_name"));
             stmt.setString(2, prompt(scanner, "season_name (e.g. 25/26)"));
@@ -1166,9 +910,6 @@ public class AdminCli {
     }
 
     private static void viewCoachStats(Connection conn, Scanner scanner) {
-        // =============================================
-        // SHOW ALL COACH NAMES BEFORE PROMPTING
-        // =============================================
         String listSql = "SELECT first_name, last_name FROM Coach ORDER BY last_name";
         try (PreparedStatement listStmt = conn.prepareStatement(listSql)) {
             System.out.println("\nAvailable Coaches:");
@@ -1176,9 +917,6 @@ public class AdminCli {
         } catch (SQLException e) {
             printSqlError(e);
         }
-        // =============================================
-        // PROMPT USER TO ENTER COACH NAME
-        // =============================================
         try (PreparedStatement stmt = conn.prepareStatement("CALL sp_coach_stats(?, ?)")) {
             stmt.setString(1, prompt(scanner, "\nfirst_name"));
             stmt.setString(2, prompt(scanner, "last_name"));
@@ -1189,9 +927,6 @@ public class AdminCli {
     }
 
     private static void viewStadiumStats(Connection conn, Scanner scanner) {
-        // =============================================
-        // SHOW ALL STADIUM NAMES BEFORE PROMPTING
-        // =============================================
         String listSql = "SELECT stadium_name, city FROM Stadium ORDER BY stadium_name";
         try (PreparedStatement listStmt = conn.prepareStatement(listSql)) {
             System.out.println("\nAvailable Stadiums:");
@@ -1199,9 +934,6 @@ public class AdminCli {
         } catch (SQLException e) {
             printSqlError(e);
         }
-        // =============================================
-        // PROMPT USER TO ENTER STADIUM NAME
-        // =============================================
         try (PreparedStatement stmt = conn.prepareStatement("CALL sp_stadium_stats(?)")) {
             stmt.setString(1, prompt(scanner, "\nstadium_name"));
             executeQuery(stmt);
@@ -1210,10 +942,10 @@ public class AdminCli {
         }
     }
 
+    // ============================================================
+    // FIX 3: Market value view with chart
+    // ============================================================
     private static void viewPlayerMarketValue(Connection conn, Scanner scanner) {
-        // =============================================
-        // SHOW SAMPLE PLAYER NAMES BEFORE PROMPTING
-        // =============================================
         String listSql = "SELECT p.first_name, p.last_name FROM Player p JOIN MarketValue mv ON p.player_id = mv.player_id GROUP BY p.player_id ORDER BY COUNT(mv.market_value_date) DESC LIMIT 20";
         try (PreparedStatement listStmt = conn.prepareStatement(listSql)) {
             System.out.println("\nPlayers with market value data (top 20):");
@@ -1221,22 +953,43 @@ public class AdminCli {
         } catch (SQLException e) {
             printSqlError(e);
         }
-        // =============================================
-        // PROMPT USER TO ENTER PLAYER NAME
-        // =============================================
+        String firstName = prompt(scanner, "\nfirst_name");
+        String lastName = prompt(scanner, "last_name");
         try (PreparedStatement stmt = conn.prepareStatement("CALL sp_player_market_value(?, ?)")) {
-            stmt.setString(1, prompt(scanner, "\nfirst_name"));
-            stmt.setString(2, prompt(scanner, "last_name"));
-            executeQuery(stmt);
+            stmt.setString(1, firstName);
+            stmt.setString(2, lastName);
+            ResultSet rs = stmt.executeQuery();
+            ResultSetMetaData meta = rs.getMetaData();
+            int cols = meta.getColumnCount();
+            int[] colWidths = new int[cols];
+            for (int i = 0; i < cols; i++) colWidths[i] = meta.getColumnLabel(i + 1).length();
+            List<String[]> rows = new ArrayList<>();
+            List<String> dates = new ArrayList<>();
+            List<Double> values = new ArrayList<>();
+            while (rs.next()) {
+                String[] row = new String[cols];
+                for (int i = 0; i < cols; i++) {
+                    String v = rs.getString(i + 1);
+                    row[i] = v == null ? "NULL" : v;
+                    if (row[i].length() > colWidths[i]) colWidths[i] = row[i].length();
+                }
+                rows.add(row);
+                try {
+                    dates.add(row[2]); // market_value_date column
+                    values.add(Double.parseDouble(row[3].replace(",", ""))); // market_value column
+                } catch (Exception ignored) {}
+            }
+            printCollectedRows(rows, colWidths, meta);
+            if (!values.isEmpty()) {
+                String playerName = firstName + " " + lastName;
+                showMarketValueChart(dates, values, playerName);
+            }
         } catch (SQLException e) {
             printSqlError(e);
         }
     }
 
     private static void viewPlayerTransfers(Connection conn, Scanner scanner) {
-        // =============================================
-        // SHOW PLAYERS WITH MOST TRANSFERS
-        // =============================================
         String listSql = "SELECT p.first_name, p.last_name, COUNT(t.transfer_id) AS transfer_count FROM Player p JOIN Transfer t ON p.player_id = t.player_id GROUP BY p.player_id ORDER BY transfer_count DESC LIMIT 20";
         try (PreparedStatement listStmt = conn.prepareStatement(listSql)) {
             System.out.println("\nPlayers with most transfers:");
@@ -1244,9 +997,6 @@ public class AdminCli {
         } catch (SQLException e) {
             printSqlError(e);
         }
-        // =============================================
-        // PROMPT USER TO ENTER PLAYER NAME
-        // =============================================
         String firstName = prompt(scanner, "\nfirst_name");
         String lastName = prompt(scanner, "last_name");
         try (PreparedStatement stmt = conn.prepareStatement("CALL sp_player_transfers(?, ?)")) {
@@ -1276,9 +1026,6 @@ public class AdminCli {
                 System.out.println(header);
                 System.out.print(rows);
             } else {
-                // =============================================
-                // FALLBACK: CHECK IF PLAYER EXISTS IN DB
-                // =============================================
                 String fallbackSql = "SELECT player_id, first_name, last_name, dob, place_of_birth, height_cm, preferred_foot FROM Player WHERE first_name = ? AND last_name = ?";
                 try (PreparedStatement fallback = conn.prepareStatement(fallbackSql)) {
                     fallback.setString(1, firstName);
@@ -1292,18 +1039,344 @@ public class AdminCli {
         }
     }
 
+    // ============================================================
+    // FIX 3: Smoothed line chart using Java Swing/AWT
+    // Tries to pop up a window first; if headless, saves PNG to disk
+    // ============================================================
+    private static void showMarketValueChart(List<String> dates, List<Double> values, String playerName) {
+        if (dates.size() < 2) {
+            System.out.println("\n[Chart] Not enough data points to draw a chart (need at least 2).");
+            return;
+        }
+
+        // FIX: reverse so oldest date is on the left and newest on the right
+        java.util.Collections.reverse(dates);
+        java.util.Collections.reverse(values);
+
+        int W = 900, H = 520;
+        BufferedImage img = new BufferedImage(W, H, BufferedImage.TYPE_INT_ARGB);
+        Graphics2D g = img.createGraphics();
+        g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+        g.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
+
+        // Background
+        g.setColor(new Color(18, 18, 30));
+        g.fillRect(0, 0, W, H);
+
+        // Extra left padding to accommodate rotated y-axis title
+        int padL = 110, padR = 40, padT = 60, padB = 80;
+        int chartW = W - padL - padR;
+        int chartH = H - padT - padB;
+
+        // Chart title
+        g.setColor(new Color(220, 220, 255));
+        g.setFont(new Font("SansSerif", Font.BOLD, 16));
+        String title = "Market Value Over Time — " + playerName;
+        FontMetrics fm = g.getFontMetrics();
+        g.drawString(title, (W - fm.stringWidth(title)) / 2, 35);
+
+        // Min/Max values
+        double minVal = values.stream().mapToDouble(Double::doubleValue).min().orElse(0);
+        double maxVal = values.stream().mapToDouble(Double::doubleValue).max().orElse(1);
+        if (maxVal == minVal) maxVal = minVal + 1;
+        int n = values.size();
+
+        // Grid lines + y-axis tick labels
+        int gridLines = 5;
+        for (int i = 0; i <= gridLines; i++) {
+            int y = padT + chartH - (int) ((double) i / gridLines * chartH);
+            g.setColor(new Color(50, 50, 80));
+            g.setStroke(new BasicStroke(1f, BasicStroke.CAP_BUTT, BasicStroke.JOIN_BEVEL, 0, new float[]{4}, 0));
+            g.drawLine(padL, y, padL + chartW, y);
+            double labelVal = minVal + (maxVal - minVal) * i / gridLines;
+            g.setColor(new Color(140, 140, 180));
+            g.setStroke(new BasicStroke(1f));
+            g.setFont(new Font("SansSerif", Font.PLAIN, 10));
+            String label = formatValue(labelVal);
+            g.drawString(label, padL - g.getFontMetrics().stringWidth(label) - 8, y + 4);
+        }
+
+        // Y-axis title — rotated 90° counter-clockwise
+        g.setFont(new Font("SansSerif", Font.BOLD, 12));
+        g.setColor(new Color(200, 200, 240));
+        String yTitle = "Million Euros";
+        FontMetrics yFm = g.getFontMetrics();
+        int yTitleX = 18;
+        int yTitleY = padT + chartH / 2 + yFm.stringWidth(yTitle) / 2;
+        java.awt.geom.AffineTransform oldTransform = g.getTransform();
+        g.translate(yTitleX, yTitleY);
+        g.rotate(-Math.PI / 2);
+        g.drawString(yTitle, 0, 0);
+        g.setTransform(oldTransform);
+
+        // X-axis title — centered below date labels
+        g.setFont(new Font("SansSerif", Font.BOLD, 12));
+        g.setColor(new Color(200, 200, 240));
+        String xTitle = "Date";
+        FontMetrics xFm = g.getFontMetrics();
+        g.drawString(xTitle, padL + chartW / 2 - xFm.stringWidth(xTitle) / 2, H - 10);
+
+        // Compute pixel coords
+        int[] px = new int[n];
+        int[] py = new int[n];
+        for (int i = 0; i < n; i++) {
+            px[i] = padL + (int) ((double) i / (n - 1) * chartW);
+            py[i] = padT + chartH - (int) ((values.get(i) - minVal) / (maxVal - minVal) * chartH);
+        }
+
+        // Gradient fill under curve using GeneralPath
+        GeneralPath fillPath = new GeneralPath();
+        fillPath.moveTo(px[0], padT + chartH);
+        fillPath.lineTo(px[0], py[0]);
+        for (int i = 1; i < n; i++) {
+            float cpx1 = px[i - 1] + (px[i] - px[i - 1]) / 3f;
+            float cpy1 = py[i - 1];
+            float cpx2 = px[i] - (px[i] - px[i - 1]) / 3f;
+            float cpy2 = py[i];
+            fillPath.curveTo(cpx1, cpy1, cpx2, cpy2, px[i], py[i]);
+        }
+        fillPath.lineTo(px[n - 1], padT + chartH);
+        fillPath.closePath();
+        GradientPaint gp = new GradientPaint(0, padT, new Color(99, 102, 241, 120), 0, padT + chartH, new Color(99, 102, 241, 0));
+        g.setPaint(gp);
+        g.fill(fillPath);
+
+        // Smoothed line
+        g.setColor(new Color(129, 140, 248));
+        g.setStroke(new BasicStroke(2.5f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+        GeneralPath linePath = new GeneralPath();
+        linePath.moveTo(px[0], py[0]);
+        for (int i = 1; i < n; i++) {
+            float cpx1 = px[i - 1] + (px[i] - px[i - 1]) / 3f;
+            float cpy1 = py[i - 1];
+            float cpx2 = px[i] - (px[i] - px[i - 1]) / 3f;
+            float cpy2 = py[i];
+            linePath.curveTo(cpx1, cpy1, cpx2, cpy2, px[i], py[i]);
+        }
+        g.draw(linePath);
+
+        // Data points
+        g.setColor(new Color(199, 210, 254));
+        for (int i = 0; i < n; i++) {
+            g.fillOval(px[i] - 4, py[i] - 4, 8, 8);
+        }
+
+        // X-axis date labels (show up to 8 evenly spaced)
+        g.setFont(new Font("SansSerif", Font.PLAIN, 10));
+        g.setColor(new Color(140, 140, 180));
+        int labelStep = Math.max(1, n / 8);
+        for (int i = 0; i < n; i += labelStep) {
+            String d = dates.get(i);
+            if (d.length() > 10) d = d.substring(0, 10);
+            int lw = g.getFontMetrics().stringWidth(d);
+            g.drawString(d, px[i] - lw / 2, padT + chartH + 20);
+        }
+
+        // Axes
+        g.setColor(new Color(80, 80, 120));
+        g.setStroke(new BasicStroke(1.5f));
+        g.drawLine(padL, padT, padL, padT + chartH);
+        g.drawLine(padL, padT + chartH, padL + chartW, padT + chartH);
+
+        g.dispose();
+
+        // Try to show in a popup window
+        boolean headless = GraphicsEnvironment.isHeadless();
+        if (!headless) {
+            try {
+                JFrame frame = new JFrame("Market Value Chart — " + playerName);
+                frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+                JLabel label = new JLabel(new ImageIcon(img));
+                frame.getContentPane().add(label);
+                frame.pack();
+                frame.setLocationRelativeTo(null);
+                frame.setVisible(true);
+                System.out.println("\n[Chart] A chart window has opened. Close it when done.");
+                return;
+            } catch (Exception e) {
+                // Fall through to file save
+            }
+        }
+
+        // Fallback: save to PNG in current directory
+        try {
+            String safeName = playerName.replaceAll("[^a-zA-Z0-9_\\- ]", "").replace(" ", "_");
+            String filename = "market_value_" + safeName + ".png";
+            File outFile = new File(filename);
+            ImageIO.write(img, "PNG", outFile);
+            System.out.println("\n[Chart] Chart saved to: " + outFile.getAbsolutePath());
+            System.out.println("        Please open this file to view the market value trend chart.");
+        } catch (IOException e) {
+            System.out.println("\n[Chart] Could not save chart: " + e.getMessage());
+        }
+    }
+
+    private static String formatValue(double val) {
+        if (val >= 1_000_000) return String.format("%.1fM", val / 1_000_000);
+        if (val >= 1_000) return String.format("%.0fK", val / 1_000);
+        return String.format("%.0f", val);
+    }
+
+    // ============================================================
+    // HELPERS
+    // ============================================================
+    private static void executeUpdate(PreparedStatement stmt) throws SQLException {
+        int updated = stmt.executeUpdate();
+        System.out.println("Rows affected: " + updated);
+    }
+
+    private static void executeQuery(PreparedStatement stmt) throws SQLException {
+        try (ResultSet rs = stmt.executeQuery()) {
+            printResultSet(rs);
+        }
+    }
+
+    private static void setNullableString(PreparedStatement stmt, int idx, String value) throws SQLException {
+        if (value == null || value.isBlank()) stmt.setNull(idx, Types.VARCHAR);
+        else stmt.setString(idx, value);
+    }
+
+    private static void setNullableInt(PreparedStatement stmt, int idx, String value) throws SQLException {
+        if (value == null || value.isBlank()) {
+            stmt.setNull(idx, Types.INTEGER);
+        } else {
+            try { stmt.setInt(idx, Integer.parseInt(value)); }
+            catch (NumberFormatException e) { throw new SQLException("Invalid integer value: " + value); }
+        }
+    }
+
+    private static void setRequiredInt(PreparedStatement stmt, int idx, String value) throws SQLException {
+        if (value == null || value.isBlank()) throw new SQLException("Required integer value is missing.");
+        try { stmt.setInt(idx, Integer.parseInt(value)); }
+        catch (NumberFormatException e) { throw new SQLException("Invalid integer value: " + value); }
+    }
+
+    private static void setNullableDecimal(PreparedStatement stmt, int idx, String value) throws SQLException {
+        if (value == null || value.isBlank()) {
+            stmt.setNull(idx, Types.DECIMAL);
+        } else {
+            try { stmt.setBigDecimal(idx, new java.math.BigDecimal(value)); }
+            catch (NumberFormatException e) { throw new SQLException("Invalid decimal value: " + value); }
+        }
+    }
+
+    private static void setRequiredDecimal(PreparedStatement stmt, int idx, String value) throws SQLException {
+        if (value == null || value.isBlank()) throw new SQLException("Required decimal value is missing.");
+        try { stmt.setBigDecimal(idx, new java.math.BigDecimal(value)); }
+        catch (NumberFormatException e) { throw new SQLException("Invalid decimal value: " + value); }
+    }
+
+    private static void setNullableDate(PreparedStatement stmt, int idx, String value) throws SQLException {
+        if (value == null || value.isBlank()) {
+            stmt.setNull(idx, Types.DATE);
+        } else {
+            try { stmt.setDate(idx, java.sql.Date.valueOf(value)); }
+            catch (IllegalArgumentException e) { throw new SQLException("Invalid date value (expected YYYY-MM-DD): " + value); }
+        }
+    }
+
+    private static void setRequiredDate(PreparedStatement stmt, int idx, String value) throws SQLException {
+        if (value == null || value.isBlank()) throw new SQLException("Required date value is missing.");
+        try { stmt.setDate(idx, java.sql.Date.valueOf(value)); }
+        catch (IllegalArgumentException e) { throw new SQLException("Invalid date value (expected YYYY-MM-DD): " + value); }
+    }
+
+    private static void printResultSet(ResultSet rs) throws SQLException {
+        ResultSetMetaData meta = rs.getMetaData();
+        int cols = meta.getColumnCount();
+        List<String[]> allRows = new ArrayList<>();
+        int[] colWidths = new int[cols];
+        for (int i = 0; i < cols; i++) colWidths[i] = meta.getColumnLabel(i + 1).length();
+        while (rs.next()) {
+            String[] row = new String[cols];
+            for (int i = 0; i < cols; i++) {
+                String value = rs.getString(i + 1);
+                row[i] = value == null ? "NULL" : value;
+                if (row[i].length() > colWidths[i]) colWidths[i] = row[i].length();
+            }
+            allRows.add(row);
+        }
+        printCollectedRows(allRows, colWidths, meta);
+    }
+
+    // Shared pretty-print method used by both printResultSet and readMarketValues
+    private static void printCollectedRows(List<String[]> allRows, int[] colWidths, ResultSetMetaData meta) throws SQLException {
+        if (allRows.isEmpty()) {
+            System.out.println("No data found for the given input. The input may be incorrect.");
+            return;
+        }
+        int cols = colWidths.length;
+        StringBuilder separator = new StringBuilder("+");
+        for (int w : colWidths) separator.append("-".repeat(w + 2)).append("+");
+
+        System.out.println(separator);
+        StringBuilder header = new StringBuilder("|");
+        for (int i = 0; i < cols; i++) {
+            String label = meta.getColumnLabel(i + 1);
+            header.append(" ").append(label).append(" ".repeat(colWidths[i] - label.length())).append(" |");
+        }
+        System.out.println(header);
+        System.out.println(separator);
+        for (String[] row : allRows) {
+            StringBuilder line = new StringBuilder("|");
+            for (int i = 0; i < cols; i++) {
+                line.append(" ").append(row[i]).append(" ".repeat(colWidths[i] - row[i].length())).append(" |");
+            }
+            System.out.println(line);
+        }
+        System.out.println(separator);
+    }
+
+    private static void printSqlError(SQLException e) {
+        System.out.println("Database error: " + e.getMessage());
+        System.out.println("SQLState: " + e.getSQLState());
+    }
+
+    // ============================================================
+    // FIX 1: Two prompt variants
+    // prompt()         — required field, loops until non-blank
+    // promptOptional() — nullable field, blank is allowed
+    // ============================================================
+    private static String prompt(Scanner scanner, String label) {
+        String value = "";
+        while (value.isBlank()) {
+            System.out.print(label + ": ");
+            value = scanner.nextLine().trim();
+            if (value.isBlank()) {
+                System.out.println("Input cannot be empty. Please try again.");
+            }
+        }
+        return value;
+    }
+
+    private static String promptOptional(Scanner scanner, String label) {
+        System.out.print(label + ": ");
+        return scanner.nextLine().trim();
+    }
+
+    private static class DbConfig {
+        final String host;
+        final int port;
+        final String user;
+        final String password;
+        final String database;
+
+        DbConfig(String host, int port, String user, String password, String database) {
+            this.host = host;
+            this.port = port;
+            this.user = user;
+            this.password = password;
+            this.database = database;
+        }
+    }
+
+    private enum Role { ADMIN, USER }
+
     private static Role parseRole(String roleInput) {
-        if (roleInput == null) {
-            return null;
-        }
+        if (roleInput == null) return null;
         String normalized = roleInput.trim().toLowerCase();
-        if ("admin".equals(normalized)) {
-            return Role.ADMIN;
-        }
-        if ("user".equals(normalized)) {
-            return Role.USER;
-        }
+        if ("admin".equals(normalized)) return Role.ADMIN;
+        if ("user".equals(normalized)) return Role.USER;
         return null;
     }
 }
-
