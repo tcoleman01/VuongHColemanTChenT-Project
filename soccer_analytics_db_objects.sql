@@ -124,12 +124,6 @@ DELIMITER ;
 -- User view operations
 
 -- ============================================================
--- DESCRIPTION
--- Function: fn_player_age
--- Purpose: Computes a player's current age from their date of birth
--- Input: p_dob (DATE) - player's date of birth
--- Output: INT - age in years, NULL if dob is NULL
--- ============================================================
 DROP FUNCTION IF EXISTS fn_player_age;
 DELIMITER //
 CREATE FUNCTION fn_player_age(p_dob DATE)
@@ -144,13 +138,6 @@ END//
 DELIMITER ;
 
 
--- ============================================================
--- DESCRIPTION
--- Procedure: sp_players_in_league
--- Purpose: Retrieves all players who played in a specified league and season
--- Inputs: p_league_name (VARCHAR) - e.g. 'Premier League'
---         p_season_name (VARCHAR) - e.g. '21/22'
--- Output: player_id, first_name, last_name, age, position, position_category, preferred_foot, club_name
 -- ============================================================
 DROP PROCEDURE IF EXISTS sp_players_in_league;
 DELIMITER //
@@ -192,14 +179,6 @@ LIMIT 10;
 
 
 -- ============================================================
--- DESCRIPTION
--- Procedure: sp_player_stats
--- Purpose: Retrieves season performance statistics for a specific player
--- Inputs: p_first_name (VARCHAR) - player's first name
---         p_last_name (VARCHAR) - player's last name
--- Output: first_name, last_name, league_name, season_name, 
---         appearance_count, goal_count, assist_count, play_time
--- ============================================================
 DROP PROCEDURE IF EXISTS sp_player_stats;
 DELIMITER //
 CREATE PROCEDURE sp_player_stats(
@@ -228,14 +207,6 @@ DELIMITER ;
 CALL sp_player_stats('Toni', 'Kroos');
 
 
--- ============================================================
--- DESCRIPTION
--- Procedure: sp_top_scorers
--- Purpose: Retrieves top scorers for a specific league and season
--- Inputs: p_league_name (VARCHAR) - e.g. 'Premier League'
---         p_season_name (VARCHAR) - e.g. '22/23'
---         p_limit (INT) - number of results to return e.g. 10
--- Output: first_name, last_name, club_name, goal_count, assist_count, appearance_count
 -- ============================================================
 DROP PROCEDURE IF EXISTS sp_top_scorers;
 DELIMITER //
@@ -298,13 +269,6 @@ DELIMITER ;
 CALL sp_teams_in_league('Premier League', '22/23');
 
 -- ============================================================
--- DESCRIPTION
--- Procedure: sp_match_results
--- Purpose: Retrieves match results for a specific league and season
--- Inputs: p_league_name (VARCHAR) - e.g. 'Premier League'
---         p_season_name (VARCHAR) - e.g. '22/23'
--- Output: match_id, match_date, home_team, home_score, away_team, away_score, home_result, away_result
--- ============================================================
 DROP PROCEDURE IF EXISTS sp_match_results;
 DELIMITER //
 CREATE PROCEDURE sp_match_results(
@@ -338,13 +302,6 @@ CALL sp_match_results('Champions League', '25/26');
 
 
 -- ============================================================
--- DESCRIPTION
--- Procedure: sp_coach_stats
--- Purpose: Retrieves coach information and their current club
--- Inputs: p_first_name (VARCHAR) - coach's first name
---         p_last_name (VARCHAR) - coach's last name
--- Output: coach_id, first_name, last_name, dob, age, nationality, club_name
--- ============================================================
 DROP PROCEDURE IF EXISTS sp_coach_stats;
 DELIMITER //
 CREATE PROCEDURE sp_coach_stats(
@@ -372,12 +329,6 @@ CALL sp_coach_stats('Pep', 'Guardiola');
 
 
 -- ============================================================
--- DESCRIPTION
--- Procedure: sp_stadium_stats
--- Purpose: Retrieves stadium information and its home club
--- Inputs: p_stadium_name (VARCHAR) - stadium name or partial name
--- Output: stadium_id, stadium_name, capacity, city, country, phone_number, home_club
--- ============================================================
 DROP PROCEDURE IF EXISTS sp_stadium_stats;
 DELIMITER //
 CREATE PROCEDURE sp_stadium_stats(
@@ -403,13 +354,6 @@ CALL sp_stadium_stats('Old Trafford');
 
 
 -- ============================================================
--- DESCRIPTION
--- Procedure: sp_player_market_value
--- Purpose: Retrieves full market value history for a specific player
--- Inputs: p_first_name (VARCHAR) - player's first name
---         p_last_name (VARCHAR) - player's last name
--- Output: first_name, last_name, market_value_date, market_value
--- ============================================================
 DROP PROCEDURE IF EXISTS sp_player_market_value;
 DELIMITER //
 CREATE PROCEDURE sp_player_market_value(
@@ -434,13 +378,6 @@ DELIMITER
 CALL sp_player_market_value('Toni', 'Kroos');
 
 
--- ============================================================
--- DESCRIPTION
--- Procedure: sp_player_transfers
--- Purpose: Retrieves full transfer history for a specific player
--- Inputs: p_first_name (VARCHAR) - player's first name
---         p_last_name (VARCHAR) - player's last name
--- Output: first_name, last_name, from_club, to_club, transfer_date, transfer_fee
 -- ============================================================
 DROP PROCEDURE IF EXISTS sp_player_transfers;
 DELIMITER //
@@ -468,3 +405,167 @@ DELIMITER ;
 
 -- testin
 CALL sp_player_transfers('Zlatan', 'Ibrahimović');
+
+
+
+DELIMITER //
+ 
+-- ====Make sure new player's country code exist=========================================
+CREATE TRIGGER trg_player_club_country_insert
+BEFORE INSERT ON Player
+FOR EACH ROW
+BEGIN
+    IF NEW.country_abbr IS NOT NULL THEN
+        IF NOT EXISTS (
+            SELECT 1 FROM Club WHERE country_abbr = NEW.country_abbr
+        ) THEN
+            SIGNAL SQLSTATE '45000'
+                SET MESSAGE_TEXT = 'Invalid country_abbr: not found in any known club country.';
+        END IF;
+    END IF;
+END//
+ 
+CREATE TRIGGER trg_player_club_country_update
+BEFORE UPDATE ON Player
+FOR EACH ROW
+BEGIN
+    IF NEW.country_abbr IS NOT NULL THEN
+        IF NOT EXISTS (
+            SELECT 1 FROM Club WHERE country_abbr = NEW.country_abbr
+        ) THEN
+            SIGNAL SQLSTATE '45000'
+                SET MESSAGE_TEXT = 'Invalid country_abbr: not found in any known club country.';
+        END IF;
+    END IF;
+END//
+ 
+-- =======validate transfer club id and fees===========================================
+CREATE TRIGGER trg_transfer_validate
+BEFORE INSERT ON Transfer
+FOR EACH ROW
+BEGIN
+    DECLARE v_current_club_id INT;
+ 
+    SELECT club_id INTO v_current_club_id
+    FROM Player
+    WHERE player_id = NEW.player_id;
+ 
+    IF v_current_club_id IS NOT NULL AND v_current_club_id = NEW.new_club_id THEN
+        SIGNAL SQLSTATE '45000'
+            SET MESSAGE_TEXT = 'Transfer rejected: player is already at the specified club.';
+    END IF;
+ 
+    IF NEW.transfer_fee IS NOT NULL AND NEW.transfer_fee < 0 THEN
+        SIGNAL SQLSTATE '45000'
+            SET MESSAGE_TEXT = 'Transfer rejected: transfer_fee cannot be negative.';
+    END IF;
+END//
+ 
+-- ========You can't input negative stats for performance===================================
+CREATE TRIGGER trg_season_performance_nonnegative_insert
+BEFORE INSERT ON SeasonPerformance
+FOR EACH ROW
+BEGIN
+    IF NEW.goal_count IS NOT NULL AND NEW.goal_count < 0 THEN
+        SIGNAL SQLSTATE '45000'
+            SET MESSAGE_TEXT = 'Invalid data: goal_count cannot be negative.';
+    END IF;
+    IF NEW.assist_count IS NOT NULL AND NEW.assist_count < 0 THEN
+        SIGNAL SQLSTATE '45000'
+            SET MESSAGE_TEXT = 'Invalid data: assist_count cannot be negative.';
+    END IF;
+    IF NEW.appearance_count IS NOT NULL AND NEW.appearance_count < 0 THEN
+        SIGNAL SQLSTATE '45000'
+            SET MESSAGE_TEXT = 'Invalid data: appearance_count cannot be negative.';
+    END IF;
+    IF NEW.play_time IS NOT NULL AND NEW.play_time < 0 THEN
+        SIGNAL SQLSTATE '45000'
+            SET MESSAGE_TEXT = 'Invalid data: play_time cannot be negative.';
+    END IF;
+END//
+ 
+
+CREATE TRIGGER trg_season_performance_nonnegative_update
+BEFORE UPDATE ON SeasonPerformance
+FOR EACH ROW
+BEGIN
+    IF NEW.goal_count IS NOT NULL AND NEW.goal_count < 0 THEN
+        SIGNAL SQLSTATE '45000'
+            SET MESSAGE_TEXT = 'Invalid data: goal_count cannot be negative.';
+    END IF;
+    IF NEW.assist_count IS NOT NULL AND NEW.assist_count < 0 THEN
+        SIGNAL SQLSTATE '45000'
+            SET MESSAGE_TEXT = 'Invalid data: assist_count cannot be negative.';
+    END IF;
+    IF NEW.appearance_count IS NOT NULL AND NEW.appearance_count < 0 THEN
+        SIGNAL SQLSTATE '45000'
+            SET MESSAGE_TEXT = 'Invalid data: appearance_count cannot be negative.';
+    END IF;
+    IF NEW.play_time IS NOT NULL AND NEW.play_time < 0 THEN
+        SIGNAL SQLSTATE '45000'
+            SET MESSAGE_TEXT = 'Invalid data: play_time cannot be negative.';
+    END IF;
+END//
+ 
+-- ===allow 1 coach for each club================================
+CREATE TRIGGER trg_coach_one_per_club_insert
+BEFORE INSERT ON Coach
+FOR EACH ROW
+BEGIN
+    IF NEW.club_id IS NOT NULL THEN
+        IF EXISTS (
+            SELECT 1 FROM Coach WHERE club_id = NEW.club_id
+        ) THEN
+            SIGNAL SQLSTATE '45000'
+                SET MESSAGE_TEXT = 'Club already has an assigned coach. Remove or reassign the existing coach first.';
+        END IF;
+    END IF;
+END//
+ 
+CREATE TRIGGER trg_coach_one_per_club_update
+BEFORE UPDATE ON Coach
+FOR EACH ROW
+BEGIN
+    IF NEW.club_id IS NOT NULL THEN
+        IF EXISTS (
+            SELECT 1 FROM Coach
+            WHERE club_id = NEW.club_id
+              AND coach_id != OLD.coach_id
+        ) THEN
+            SIGNAL SQLSTATE '45000'
+                SET MESSAGE_TEXT = 'Club already has an assigned coach. Remove or reassign the existing coach first.';
+        END IF;
+    END IF;
+END//
+ 
+-- =========check if there's other associated data============================
+CREATE TRIGGER trg_delete_player_cascade_check
+BEFORE DELETE ON Player
+FOR EACH ROW
+BEGIN
+    DECLARE v_sp_count  INT DEFAULT 0;
+    DECLARE v_mp_count  INT DEFAULT 0;
+    DECLARE v_mv_count  INT DEFAULT 0;
+    DECLARE v_tr_count  INT DEFAULT 0;
+    DECLARE v_msg       VARCHAR(500);
+ 
+    SELECT COUNT(*) INTO v_sp_count FROM SeasonPerformance  WHERE player_id = OLD.player_id;
+    SELECT COUNT(*) INTO v_mp_count FROM MatchPerformance   WHERE player_id = OLD.player_id;
+    SELECT COUNT(*) INTO v_mv_count FROM MarketValue        WHERE player_id = OLD.player_id;
+    SELECT COUNT(*) INTO v_tr_count FROM Transfer           WHERE player_id = OLD.player_id;
+ 
+    IF v_sp_count > 0 OR v_mp_count > 0 OR v_mv_count > 0 OR v_tr_count > 0 THEN
+        SET v_msg = CONCAT(
+            'Cannot delete player_id ', OLD.player_id, ' (', OLD.first_name, ' ', OLD.last_name, '). ',
+            'Dependent records found: ',
+            v_sp_count, ' season performance(s), ',
+            v_mp_count, ' match performance(s), ',
+            v_mv_count, ' market value(s), ',
+            v_tr_count, ' transfer(s). ',
+            'Delete or reassign these records first.'
+        );
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = v_msg;
+    END IF;
+END//
+ 
+DELIMITER ;

@@ -1,3 +1,5 @@
+CREATE DATABASE  IF NOT EXISTS `soccer_analytics_db` /*!40100 DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci */ /*!80016 DEFAULT ENCRYPTION='N' */;
+USE `soccer_analytics_db`;
 -- MySQL dump 10.13  Distrib 8.0.44, for Win64 (x86_64)
 --
 -- Host: localhost    Database: soccer_analytics_db
@@ -21,7 +23,7 @@ SET @@SESSION.SQL_LOG_BIN= 0;
 -- GTID state at the beginning of the backup 
 --
 
-SET @@GLOBAL.GTID_PURGED=/*!80000 '+'*/ '22acc739-f25c-11f0-977d-f889d28df158:1-438';
+SET @@GLOBAL.GTID_PURGED=/*!80000 '+'*/ '22acc739-f25c-11f0-977d-f889d28df158:1-474';
 
 --
 -- Table structure for table `club`
@@ -87,6 +89,56 @@ LOCK TABLES `coach` WRITE;
 INSERT INTO `coach` VALUES (1,'Adi','Hutter','1969-08-08','AUT',NULL),(2,'Sergio','Conceicao','1974-11-15','PRT',NULL),(3,'Mikel','Arteta','1982-03-26','ESP',NULL),(4,'Unai','Emery','1971-11-03','ESP',NULL),(5,'Vincent','Kompany','1986-04-10','BEL',NULL),(6,'Pep','Guardiola','1971-01-18','ESP',NULL),(7,'Ruben','Amorim','1985-01-27','PRT',NULL),(8,'Arne','Slot','1978-09-17','NLD',NULL),(9,'Enzo','Maresca','1980-02-10','ITA',NULL),(10,'Sean','Dyche','1971-06-28','ENG',NULL),(11,'Eddie','Howe','1977-11-29','ENG',NULL),(12,'Nuno','Espirito Santo','1974-01-25','PRT',NULL),(13,'Carlo','Ancelotti','1959-06-10','ITA',NULL),(14,'Ange','Postecoglou','1965-08-27','AUS',NULL),(15,'Hansi','Flick','1965-02-24','GER',NULL);
 /*!40000 ALTER TABLE `coach` ENABLE KEYS */;
 UNLOCK TABLES;
+/*!50003 SET @saved_cs_client      = @@character_set_client */ ;
+/*!50003 SET @saved_cs_results     = @@character_set_results */ ;
+/*!50003 SET @saved_col_connection = @@collation_connection */ ;
+/*!50003 SET character_set_client  = utf8mb4 */ ;
+/*!50003 SET character_set_results = utf8mb4 */ ;
+/*!50003 SET collation_connection  = utf8mb4_0900_ai_ci */ ;
+/*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
+/*!50003 SET sql_mode              = 'ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION' */ ;
+DELIMITER ;;
+/*!50003 CREATE*/ /*!50017 DEFINER=`root`@`localhost`*/ /*!50003 TRIGGER `trg_coach_one_per_club_insert` BEFORE INSERT ON `coach` FOR EACH ROW BEGIN
+    IF NEW.club_id IS NOT NULL THEN
+        IF EXISTS (
+            SELECT 1 FROM Coach WHERE club_id = NEW.club_id
+        ) THEN
+            SIGNAL SQLSTATE '45000'
+                SET MESSAGE_TEXT = 'Club already has an assigned coach. Remove or reassign the existing coach first.';
+        END IF;
+    END IF;
+END */;;
+DELIMITER ;
+/*!50003 SET sql_mode              = @saved_sql_mode */ ;
+/*!50003 SET character_set_client  = @saved_cs_client */ ;
+/*!50003 SET character_set_results = @saved_cs_results */ ;
+/*!50003 SET collation_connection  = @saved_col_connection */ ;
+/*!50003 SET @saved_cs_client      = @@character_set_client */ ;
+/*!50003 SET @saved_cs_results     = @@character_set_results */ ;
+/*!50003 SET @saved_col_connection = @@collation_connection */ ;
+/*!50003 SET character_set_client  = utf8mb4 */ ;
+/*!50003 SET character_set_results = utf8mb4 */ ;
+/*!50003 SET collation_connection  = utf8mb4_0900_ai_ci */ ;
+/*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
+/*!50003 SET sql_mode              = 'ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION' */ ;
+DELIMITER ;;
+/*!50003 CREATE*/ /*!50017 DEFINER=`root`@`localhost`*/ /*!50003 TRIGGER `trg_coach_one_per_club_update` BEFORE UPDATE ON `coach` FOR EACH ROW BEGIN
+    IF NEW.club_id IS NOT NULL THEN
+        IF EXISTS (
+            SELECT 1 FROM Coach
+            WHERE club_id = NEW.club_id
+              AND coach_id != OLD.coach_id
+        ) THEN
+            SIGNAL SQLSTATE '45000'
+                SET MESSAGE_TEXT = 'Club already has an assigned coach. Remove or reassign the existing coach first.';
+        END IF;
+    END IF;
+END */;;
+DELIMITER ;
+/*!50003 SET sql_mode              = @saved_sql_mode */ ;
+/*!50003 SET character_set_client  = @saved_cs_client */ ;
+/*!50003 SET character_set_results = @saved_cs_results */ ;
+/*!50003 SET collation_connection  = @saved_col_connection */ ;
 
 --
 -- Table structure for table `country`
@@ -198,9 +250,69 @@ CREATE TABLE `match` (
 
 LOCK TABLES `match` WRITE;
 /*!40000 ALTER TABLE `match` DISABLE KEYS */;
-INSERT INTO `match` VALUES (1,316,6,7,'2025-08-16',0,0,'Draw','Draw'),(2,316,6,8,'2025-09-13',2,1,'Win','Loss'),(3,316,7,6,'2025-10-11',1,1,'Draw','Draw'),(4,316,7,8,'2025-11-08',0,0,'Draw','Draw'),(5,316,8,6,'2025-12-06',4,3,'Win','Loss'),(6,316,8,7,'2026-01-03',0,0,'Draw','Draw'),(7,316,6,3,'2025-08-23',0,1,'Loss','Win'),(8,316,3,6,'2025-12-30',1,0,'Win','Loss'),(9,316,7,3,'2025-08-30',4,1,'Win','Loss'),(10,316,3,7,'2026-01-06',4,3,'Win','Loss'),(11,316,8,3,'2025-09-06',1,3,'Loss','Win'),(12,316,3,8,'2026-01-13',4,2,'Win','Loss'),(13,316,6,4,'2025-09-13',0,1,'Loss','Win'),(14,316,4,6,'2026-01-20',3,2,'Win','Loss'),(15,316,7,4,'2025-09-20',2,1,'Win','Loss'),(16,316,4,7,'2026-01-27',1,2,'Loss','Win'),(17,316,8,4,'2025-09-27',0,0,'Draw','Draw'),(18,316,4,8,'2026-02-03',3,0,'Win','Loss'),(19,316,6,23,'2025-10-04',2,2,'Draw','Draw'),(20,316,23,6,'2026-02-10',4,2,'Win','Loss'),(21,316,7,23,'2025-10-11',0,3,'Loss','Win'),(22,316,23,7,'2026-02-17',4,0,'Win','Loss'),(23,316,8,23,'2025-10-18',3,0,'Win','Loss'),(24,316,23,8,'2026-02-24',4,2,'Win','Loss'),(25,316,6,24,'2025-10-25',4,2,'Win','Loss'),(26,316,24,6,'2026-03-03',4,1,'Win','Loss'),(27,316,7,24,'2025-11-01',0,0,'Draw','Draw'),(28,316,24,7,'2026-03-10',1,2,'Loss','Win'),(29,316,8,24,'2025-11-08',0,1,'Loss','Win'),(30,316,24,8,'2026-03-17',0,3,'Loss','Win'),(31,316,6,9,'2025-11-15',2,3,'Loss','Win'),(32,316,9,6,'2026-03-24',2,1,'Win','Loss'),(33,316,7,9,'2025-11-22',2,2,'Draw','Draw'),(34,316,9,7,'2026-03-31',1,2,'Loss','Win'),(35,316,8,9,'2025-11-29',0,1,'Loss','Win'),(36,316,9,8,'2026-04-07',4,1,'Win','Loss'),(37,316,6,26,'2025-12-06',1,3,'Loss','Win'),(38,316,26,6,'2026-04-14',NULL,NULL,NULL,NULL),(39,316,7,26,'2025-12-13',3,2,'Win','Loss'),(40,316,26,7,'2026-04-21',NULL,NULL,NULL,NULL),(41,316,8,26,'2025-12-20',4,1,'Win','Loss'),(42,316,26,8,'2026-04-28',NULL,NULL,NULL,NULL),(43,316,6,10,'2025-12-27',2,0,'Win','Loss'),(44,316,10,6,'2026-05-05',NULL,NULL,NULL,NULL),(45,316,7,10,'2026-01-03',1,0,'Win','Loss'),(46,316,10,7,'2026-05-12',NULL,NULL,NULL,NULL),(47,316,8,10,'2026-01-10',2,3,'Loss','Win'),(48,316,10,8,'2026-05-19',NULL,NULL,NULL,NULL),(49,316,6,31,'2026-01-17',2,0,'Win','Loss'),(50,316,31,6,'2026-05-26',NULL,NULL,NULL,NULL),(51,316,7,31,'2026-01-24',1,2,'Loss','Win'),(52,316,31,7,'2026-06-02',NULL,NULL,NULL,NULL),(53,316,8,31,'2026-01-31',1,3,'Loss','Win'),(54,316,31,8,'2026-06-09',NULL,NULL,NULL,NULL),(55,316,6,35,'2026-02-07',3,3,'Draw','Draw'),(56,316,35,6,'2026-06-16',NULL,NULL,NULL,NULL),(57,316,7,35,'2026-02-14',1,2,'Loss','Win'),(58,316,35,7,'2026-06-23',NULL,NULL,NULL,NULL),(59,316,8,35,'2026-02-21',1,1,'Draw','Draw'),(60,316,35,8,'2026-06-30',NULL,NULL,NULL,NULL),(61,316,6,38,'2026-02-28',4,2,'Win','Loss'),(62,316,38,6,'2026-07-07',NULL,NULL,NULL,NULL),(63,316,7,38,'2026-03-07',4,3,'Win','Loss'),(64,316,38,7,'2026-07-14',NULL,NULL,NULL,NULL),(65,316,8,38,'2026-03-14',4,3,'Win','Loss'),(66,316,38,8,'2026-07-21',NULL,NULL,NULL,NULL),(67,316,6,11,'2026-03-21',2,1,'Win','Loss'),(68,316,11,6,'2026-07-28',NULL,NULL,NULL,NULL),(69,316,7,11,'2026-03-28',1,3,'Loss','Win'),(70,316,11,7,'2026-08-04',NULL,NULL,NULL,NULL),(71,316,8,11,'2026-04-04',0,0,'Draw','Draw'),(72,316,11,8,'2026-08-11',NULL,NULL,NULL,NULL),(73,316,6,12,'2026-04-11',0,1,'Loss','Win'),(74,316,12,6,'2026-08-18',NULL,NULL,NULL,NULL),(75,316,7,12,'2026-04-18',NULL,NULL,NULL,NULL),(76,316,12,7,'2026-08-25',NULL,NULL,NULL,NULL),(77,316,8,12,'2026-04-25',NULL,NULL,NULL,NULL),(78,316,12,8,'2026-09-01',NULL,NULL,NULL,NULL),(79,316,6,49,'2026-05-02',NULL,NULL,NULL,NULL),(80,316,49,6,'2026-09-08',NULL,NULL,NULL,NULL),(81,316,7,49,'2026-05-09',NULL,NULL,NULL,NULL),(82,316,49,7,'2026-09-15',NULL,NULL,NULL,NULL),(83,316,8,49,'2026-05-16',NULL,NULL,NULL,NULL),(84,316,49,8,'2026-09-22',NULL,NULL,NULL,NULL),(85,316,6,14,'2026-05-23',NULL,NULL,NULL,NULL),(86,316,14,6,'2026-09-29',NULL,NULL,NULL,NULL),(87,316,7,14,'2026-05-30',NULL,NULL,NULL,NULL),(88,316,14,7,'2026-10-06',NULL,NULL,NULL,NULL),(89,316,8,14,'2026-06-06',NULL,NULL,NULL,NULL),(90,316,14,8,'2026-10-13',NULL,NULL,NULL,NULL),(91,316,6,55,'2026-06-13',NULL,NULL,NULL,NULL),(92,316,55,6,'2026-10-20',NULL,NULL,NULL,NULL),(93,316,7,55,'2026-06-20',NULL,NULL,NULL,NULL),(94,316,55,7,'2026-10-27',NULL,NULL,NULL,NULL),(95,316,8,55,'2026-06-27',NULL,NULL,NULL,NULL),(96,316,55,8,'2026-11-03',NULL,NULL,NULL,NULL),(97,316,6,56,'2026-07-04',NULL,NULL,NULL,NULL),(98,316,56,6,'2026-11-10',NULL,NULL,NULL,NULL),(99,316,7,56,'2026-07-11',NULL,NULL,NULL,NULL),(100,316,56,7,'2026-11-17',NULL,NULL,NULL,NULL),(101,316,8,56,'2026-07-18',NULL,NULL,NULL,NULL),(102,316,56,8,'2026-11-24',NULL,NULL,NULL,NULL),(103,316,6,57,'2026-07-25',NULL,NULL,NULL,NULL),(104,316,57,6,'2026-12-01',NULL,NULL,NULL,NULL),(105,316,7,57,'2026-08-01',NULL,NULL,NULL,NULL),(106,316,57,7,'2026-12-08',NULL,NULL,NULL,NULL),(107,316,8,57,'2026-08-08',NULL,NULL,NULL,NULL),(108,316,57,8,'2026-12-15',NULL,NULL,NULL,NULL),(109,315,6,41,'2025-09-17',0,2,'Loss','Win'),(110,315,6,5,'2025-10-01',2,0,'Win','Loss'),(111,315,6,34,'2025-10-15',2,3,'Loss','Win'),(112,315,6,2,'2025-10-29',1,3,'Loss','Win'),(113,315,19,6,'2025-11-12',0,2,'Loss','Win'),(114,315,36,6,'2025-11-26',4,1,'Win','Loss'),(115,315,18,6,'2025-12-10',4,0,'Win','Loss'),(116,315,20,6,'2025-12-24',2,1,'Win','Loss'),(117,315,7,41,'2025-09-17',1,2,'Loss','Win'),(118,315,7,5,'2025-10-01',1,0,'Win','Loss'),(119,315,7,34,'2025-10-15',4,2,'Win','Loss'),(120,315,7,2,'2025-10-29',3,0,'Win','Loss'),(121,315,19,7,'2025-11-12',0,2,'Loss','Win'),(122,315,36,7,'2025-11-26',2,1,'Win','Loss'),(123,315,18,7,'2025-12-10',0,1,'Loss','Win'),(124,315,20,7,'2025-12-24',4,0,'Win','Loss'),(125,315,8,41,'2025-09-17',0,3,'Loss','Win'),(126,315,8,5,'2025-10-01',0,1,'Loss','Win'),(127,315,8,34,'2025-10-15',1,3,'Loss','Win'),(128,315,8,2,'2025-10-29',4,1,'Win','Loss'),(129,315,19,8,'2025-11-12',2,3,'Loss','Win'),(130,315,36,8,'2025-11-26',1,1,'Draw','Draw'),(131,315,18,8,'2025-12-10',2,3,'Loss','Win'),(132,315,20,8,'2025-12-24',2,3,'Loss','Win'),(133,315,8,13,'2026-04-15',NULL,NULL,NULL,NULL),(134,315,13,8,'2026-04-22',NULL,NULL,NULL,NULL),(135,315,6,5,'2026-04-16',NULL,NULL,NULL,NULL),(136,315,5,6,'2026-04-23',NULL,NULL,NULL,NULL),(137,315,7,15,'2026-04-16',NULL,NULL,NULL,NULL),(138,315,15,7,'2026-04-23',NULL,NULL,NULL,NULL),(139,315,8,6,'2026-04-29',NULL,NULL,NULL,NULL),(140,315,6,8,'2026-05-06',NULL,NULL,NULL,NULL),(141,315,7,13,'2026-04-30',NULL,NULL,NULL,NULL),(142,315,13,7,'2026-05-07',NULL,NULL,NULL,NULL),(143,315,8,7,'2026-05-31',NULL,NULL,NULL,NULL);
+INSERT INTO `match` VALUES (1,316,6,7,'2025-08-16',0,0,'Draw','Draw'),(2,316,6,8,'2025-09-13',2,1,'Win','Loss'),(3,316,7,6,'2025-10-11',1,1,'Draw','Draw'),(4,316,7,8,'2025-11-08',0,0,'Draw','Draw'),(5,316,8,6,'2025-12-06',4,3,'Win','Loss'),(6,316,8,7,'2026-01-03',0,0,'Draw','Draw'),(7,316,6,3,'2025-08-23',0,1,'Loss','Win'),(8,316,3,6,'2025-12-30',1,0,'Win','Loss'),(9,316,7,3,'2025-08-30',4,1,'Win','Loss'),(10,316,3,7,'2026-01-06',4,3,'Win','Loss'),(11,316,8,3,'2025-09-06',1,3,'Loss','Win'),(12,316,3,8,'2026-01-13',4,2,'Win','Loss'),(13,316,6,4,'2025-09-13',0,1,'Loss','Win'),(14,316,4,6,'2026-01-20',3,2,'Win','Loss'),(15,316,7,4,'2025-09-20',2,1,'Win','Loss'),(16,316,4,7,'2026-01-27',1,2,'Loss','Win'),(17,316,8,4,'2025-09-27',0,0,'Draw','Draw'),(18,316,4,8,'2026-02-03',3,0,'Win','Loss'),(19,316,6,23,'2025-10-04',2,2,'Draw','Draw'),(20,316,23,6,'2026-02-10',4,2,'Win','Loss'),(21,316,7,23,'2025-10-11',0,3,'Loss','Win'),(22,316,23,7,'2026-02-17',4,0,'Win','Loss'),(23,316,8,23,'2025-10-18',3,0,'Win','Loss'),(24,316,23,8,'2026-02-24',4,2,'Win','Loss'),(25,316,6,24,'2025-10-25',4,2,'Win','Loss'),(26,316,24,6,'2026-03-03',4,1,'Win','Loss'),(27,316,7,24,'2025-11-01',0,0,'Draw','Draw'),(28,316,24,7,'2026-03-10',1,2,'Loss','Win'),(29,316,8,24,'2025-11-08',0,1,'Loss','Win'),(30,316,24,8,'2026-03-17',0,3,'Loss','Win'),(31,316,6,9,'2025-11-15',2,3,'Loss','Win'),(32,316,9,6,'2026-03-24',2,1,'Win','Loss'),(33,316,7,9,'2025-11-22',2,2,'Draw','Draw'),(34,316,9,7,'2026-03-31',1,2,'Loss','Win'),(35,316,8,9,'2025-11-29',0,1,'Loss','Win'),(36,316,9,8,'2026-04-07',4,1,'Win','Loss'),(37,316,6,26,'2025-12-06',1,3,'Loss','Win'),(38,316,26,6,'2026-04-14',NULL,NULL,'Draw','Draw'),(39,316,7,26,'2025-12-13',3,2,'Win','Loss'),(40,316,26,7,'2026-04-21',NULL,NULL,'Draw','Draw'),(41,316,8,26,'2025-12-20',4,1,'Win','Loss'),(42,316,26,8,'2026-04-28',NULL,NULL,'Draw','Draw'),(43,316,6,10,'2025-12-27',2,0,'Win','Loss'),(44,316,10,6,'2026-05-05',NULL,NULL,'Draw','Draw'),(45,316,7,10,'2026-01-03',1,0,'Win','Loss'),(46,316,10,7,'2026-05-12',NULL,NULL,'Draw','Draw'),(47,316,8,10,'2026-01-10',2,3,'Loss','Win'),(48,316,10,8,'2026-05-19',NULL,NULL,'Draw','Draw'),(49,316,6,31,'2026-01-17',2,0,'Win','Loss'),(50,316,31,6,'2026-05-26',NULL,NULL,'Draw','Draw'),(51,316,7,31,'2026-01-24',1,2,'Loss','Win'),(52,316,31,7,'2026-06-02',NULL,NULL,'Draw','Draw'),(53,316,8,31,'2026-01-31',1,3,'Loss','Win'),(54,316,31,8,'2026-06-09',NULL,NULL,'Draw','Draw'),(55,316,6,35,'2026-02-07',3,3,'Draw','Draw'),(56,316,35,6,'2026-06-16',NULL,NULL,'Draw','Draw'),(57,316,7,35,'2026-02-14',1,2,'Loss','Win'),(58,316,35,7,'2026-06-23',NULL,NULL,'Draw','Draw'),(59,316,8,35,'2026-02-21',1,1,'Draw','Draw'),(60,316,35,8,'2026-06-30',NULL,NULL,'Draw','Draw'),(61,316,6,38,'2026-02-28',4,2,'Win','Loss'),(62,316,38,6,'2026-07-07',NULL,NULL,'Draw','Draw'),(63,316,7,38,'2026-03-07',4,3,'Win','Loss'),(64,316,38,7,'2026-07-14',NULL,NULL,'Draw','Draw'),(65,316,8,38,'2026-03-14',4,3,'Win','Loss'),(66,316,38,8,'2026-07-21',NULL,NULL,'Draw','Draw'),(67,316,6,11,'2026-03-21',2,1,'Win','Loss'),(68,316,11,6,'2026-07-28',NULL,NULL,'Draw','Draw'),(69,316,7,11,'2026-03-28',1,3,'Loss','Win'),(70,316,11,7,'2026-08-04',NULL,NULL,'Draw','Draw'),(71,316,8,11,'2026-04-04',0,0,'Draw','Draw'),(72,316,11,8,'2026-08-11',NULL,NULL,'Draw','Draw'),(73,316,6,12,'2026-04-11',0,1,'Loss','Win'),(74,316,12,6,'2026-08-18',NULL,NULL,'Draw','Draw'),(75,316,7,12,'2026-04-18',NULL,NULL,'Draw','Draw'),(76,316,12,7,'2026-08-25',NULL,NULL,'Draw','Draw'),(77,316,8,12,'2026-04-25',NULL,NULL,'Draw','Draw'),(78,316,12,8,'2026-09-01',NULL,NULL,'Draw','Draw'),(79,316,6,49,'2026-05-02',NULL,NULL,'Draw','Draw'),(80,316,49,6,'2026-09-08',NULL,NULL,'Draw','Draw'),(81,316,7,49,'2026-05-09',NULL,NULL,'Draw','Draw'),(82,316,49,7,'2026-09-15',NULL,NULL,'Draw','Draw'),(83,316,8,49,'2026-05-16',NULL,NULL,'Draw','Draw'),(84,316,49,8,'2026-09-22',NULL,NULL,'Draw','Draw'),(85,316,6,14,'2026-05-23',NULL,NULL,'Draw','Draw'),(86,316,14,6,'2026-09-29',NULL,NULL,'Draw','Draw'),(87,316,7,14,'2026-05-30',NULL,NULL,'Draw','Draw'),(88,316,14,7,'2026-10-06',NULL,NULL,'Draw','Draw'),(89,316,8,14,'2026-06-06',NULL,NULL,'Draw','Draw'),(90,316,14,8,'2026-10-13',NULL,NULL,'Draw','Draw'),(91,316,6,55,'2026-06-13',NULL,NULL,'Draw','Draw'),(92,316,55,6,'2026-10-20',NULL,NULL,'Draw','Draw'),(93,316,7,55,'2026-06-20',NULL,NULL,'Draw','Draw'),(94,316,55,7,'2026-10-27',NULL,NULL,'Draw','Draw'),(95,316,8,55,'2026-06-27',NULL,NULL,'Draw','Draw'),(96,316,55,8,'2026-11-03',NULL,NULL,'Draw','Draw'),(97,316,6,56,'2026-07-04',NULL,NULL,'Draw','Draw'),(98,316,56,6,'2026-11-10',NULL,NULL,'Draw','Draw'),(99,316,7,56,'2026-07-11',NULL,NULL,'Draw','Draw'),(100,316,56,7,'2026-11-17',NULL,NULL,'Draw','Draw'),(101,316,8,56,'2026-07-18',NULL,NULL,'Draw','Draw'),(102,316,56,8,'2026-11-24',NULL,NULL,'Draw','Draw'),(103,316,6,57,'2026-07-25',NULL,NULL,'Draw','Draw'),(104,316,57,6,'2026-12-01',NULL,NULL,'Draw','Draw'),(105,316,7,57,'2026-08-01',NULL,NULL,'Draw','Draw'),(106,316,57,7,'2026-12-08',NULL,NULL,'Draw','Draw'),(107,316,8,57,'2026-08-08',NULL,NULL,'Draw','Draw'),(108,316,57,8,'2026-12-15',NULL,NULL,'Draw','Draw'),(109,315,6,41,'2025-09-17',0,2,'Loss','Win'),(110,315,6,5,'2025-10-01',2,0,'Win','Loss'),(111,315,6,34,'2025-10-15',2,3,'Loss','Win'),(112,315,6,2,'2025-10-29',1,3,'Loss','Win'),(113,315,19,6,'2025-11-12',0,2,'Loss','Win'),(114,315,36,6,'2025-11-26',4,1,'Win','Loss'),(115,315,18,6,'2025-12-10',4,0,'Win','Loss'),(116,315,20,6,'2025-12-24',2,1,'Win','Loss'),(117,315,7,41,'2025-09-17',1,2,'Loss','Win'),(118,315,7,5,'2025-10-01',1,0,'Win','Loss'),(119,315,7,34,'2025-10-15',4,2,'Win','Loss'),(120,315,7,2,'2025-10-29',3,0,'Win','Loss'),(121,315,19,7,'2025-11-12',0,2,'Loss','Win'),(122,315,36,7,'2025-11-26',2,1,'Win','Loss'),(123,315,18,7,'2025-12-10',0,1,'Loss','Win'),(124,315,20,7,'2025-12-24',4,0,'Win','Loss'),(125,315,8,41,'2025-09-17',0,3,'Loss','Win'),(126,315,8,5,'2025-10-01',0,1,'Loss','Win'),(127,315,8,34,'2025-10-15',1,3,'Loss','Win'),(128,315,8,2,'2025-10-29',4,1,'Win','Loss'),(129,315,19,8,'2025-11-12',2,3,'Loss','Win'),(130,315,36,8,'2025-11-26',1,1,'Draw','Draw'),(131,315,18,8,'2025-12-10',2,3,'Loss','Win'),(132,315,20,8,'2025-12-24',2,3,'Loss','Win'),(133,315,8,13,'2026-04-15',NULL,NULL,'Draw','Draw'),(134,315,13,8,'2026-04-22',NULL,NULL,'Draw','Draw'),(135,315,6,5,'2026-04-16',NULL,NULL,'Draw','Draw'),(136,315,5,6,'2026-04-23',NULL,NULL,'Draw','Draw'),(137,315,7,15,'2026-04-16',NULL,NULL,'Draw','Draw'),(138,315,15,7,'2026-04-23',NULL,NULL,'Draw','Draw'),(139,315,8,6,'2026-04-29',NULL,NULL,'Draw','Draw'),(140,315,6,8,'2026-05-06',NULL,NULL,'Draw','Draw'),(141,315,7,13,'2026-04-30',NULL,NULL,'Draw','Draw'),(142,315,13,7,'2026-05-07',NULL,NULL,'Draw','Draw'),(143,315,8,7,'2026-05-31',NULL,NULL,'Draw','Draw');
 /*!40000 ALTER TABLE `match` ENABLE KEYS */;
 UNLOCK TABLES;
+/*!50003 SET @saved_cs_client      = @@character_set_client */ ;
+/*!50003 SET @saved_cs_results     = @@character_set_results */ ;
+/*!50003 SET @saved_col_connection = @@collation_connection */ ;
+/*!50003 SET character_set_client  = utf8mb4 */ ;
+/*!50003 SET character_set_results = utf8mb4 */ ;
+/*!50003 SET collation_connection  = utf8mb4_0900_ai_ci */ ;
+/*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
+/*!50003 SET sql_mode              = 'ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION' */ ;
+DELIMITER ;;
+/*!50003 CREATE*/ /*!50017 DEFINER=`root`@`localhost`*/ /*!50003 TRIGGER `trg_match_validate_insert` BEFORE INSERT ON `match` FOR EACH ROW BEGIN
+    IF NEW.home_team_id = NEW.away_team_id THEN
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Home and away teams must be different';
+    END IF;
+
+    IF NEW.home_score > NEW.away_score THEN
+        SET NEW.home_result = 'Win';
+        SET NEW.away_result = 'Loss';
+    ELSEIF NEW.home_score < NEW.away_score THEN
+        SET NEW.home_result = 'Loss';
+        SET NEW.away_result = 'Win';
+    ELSE
+        SET NEW.home_result = 'Draw';
+        SET NEW.away_result = 'Draw';
+    END IF;
+END */;;
+DELIMITER ;
+/*!50003 SET sql_mode              = @saved_sql_mode */ ;
+/*!50003 SET character_set_client  = @saved_cs_client */ ;
+/*!50003 SET character_set_results = @saved_cs_results */ ;
+/*!50003 SET collation_connection  = @saved_col_connection */ ;
+/*!50003 SET @saved_cs_client      = @@character_set_client */ ;
+/*!50003 SET @saved_cs_results     = @@character_set_results */ ;
+/*!50003 SET @saved_col_connection = @@collation_connection */ ;
+/*!50003 SET character_set_client  = utf8mb4 */ ;
+/*!50003 SET character_set_results = utf8mb4 */ ;
+/*!50003 SET collation_connection  = utf8mb4_0900_ai_ci */ ;
+/*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
+/*!50003 SET sql_mode              = 'ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION' */ ;
+DELIMITER ;;
+/*!50003 CREATE*/ /*!50017 DEFINER=`root`@`localhost`*/ /*!50003 TRIGGER `trg_match_validate_update` BEFORE UPDATE ON `match` FOR EACH ROW BEGIN
+    IF NEW.home_team_id = NEW.away_team_id THEN
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Home and away teams must be different';
+    END IF;
+
+    IF NEW.home_score > NEW.away_score THEN
+        SET NEW.home_result = 'Win';
+        SET NEW.away_result = 'Loss';
+    ELSEIF NEW.home_score < NEW.away_score THEN
+        SET NEW.home_result = 'Loss';
+        SET NEW.away_result = 'Win';
+    ELSE
+        SET NEW.home_result = 'Draw';
+        SET NEW.away_result = 'Draw';
+    END IF;
+END */;;
+DELIMITER ;
+/*!50003 SET sql_mode              = @saved_sql_mode */ ;
+/*!50003 SET character_set_client  = @saved_cs_client */ ;
+/*!50003 SET character_set_results = @saved_cs_results */ ;
+/*!50003 SET collation_connection  = @saved_col_connection */ ;
 
 --
 -- Table structure for table `matchperformance`
@@ -256,7 +368,7 @@ CREATE TABLE `player` (
   CONSTRAINT `fk_player_club` FOREIGN KEY (`club_id`) REFERENCES `club` (`club_id`) ON DELETE SET NULL ON UPDATE CASCADE,
   CONSTRAINT `fk_player_country` FOREIGN KEY (`country_abbr`) REFERENCES `country` (`country_abbr`) ON DELETE SET NULL ON UPDATE CASCADE,
   CONSTRAINT `fk_player_position` FOREIGN KEY (`position_id`) REFERENCES `position` (`position_id`) ON DELETE SET NULL ON UPDATE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=317 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=318 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -268,6 +380,93 @@ LOCK TABLES `player` WRITE;
 INSERT INTO `player` VALUES (0,'Rafael','Leão','1999-06-10','Almada',188.00,'Right',1,'PRT',2),(1,'Ciprian','Tatarusanu','1986-02-09','Bukarest',198.00,'Right',7,'ROU',2),(2,'Jed','Steer','1992-09-23','Norwich',183.00,'Left',7,'ENG',4),(3,'Wayne','Hennessey','1987-01-24','Beaumaris',198.00,'Right',7,'WAL',12),(4,'Tom','Heaton','1986-04-15','Chester',188.00,'Right',7,'ENG',7),(5,'Harry','Arter','1989-12-28','London',177.00,'Left',9,'IRL',12),(6,'Jack','Colback','1989-10-24','Killingworth',177.00,'Left',10,'ENG',12),(7,'Ashley','Young','1985-07-09','Stevenage',175.00,'Both',5,'ENG',4),(9,'Harry','Kane','1993-07-28','London',188.00,'Right',0,'ENG',14),(10,'Bukayo','Saka','2001-09-05','London',178.00,'Left',12,'ENG',3),(11,'Erling','Haaland','2000-07-21','Leeds',195.00,'Left',0,'NOR',6),(12,'Seamus','Coleman','1988-10-11','Donegal',177.00,'Right',6,'IRL',10),(13,'Loris','Karius','1993-06-22','Biberach an der Riß',191.00,'Right',7,'GER',11),(14,'Matt','Ritchie','1989-09-10','Gosport',173.00,'Left',12,'SCO',11),(15,'Phil','Foden','2000-05-28','Stockport',171.00,'Left',9,'ENG',6),(16,'Phil','Jones','1992-02-21','Preston',185.00,'Right',4,'ENG',7),(17,'Paul','Dummett','1991-09-26','Newcastle upon Tyne',183.00,'Left',5,'WAL',11),(18,'Jesús','Vallejo','1997-01-05','Zaragoza',184.00,'Right',4,'ESP',13),(19,'Karl','Darlow','1990-10-08','Northampton',190.00,'Right',7,'ENG',11),(20,'Fraser','Forster','1988-03-17','Hexham',201.00,'Right',7,'ENG',14),(21,'Marc-André','ter Stegen','1992-04-30','Mönchengladbach',187.00,'Right',7,'GER',15),(22,'Andreas','Christensen','1996-04-10','Lillerød',187.00,'Right',4,'DEN',15),(23,'Ferran','Torres','2000-02-29','Foios',182.00,'Right',1,'ESP',15),(24,'Karim','Benzema','1987-12-19','Lyon',185.00,'Right',0,'FRA',13),(25,'Antonio','Rüdiger','1993-03-03','Berlin',190.00,'Right',4,'GER',13),(26,'Ferland','Mendy','1995-06-08','Meulan-en-Yvelines',180.00,'Left',5,'FRA',13),(28,'Sergio','Busquets','1988-07-16','Badia del Vallès',189.00,'Right',10,'ESP',15),(29,'Jordi','Alba','1989-03-21','L\'Hospitalet de Llobregat',170.00,'Left',5,'ESP',15),(30,'Gerard','Piqué','1987-02-02','Barcelona',194.00,'Right',4,'ESP',15),(31,'Iñaki','Peña','1999-03-02','Alicante',184.00,'Right',7,'ESP',15),(32,'Andriy','Lunin','1999-02-11','Krasnograd, Kharkiv Oblast',191.00,'Right',7,'UKR',13),(34,'Willem','Geubbels','2001-08-16','Villeurbanne',185.00,'Right',1,'FRA',1),(35,'Soungoutou','Magassa','2003-10-08','Stains',188.00,'Right',10,'FRA',1),(36,'Maghnes','Akliouche','2002-02-25','Tremblay-en-France',183.00,'Left',8,'FRA',1),(37,'Thomas','Didillon','1995-11-28','Séclin',193.00,'Left',7,'FRA',1),(38,'Félix','Lemaréchal','2003-08-07','Tours',180.00,'Right',9,'FRA',1),(39,'Guillermo','Maripán','1994-05-06','Vitacura',190.00,'Right',4,'CHI',1),(40,'Ismail','Jakobs','1999-08-17','Köln',184.00,'Left',5,'SEN',1),(41,'Eliot','Matazo','2002-02-15','Woluwe-Saint-Lambert',170.00,'Right',9,'BEL',1),(42,'Wissam','Ben Yedder','1990-08-12','Sarcelles',170.00,'Both',0,'FRA',1),(43,'Malang','Sarr','1999-01-23','Nice',183.00,'Left',4,'FRA',1),(44,'Breel','Embolo','1997-02-14','Yaoundé',187.00,'Right',0,'SUI',1),(45,'Aleksandr','Golovin','1996-05-30','Kaltan, Kemerovo Oblast',178.00,'Right',8,'RUS',1),(46,'Axel','Disasi','1998-03-11','Gonesse',190.00,'Right',4,'FRA',1),(47,'Youssouf','Fofana','1999-01-10','Paris',185.00,'Right',9,'FRA',1),(48,'Zlatan','Ibrahimović','1981-10-03','Malmö',195.00,'Both',0,'SWE',2),(49,'Kevin','Volland','1992-07-30','Marktoberdorf',174.00,'Left',0,'GER',1),(50,'Ruben','Aguilar','1993-04-26','Grenoble',170.00,'Right',6,'FRA',1),(51,'Takumi','Minamino','1995-01-16','Izumisano, Osaka',172.00,'Right',1,'JPN',1),(52,'Myron','Boadu','2001-01-14','Amsterdam',181.00,'Right',0,'NLD',1),(53,'Gelson','Martins','1995-05-11','Praia',170.00,'Right',2,'PRT',1),(54,'Alexander','Nübel','1996-09-30','Paderborn',193.00,'Right',7,'GER',1),(55,'Krépin','Diatta','1999-02-25','Dakar',175.00,'Right',2,'SEN',1),(56,'Aurélien','Tchouameni','2000-01-27','Rouen',187.00,'Right',10,'FRA',13),(57,'Tommaso','Pobega','1999-07-15','Trieste',188.00,'Both',9,'ITA',2),(58,'Alexis','Saelemaekers','1999-06-27','Berchem-Sainte-Agathe',180.00,'Right',2,'BEL',2),(60,'Matteo','Gabbia','1999-10-21','Busto Arsizio',185.00,'Right',4,'ITA',2),(61,'Simon','Kjaer','1989-03-26','Horsens',191.00,'Right',4,'DEN',2),(62,'Malick','Thiaw','2001-08-08','Düsseldorf',194.00,'Right',4,'GER',2),(63,'Junior','Messias','1991-05-13','Belo Horizonte',174.00,'Left',2,'BRA',2),(64,'Brahim','Díaz','1999-08-03','Málaga',171.00,'Both',8,'ESP',2),(65,'Yacine','Adli','2000-07-29','Vitry-sur-Seine',186.00,'Right',8,'FRA',2),(66,'Divock','Origi','1995-04-18','Oostende',189.00,'Right',0,'BEL',2),(67,'Aster','Vranckx','2002-10-04','Erps-Kwerps',183.00,'Right',9,'BEL',2),(68,'Davide','Calabria','1996-12-06','Brescia',176.00,'Right',6,'ITA',2),(69,'Charles','De Ketelaere','2001-03-10','Brugge',192.00,'Left',8,'BEL',2),(70,'Pierre','Kalulu','2000-06-05','Lyon',182.00,'Right',4,'FRA',2),(71,'Mike','Maignan','1995-07-03','Cayenne',191.00,'Right',7,'FRA',2),(72,'Alessandro','Florenzi','1991-03-11','Roma',173.00,'Right',6,'ITA',2),(74,'Ante','Rebic','1993-09-21','Split',185.00,'Right',1,'CRO',2),(75,'Olivier','Giroud','1986-09-30','Chambéry',192.00,'Left',0,'FRA',2),(76,'Tiemoué','Bakayoko','1994-08-17','Paris',189.00,'Right',10,'FRA',2),(77,'Marko','Lazetić','2004-01-22','Belgrad',192.00,'Right',0,'SRB',2),(78,'Fodé','Ballo-Touré','1997-01-03','Conflans-Sainte-Honorine',182.00,'Left',5,'SEN',2),(79,'Federico','Valverde','1998-07-22','Montevideo',182.00,'Right',9,'URU',13),(80,'Daniel','Carvajal','1992-01-11','Leganés',173.00,'Right',6,'ESP',13),(81,'Eric','García','2001-01-09','Barcelona',182.00,'Right',4,'ESP',15),(82,'Memphis','Depay','1994-02-13','Moordrecht',178.00,'Right',0,'NLD',15),(83,'Marco','Asensio','1996-01-21','Palma de Mallorca',182.00,'Left',2,'ESP',13),(84,'Toni','Kroos','1990-01-04','Greifswald',183.00,'Right',9,'GER',13),(85,'Marcus','Bettinelli','1992-05-24','London',193.00,'Right',7,'ENG',9),(86,'Giulian','Biancone','2000-03-31','Fréjus',187.00,'Right',6,'FRA',12),(87,'Japhet','Tanganga','1999-03-31','London',184.00,'Right',4,'ENG',14),(88,'Jan','Bednarek','1996-04-12','Słupca',189.00,'Right',4,'POL',4),(89,'Jordan','Henderson','1990-06-17','Sunderland',187.00,'Right',9,'ENG',8),(90,'Sergio','Gómez','2000-09-04','Badalona',171.00,'Left',5,'ESP',6),(91,'Carney','Chukwuemeka','2003-10-20','Eisenstadt',187.00,'Right',9,'ENG',9),(92,'Bryan','Gil','2001-02-11','Barbate (Cádiz)',175.00,'Left',1,'ESP',14),(93,'Victor','Lindelöf','1994-07-17','Västerås',187.00,'Right',4,'SWE',7),(94,'Emil','Krafth','1994-08-02','Ljungby',184.00,'Right',6,'SWE',11),(95,'Martin','Dúbravka','1989-01-15','Žilina',191.00,'Right',7,'SVK',7),(96,'Ludwig','Augustinsson','1994-04-21','Stockholm',181.00,'Left',5,'SWE',4),(98,'Frédéric','Guilbert','1994-12-24','Valognes',178.00,'Right',6,'FRA',4),(99,'Marvelous','Nakamba','1994-01-19','Hwange',177.00,'Left',10,'ZIM',4),(100,'Alejandro','Garnacho','2004-07-01','Madrid',180.00,'Right',1,'ARG',7),(101,'Rúben','Vinagre','1999-04-09','Charneca da Caparica',174.00,'Left',5,'PRT',10),(102,'Cédric','Soares','1991-08-31','Singen',171.00,'Right',6,'PRT',3),(103,'Pierre-Emerick','Aubameyang','1989-06-18','Laval',186.00,'Right',0,'GAB',9),(104,'Tom','Davies','1998-06-30','Liverpool',180.00,'Right',9,'ENG',10),(105,'Abdoulaye','Doucouré','1993-01-01','Meulan-en-Yvelines',183.00,'Right',9,'MLI',10),(106,'Orel','Mangala','1998-03-18','Brüssel',178.00,'Right',9,'BEL',12),(107,'Matt','Doherty','1992-01-16','Dublin',185.00,'Right',6,'IRL',14),(108,'Dan','Burn','1992-05-09','Blyth',201.00,'Left',4,'ENG',11),(110,'Aaron','Wan-Bissaka','1997-11-26','London',183.00,'Right',6,'ENG',7),(111,'Clément','Lenglet','1995-06-17','Beauvais',186.00,'Left',4,'FRA',14),(112,'Ben','Godfrey','1998-01-15','York',184.00,'Right',4,'ENG',10),(113,'Nick','Pope','1992-04-19','Soham',198.00,'Right',7,'ENG',11),(114,'Callum','Wilson','1992-02-27','Coventry',180.00,'Right',0,'ENG',11),(115,'Conor','Coady','1993-02-25','Liverpool',185.00,'Right',4,'ENG',10),(116,'Konstantinos','Tsimikas','1996-05-12','Thessaloniki',179.00,'Left',5,'GRE',8),(117,'Neco','Williams','2001-04-13','Wrexham',183.00,'Right',6,'WAL',12),(118,'Moussa','Niakhaté','1996-03-08','Roubaix',190.00,'Left',4,'SEN',12),(119,'Dwight','McNeil','1999-11-22','Rochdale',183.00,'Left',1,'ENG',10),(120,'Anthony','Martial','1995-12-05','Massy',181.00,'Right',0,'FRA',7),(121,'Pape Matar','Sarr','2002-09-14','Thiaroye',184.00,'Right',9,'SEN',14),(122,'Albert Sambi','Lokonga','1999-10-22','Verviers',183.00,'Right',9,'BEL',3),(123,'David','de Gea','1990-11-07','Madrid',189.00,'Right',7,'ESP',7),(124,'Kyle','Walker','1990-05-28','Sheffield',183.00,'Right',6,'ENG',6),(125,'Mason','Holgate','1996-10-22','Doncaster',187.00,'Right',4,'ENG',10),(126,'Cole','Palmer','2002-05-06','Manchester',182.00,'Left',8,'ENG',6),(127,'Danny','Ings','1992-07-23','Winchester',177.00,'Right',0,'ENG',4),(128,'Joel','Matip','1991-08-08','Bochum',195.00,'Right',4,'CMR',8),(129,'Eddie','Nketiah','1999-05-30','London',175.00,'Right',0,'ENG',3),(130,'Yerry','Mina','1994-09-23','Guachené',195.00,'Right',4,'COL',10),(131,'Philippe','Coutinho','1992-06-12','Rio de Janeiro',172.00,'Right',1,'BRA',4),(132,'Demarai','Gray','1996-06-28','Birmingham',183.00,'Right',1,'ENG',10),(133,'Ben','Davies','1993-04-24','Neath',181.00,'Left',5,'WAL',14),(134,'Donny','van de Beek','1997-04-18','Nijkerkerveen',184.00,'Right',9,'NLD',7),(135,'Naby','Keïta','1995-02-10','Conakry',172.00,'Right',9,'GUI',8),(136,'Brennan','Johnson','2001-05-23','Nottingham',179.00,'Right',3,'WAL',12),(137,'Taiwo','Awoniyi','1997-08-12','Ilorin',183.00,'Right',0,'NGA',12),(138,'Miguel','Almirón','1994-02-10','Asunción',174.00,'Left',8,'PAR',11),(139,'Denis','Zakaria','1996-11-20','Genf',190.00,'Right',10,'SUI',9),(140,'Renan','Lodi','1998-04-08','Serrana',173.00,'Left',5,'BRA',12),(141,'Emmanuel','Dennis','1997-11-15','Abuja',175.00,'Right',0,'NGA',12),(142,'Kieran','Trippier','1990-09-19','Bury',173.00,'Right',6,'ENG',11),(143,'Kepa','Arrizabalaga','1994-10-03','Ondarroa',186.00,'Right',7,'ESP',9),(144,'Neal','Maupay','1996-08-14','Versailles',173.00,'Right',0,'FRA',10),(145,'Remo','Freuler','1992-04-15','Ennenda',180.00,'Right',9,'SUI',12),(146,'Nathan','Patterson','2001-10-16','Glasgow',189.00,'Right',6,'SCO',10),(147,'Jesse','Lingard','1992-12-15','Warrington',174.00,'Right',8,'ENG',12),(148,'James','Garner','2001-03-13','Birkenhead',182.00,'Right',10,'ENG',10),(149,'Djed','Spence','2000-08-09','London',184.00,'Right',6,'ENG',14),(150,'Oliver','Skipp','2000-09-16','Welwyn Garden City',175.00,'Right',10,'ENG',14),(151,'Ivan','Perisic','1989-02-02','Split',186.00,'Both',11,'CRO',14),(152,'Calum','Chambers','1995-01-20','Petersfield',182.00,'Right',4,'ENG',4),(153,'Rob','Holding','1995-09-20','Stalybridge',189.00,'Right',4,'ENG',3),(154,'Scott','McKenna','1996-11-12','Kirriemuir',189.00,'Left',4,'SCO',12),(155,'Matt','Targett','1995-09-18','Eastleigh',183.00,'Left',5,'ENG',11),(156,'Loïc','Badé','2000-04-11','Sèvres',191.00,'Right',4,'FRA',12),(157,'Jacob','Murphy','1995-02-24','London',173.00,'Right',2,'ENG',11),(158,'Ryan','Fraser','1994-02-24','Aberdeen',163.00,'Right',1,'SCO',11),(160,'Brandon','Williams','2000-09-03','Crumpsall',180.00,'Right',5,'ENG',7),(161,'Joe','Worrall','1997-01-10','Nottingham',190.00,'Right',4,'ENG',12),(162,'Idrissa','Gueye','1989-09-26','Dakar',174.00,'Right',9,'SEN',10),(164,'Fabian','Schär','1991-12-20','Wil',186.00,'Right',4,'SUI',11),(165,'César','Azpilicueta','1989-08-28','Pamplona',178.00,'Right',6,'ESP',9),(166,'Lewis','O\'Brien','1998-10-14','Colchester',173.00,'Left',9,'ENG',12),(167,'Mohamed','Elneny','1992-07-11','Mahalla',179.00,'Right',10,'EGY',3),(168,'Ryan','Yates','1997-11-21','Nottingham',190.00,'Right',9,'ENG',12),(169,'Michael','Keane','1993-01-11','Manchester',188.00,'Right',4,'ENG',10),(170,'Calvin','Ramsay','2003-07-31','Aberdeen',177.00,'Right',6,'SCO',8),(171,'Alex','Oxlade-Chamberlain','1993-08-15','Portsmouth',175.00,'Right',9,'ENG',8),(172,'Stefan','Ortega','1992-11-06','Hofgeismar',185.00,'Right',7,'GER',6),(173,'Morgan','Sanson','1994-08-18','Saint-Doulchard',180.00,'Right',9,'FRA',4),(175,'Axel','Tuanzebe','1997-11-14','Bunia',185.00,'Right',4,'ENG',7),(176,'Jamaal','Lascelles','1993-11-11','Derby',188.00,'Right',4,'ENG',11),(177,'Hugo','Lloris','1986-12-26','Nizza',188.00,'Left',7,'FRA',14),(178,'Reiss','Nelson','1999-12-10','London',175.00,'Right',2,'ENG',3),(179,'Caoimhín','Kelleher','1998-11-23','Cork',188.00,'Right',7,'IRL',8),(180,'Jonjo','Shelvey','1992-02-27','Romford',184.00,'Right',9,'ENG',11),(181,'Andros','Townsend','1991-07-16','Walthamstow',181.00,'Left',2,'ENG',10),(182,'Omar','Richards','1998-02-15','London',174.00,'Left',5,'ENG',12),(183,'Facundo','Pellistri','2001-12-20','Montevideo',174.00,'Right',2,'URU',7),(184,'Javier','Manquillo','1994-05-05','Madrid',178.00,'Right',6,'ESP',11),(185,'Nathaniel','Phillips','1997-03-21','Bolton',190.00,'Right',4,'ENG',8),(186,'Steve','Cook','1991-04-19','Hastings',185.00,'Right',4,'ENG',12),(187,'Cheikhou','Kouyaté','1989-12-21','Dakar',189.00,'Right',10,'SEN',12),(188,'Sam','Surridge','1998-07-28','Slough',190.00,'Right',0,'ENG',12),(189,'Harry','Toffolo','1995-08-19','Welwyn Garden City',183.00,'Left',5,'ENG',12),(190,'Cameron','Archer','2001-12-09','Walsall',175.00,'Right',0,'ENG',4),(191,'James','Milner','1986-01-04','Leeds',175.00,'Right',9,'ENG',8),(192,'Elliot','Anderson','2002-11-06','Whitley Bay',179.00,'Right',8,'SCO',11),(193,'Loïc','Mbe Soh','2001-06-13','Souza Gare',187.00,'Right',4,'FRA',12),(194,'Robin','Olsen','1990-01-08','Malmö',196.00,'Right',7,'SWE',4),(195,'Thiago','Silva','1984-09-22','Rio de Janeiro',181.00,'Right',4,'BRA',9),(196,'Matty','Cash','1997-08-07','Slough',185.00,'Right',6,'POL',4),(197,'Amadou','Onana','2001-08-16','Dakar',195.00,'Right',10,'BEL',10),(198,'Fábio','Carvalho','2002-08-30','Torres Vedras',170.00,'Right',8,'PRT',8),(199,'Armando','Broja','2001-09-10','Slough',191.00,'Right',0,'ALB',9),(200,'Aaron','Ramsdale','1998-05-14','Chesterton',190.00,'Right',7,'ENG',3),(201,'Dominic','Calvert-Lewin','1997-03-16','Sheffield',189.00,'Right',0,'ENG',10),(202,'Scott','McTominay','1996-12-08','Lancaster',191.00,'Right',10,'SCO',7),(203,'Conor','Gallagher','2000-02-06','Epsom',182.00,'Right',9,'ENG',9),(204,'Diogo','Dalot','1999-03-18','Braga',183.00,'Right',6,'PRT',7),(205,'Yves','Bissouma','1996-08-30','Issia',182.00,'Right',9,'MLI',14),(206,'Ollie','Watkins','1995-12-30','Torquay',180.00,'Right',0,'ENG',4),(207,'Oleksandr','Zinchenko','1996-12-15','Radomyshl, Zhytomyr Oblast',175.00,'Left',5,'UKR',3),(208,'Kalidou','Koulibaly','1991-06-20','Saint-Dié-des-Vosges',186.00,'Right',4,'SEN',9),(209,'Harvey','Elliott','2003-04-04','London',170.00,'Left',8,'ENG',8),(210,'Jacob','Ramsey','2001-05-28','Birmingham',180.00,'Right',9,'ENG',4),(211,'Ibrahima','Konaté','1999-05-25','Paris',194.00,'Right',4,'FRA',8),(212,'Johannes','Schenk','2003-01-13','Schweinfurt',191.00,'',7,'GER',5),(213,'Sven','Ulreich','1988-08-03','Schorndorf',192.00,'Right',7,'GER',5),(214,'William','Saliba','2001-03-24','Bondy',192.00,'Right',4,'FRA',3),(215,'Virgil','van Dijk','1991-07-08','Breda',193.00,'Right',4,'NLD',8),(216,'Lisandro','Martínez','1998-01-18','Gualeguay',175.00,'Left',4,'ARG',7),(217,'Alexander','Isak','1999-09-21','Solna',192.00,'Right',0,'SWE',11),(218,'Dejan','Kulusevski','2000-04-25','Stockholm',186.00,'Left',2,'SWE',14),(219,'Martin','Ødegaard','1998-12-17','Drammen',178.00,'Left',8,'NOR',3),(220,'Gabriel','Martinelli','2001-06-18','Guarulhos',178.00,'Right',1,'BRA',3),(221,'Bruno','Guimarães','1997-11-16','Rio de Janeiro',182.00,'Right',10,'BRA',11),(222,'Wesley','Fofana','2000-12-17','Marseille',186.00,'Right',4,'FRA',9),(223,'Kai','Havertz','1999-06-11','Aachen',190.00,'Left',8,'GER',9),(224,'Darwin','Núñez','1999-06-24','Artigas',187.00,'Right',0,'URU',8),(226,'Trent','Alexander-Arnold','1998-10-07','Liverpool',180.00,'Right',6,'ENG',8),(227,'Andrew','Robertson','1994-03-11','Glasgow',178.00,'Left',5,'SCO',8),(228,'Reece','James','1999-12-08','London',180.00,'Right',6,'ENG',9),(229,'Raheem','Sterling','1994-12-08','Kingston',170.00,'Right',1,'ENG',9),(230,'Joshua','Kimmich','1995-02-08','Rottweil',177.00,'Right',10,'GER',5),(231,'Marc','Cucurella','1998-07-22','Alella',173.00,'Left',5,'ESP',9),(232,'Jadon','Sancho','2000-03-25','London',180.00,'Right',1,'ENG',7),(233,'Thomas','Partey','1993-06-13','Odumase Krobo',185.00,'Right',10,'GHA',3),(234,'Sven','Botman','2000-01-12','Badhoevedorp',195.00,'Left',4,'NLD',11),(235,'Ben','Chilwell','1996-12-21','Milton Keynes',180.00,'Left',5,'ENG',9),(236,'Rodrigo','Bentancur','1997-06-25','Nueva Helvecia',187.00,'Right',9,'URU',14),(237,'Marcus','Rashford','1997-10-31','Manchester',185.00,'Right',1,'ENG',7),(239,'Anthony','Gordon','2001-02-24','Liverpool',182.00,'Right',1,'ENG',10),(240,'Allan','Saint-Maximin','1997-03-12','Châtenay-Malabry',173.00,'Right',1,'FRA',11),(241,'Mateo','Kovacic','1994-05-06','Linz',177.00,'Right',9,'CRO',9),(242,'Emile','Smith Rowe','2000-07-28','London',182.00,'Right',8,'ENG',3),(243,'Kalvin','Phillips','1995-12-02','Leeds',179.00,'Right',10,'ENG',6),(244,'Pierre-Emile','Höjbjerg','1995-08-05','København',185.00,'Right',9,'DEN',14),(245,'Jamal','Musiala','2003-02-26','Stuttgart',184.00,'Right',8,'GER',5),(246,'Leon','Bailey','1997-08-09','Kingston',178.00,'Left',1,'JAM',4),(247,'Gabriel','Magalhães','1997-12-19','São Paulo',190.00,'Left',4,'BRA',3),(248,'Ilkay','Gündogan','1990-10-24','Gelsenkirchen',180.00,'Right',9,'GER',6),(249,'Boubacar','Kamara','1999-11-23','Marseille',184.00,'Right',10,'FRA',4),(250,'Edouard','Mendy','1992-03-01','Montivilliers',194.00,'Right',7,'SEN',9),(251,'Raphaël','Varane','1993-04-25','Lille',191.00,'Right',4,'FRA',7),(252,'Davinson','Sánchez','1996-06-12','Caloto',187.00,'Right',4,'COL',14),(253,'Tyrone','Mings','1993-03-13','Bath',196.00,'Left',4,'ENG',4),(254,'Ruben','Loftus-Cheek','1996-01-23','London',191.00,'Right',9,'ENG',9),(255,'Alex','Iwobi','1996-05-03','Lagos',183.00,'Right',8,'NGA',10),(256,'Morgan','Gibbs-White','2000-01-27','Stafford',178.00,'Right',8,'ENG',12),(257,'Luke','Shaw','1995-07-12','Kingston upon Thames',178.00,'Left',5,'ENG',7),(258,'Aymeric','Laporte','1994-05-27','Agen',189.00,'Left',4,'ESP',6),(259,'Takehiro','Tomiyasu','1998-11-05','Fukuoka, Fukuoka',188.00,'Right',6,'JPN',3),(260,'Granit','Xhaka','1992-09-27','Basel',186.00,'Left',10,'SUI',3),(261,'Emiliano','Buendía','1996-12-25','Mar del Plata',172.00,'Right',2,'ARG',4),(262,'Harry','Maguire','1993-03-05','Sheffield',194.00,'Right',4,'ENG',7),(263,'Joe','Willock','1999-08-20','London',186.00,'Right',9,'ENG',11),(264,'Kieran','Tierney','1997-06-05','Douglas',180.00,'Left',5,'SCO',3),(265,'Joe','Gomez','1997-05-23','London',188.00,'Right',4,'ENG',8),(266,'Riyad','Mahrez','1991-02-21','Sarcelles',179.00,'Left',2,'ALG',6),(267,'Nathan','Aké','1995-02-18','Den Haag',180.00,'Left',4,'NLD',6),(268,'Manuel','Akanji','1995-07-19','Wiesendangen',188.00,'Right',4,'SUI',6),(269,'John','McGinn','1994-10-18','Glasgow',178.00,'Left',9,'SCO',4),(270,'Eric','Dier','1994-01-15','Cheltenham',188.00,'Right',4,'ENG',14),(271,'John','Stones','1994-05-28','Barnsley',188.00,'Right',4,'ENG',6),(272,'Fábio','Vieira','2000-05-30','Santa Maria da Feira',170.00,'Left',8,'PRT',3),(273,'Ezri','Konsa','1997-10-23','London',183.00,'Right',4,'ENG',4),(274,'Tyrell','Malacia','1999-08-17','Rotterdam',169.00,'Left',5,'NLD',7),(275,'Sean','Longstaff','1997-10-30','Newcastle upon Tyne',181.00,'Right',9,'ENG',11),(276,'Lucas','Digne','1993-07-20','Meaux',178.00,'Left',5,'FRA',4),(277,'Curtis','Jones','2001-01-30','Liverpool',185.00,'Right',9,'ENG',8),(278,'Ben','White','1997-10-08','Poole',186.00,'Right',4,'ENG',3),(279,'Christian','Eriksen','1992-02-14','Middelfart',182.00,'Right',8,'DEN',7),(280,'Anthony','Elanga','2002-04-27','Hyllie',178.00,'Right',1,'SWE',7),(281,'James','Tarkowski','1992-11-19','Manchester',185.00,'Right',4,'ENG',10),(282,'Leander','Dendoncker','1995-04-15','Passendale',188.00,'Right',10,'BEL',4),(283,'Dean','Henderson','1997-03-12','Whitehaven',188.00,'Right',7,'ENG',12),(284,'Ryan','Sessegnon','2000-05-18','London',178.00,'Left',11,'ENG',14),(285,'N\'Golo','Kanté','1991-03-29','Paris',169.00,'Right',10,'FRA',9),(286,'Jordan','Pickford','1994-03-07','Washington',185.00,'Left',7,'ENG',10),(287,'Trevoh','Chalobah','1999-07-05','Freetown',192.00,'Right',4,'ENG',9),(288,'Vitaliy','Mykolenko','1999-05-29','Cherkasy',180.00,'Left',5,'UKR',10),(289,'Manuel','Neuer','1986-03-27','Gelsenkirchen',193.00,'Right',7,'GER',5),(290,'Eric Maxim','Choupo-Moting','1989-03-23','Hamburg',191.00,'Right',0,'CMR',5),(291,'Josip','Stanisic','2000-04-02','München',187.00,'Both',6,'CRO',5),(292,'Paul','Wanner','2005-12-23','Dornbirn',185.00,'Left',8,'AUT',5),(293,'Ryan','Gravenberch','2002-05-16','Amsterdam',190.00,'Right',9,'NLD',5),(294,'Bouna','Sarr','1992-01-31','Lyon',177.00,'Right',6,'SEN',5),(295,'Marcos','Alonso','1990-12-28','Madrid',189.00,'Left',5,'ESP',15),(296,'Lucas','Vázquez','1991-07-01','A Coruña',173.00,'Right',2,'ESP',13),(297,'Nacho','Fernández','1990-01-18','Madrid',180.00,'Right',4,'ESP',13),(298,'Dani','Ceballos','1996-08-07','Utrera',179.00,'Right',9,'ESP',13),(299,'Luka','Modric','1985-09-09','Zadar',172.00,'Right',9,'CRO',13),(300,'Álvaro','Odriozola','1995-12-14','San Sebastián',176.00,'Right',6,'ESP',13),(301,'Mathys','Tel','2005-04-27','Sarcelles',183.00,'Right',0,'FRA',5),(302,'Sergi','Roberto','1992-02-07','Reus',178.00,'Right',6,'ESP',15),(303,'Benjamin','Pavard','1996-03-28','Maubeuge',186.00,'Right',6,'FRA',5),(304,'Lucas','Hernández','1996-02-14','Marseille',184.00,'Left',4,'FRA',5),(305,'Kingsley','Coman','1996-06-13','Paris',180.00,'Right',2,'FRA',5),(306,'Leon','Goretzka','1995-02-06','Bochum',189.00,'Right',9,'GER',5),(307,'Serge','Gnabry','1995-07-14','Stuttgart',176.00,'Right',2,'GER',5),(308,'Sadio','Mané','1992-04-10','Sedhiou',174.00,'Right',1,'SEN',5),(309,'Leroy','Sané','1996-01-11','Essen',183.00,'Left',1,'GER',5),(310,'Héctor','Bellerín','1995-03-19','Badalona',177.00,'Right',6,'ESP',15),(311,'Alejandro','Balde','2003-10-18','Barcelona',175.00,'Left',5,'ESP',15),(312,'Eden','Hazard','1991-01-07','La Louvière',175.00,'Right',1,'BEL',13),(313,'Alphonso','Davies','2000-11-02','Buduburam',185.00,'Left',5,'CAN',5),(314,'Marcel','Sabitzer','1994-03-17','Wels',177.00,'Right',9,'AUT',5),(315,'Matthijs','de Ligt','1999-08-12','Leiderdorp',189.00,'Right',4,'NLD',5),(316,'Thomas','Müller','1989-09-13','Weilheim in Oberbayern',185.00,'Right',3,'GER',5);
 /*!40000 ALTER TABLE `player` ENABLE KEYS */;
 UNLOCK TABLES;
+/*!50003 SET @saved_cs_client      = @@character_set_client */ ;
+/*!50003 SET @saved_cs_results     = @@character_set_results */ ;
+/*!50003 SET @saved_col_connection = @@collation_connection */ ;
+/*!50003 SET character_set_client  = utf8mb4 */ ;
+/*!50003 SET character_set_results = utf8mb4 */ ;
+/*!50003 SET collation_connection  = utf8mb4_0900_ai_ci */ ;
+/*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
+/*!50003 SET sql_mode              = 'ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION' */ ;
+DELIMITER ;;
+/*!50003 CREATE*/ /*!50017 DEFINER=`root`@`localhost`*/ /*!50003 TRIGGER `trg_player_club_country_insert` BEFORE INSERT ON `player` FOR EACH ROW BEGIN
+    IF NEW.country_abbr IS NOT NULL THEN
+        IF NOT EXISTS (
+            SELECT 1 FROM Club WHERE country_abbr = NEW.country_abbr
+        ) THEN
+            SIGNAL SQLSTATE '45000'
+                SET MESSAGE_TEXT = 'Invalid country_abbr: not found in any known club country.';
+        END IF;
+    END IF;
+END */;;
+DELIMITER ;
+/*!50003 SET sql_mode              = @saved_sql_mode */ ;
+/*!50003 SET character_set_client  = @saved_cs_client */ ;
+/*!50003 SET character_set_results = @saved_cs_results */ ;
+/*!50003 SET collation_connection  = @saved_col_connection */ ;
+/*!50003 SET @saved_cs_client      = @@character_set_client */ ;
+/*!50003 SET @saved_cs_results     = @@character_set_results */ ;
+/*!50003 SET @saved_col_connection = @@collation_connection */ ;
+/*!50003 SET character_set_client  = utf8mb4 */ ;
+/*!50003 SET character_set_results = utf8mb4 */ ;
+/*!50003 SET collation_connection  = utf8mb4_0900_ai_ci */ ;
+/*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
+/*!50003 SET sql_mode              = 'ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION' */ ;
+DELIMITER ;;
+/*!50003 CREATE*/ /*!50017 DEFINER=`root`@`localhost`*/ /*!50003 TRIGGER `trg_player_club_country_update` BEFORE UPDATE ON `player` FOR EACH ROW BEGIN
+    IF NEW.country_abbr IS NOT NULL THEN
+        IF NOT EXISTS (
+            SELECT 1 FROM Club WHERE country_abbr = NEW.country_abbr
+        ) THEN
+            SIGNAL SQLSTATE '45000'
+                SET MESSAGE_TEXT = 'Invalid country_abbr: not found in any known club country.';
+        END IF;
+    END IF;
+END */;;
+DELIMITER ;
+/*!50003 SET sql_mode              = @saved_sql_mode */ ;
+/*!50003 SET character_set_client  = @saved_cs_client */ ;
+/*!50003 SET character_set_results = @saved_cs_results */ ;
+/*!50003 SET collation_connection  = @saved_col_connection */ ;
+/*!50003 SET @saved_cs_client      = @@character_set_client */ ;
+/*!50003 SET @saved_cs_results     = @@character_set_results */ ;
+/*!50003 SET @saved_col_connection = @@collation_connection */ ;
+/*!50003 SET character_set_client  = utf8mb4 */ ;
+/*!50003 SET character_set_results = utf8mb4 */ ;
+/*!50003 SET collation_connection  = utf8mb4_0900_ai_ci */ ;
+/*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
+/*!50003 SET sql_mode              = 'ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION' */ ;
+DELIMITER ;;
+/*!50003 CREATE*/ /*!50017 DEFINER=`root`@`localhost`*/ /*!50003 TRIGGER `trg_delete_player_cascade_check` BEFORE DELETE ON `player` FOR EACH ROW BEGIN
+    DECLARE v_sp_count  INT DEFAULT 0;
+    DECLARE v_mp_count  INT DEFAULT 0;
+    DECLARE v_mv_count  INT DEFAULT 0;
+    DECLARE v_tr_count  INT DEFAULT 0;
+    DECLARE v_msg       VARCHAR(500);
+ 
+    SELECT COUNT(*) INTO v_sp_count FROM SeasonPerformance  WHERE player_id = OLD.player_id;
+    SELECT COUNT(*) INTO v_mp_count FROM MatchPerformance   WHERE player_id = OLD.player_id;
+    SELECT COUNT(*) INTO v_mv_count FROM MarketValue        WHERE player_id = OLD.player_id;
+    SELECT COUNT(*) INTO v_tr_count FROM Transfer           WHERE player_id = OLD.player_id;
+ 
+    IF v_sp_count > 0 OR v_mp_count > 0 OR v_mv_count > 0 OR v_tr_count > 0 THEN
+        SET v_msg = CONCAT(
+            'Cannot delete player_id ', OLD.player_id, ' (', OLD.first_name, ' ', OLD.last_name, '). ',
+            'Dependent records found: ',
+            v_sp_count, ' season performance(s), ',
+            v_mp_count, ' match performance(s), ',
+            v_mv_count, ' market value(s), ',
+            v_tr_count, ' transfer(s). ',
+            'Delete or reassign these records first.'
+        );
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = v_msg;
+    END IF;
+END */;;
+DELIMITER ;
+/*!50003 SET sql_mode              = @saved_sql_mode */ ;
+/*!50003 SET character_set_client  = @saved_cs_client */ ;
+/*!50003 SET character_set_results = @saved_cs_results */ ;
+/*!50003 SET collation_connection  = @saved_col_connection */ ;
 
 --
 -- Table structure for table `position`
@@ -324,6 +523,70 @@ LOCK TABLES `seasonperformance` WRITE;
 INSERT INTO `seasonperformance` VALUES (1,2,2,0,NULL,180),(1,17,4,0,NULL,360),(1,21,NULL,0,NULL,NULL),(1,31,6,0,NULL,540),(1,46,7,0,NULL,630),(3,6,1,0,NULL,90),(3,7,2,0,NULL,180),(3,14,1,0,NULL,90),(3,55,18,0,NULL,1575),(3,69,29,0,NULL,2610),(3,137,3,0,NULL,270),(4,6,NULL,0,NULL,NULL),(4,14,1,0,NULL,90),(4,22,19,0,NULL,1710),(4,44,NULL,0,NULL,NULL),(4,69,38,0,NULL,3420),(4,72,2,0,NULL,180),(4,152,2,0,NULL,134),(4,161,21,0,NULL,1883),(5,9,1,0,0,71),(5,11,13,0,0,715),(5,12,28,2,1,1732),(5,13,1,1,0,18),(5,16,1,0,0,90),(5,23,1,0,0,85),(5,24,1,0,0,83),(5,69,35,1,4,2959),(5,71,21,1,0,1671),(5,82,25,0,1,2008),(5,84,13,1,0,962),(5,99,2,0,1,168),(5,103,2,0,0,164),(5,134,43,9,4,3727),(5,135,1,0,0,90),(5,136,3,0,0,262),(5,137,2,1,0,180),(5,152,31,3,3,2705),(5,168,1,0,0,18),(5,171,1,0,0,90),(6,6,5,0,0,156),(6,7,2,0,0,18),(6,8,38,3,1,3118),(6,9,4,0,0,233),(6,10,1,0,0,90),(6,11,17,0,0,1100),(6,15,1,0,0,90),(6,24,NULL,0,0,NULL),(6,70,3,0,1,212),(6,71,29,1,1,2396),(6,85,2,0,0,98),(6,98,33,3,3,2425),(6,99,4,0,0,205),(6,100,35,0,0,2814),(6,102,NULL,0,0,NULL),(6,136,2,0,1,146),(6,137,4,1,1,310),(6,161,13,0,2,1165),(6,163,16,1,0,1440),(6,164,29,0,1,1978),(6,165,35,4,7,3129),(6,168,1,0,0,60),(6,169,11,0,0,586),(6,170,37,4,4,2699),(6,171,2,1,0,180),(6,172,NULL,0,0,NULL),(6,173,38,3,2,3387),(6,174,NULL,0,0,NULL),(6,191,1,0,0,13),(6,192,34,1,1,2641),(7,6,13,1,0,905),(7,7,2,0,0,164),(7,10,1,0,0,90),(7,13,1,0,0,90),(7,14,2,0,0,100),(7,15,3,0,0,270),(7,16,4,0,1,314),(7,18,24,0,2,1238),(7,21,5,0,0,420),(7,26,7,0,1,581),(7,27,4,0,1,337),(7,31,4,0,0,252),(7,35,8,0,0,248),(7,37,2,0,0,25),(7,38,3,1,0,244),(7,55,12,0,0,953),(7,68,7,0,0,331),(7,69,12,0,1,757),(7,70,1,0,0,90),(7,71,18,1,3,1061),(7,72,1,0,0,47),(7,80,4,1,0,317),(7,82,30,2,2,2568),(7,84,30,2,5,2447),(7,85,3,0,0,261),(7,87,5,0,1,345),(7,98,20,2,4,1031),(7,100,19,0,5,1372),(7,102,1,0,0,90),(7,103,NULL,0,0,NULL),(7,135,3,0,1,129),(7,136,2,0,0,74),(7,165,26,2,5,2068),(7,168,2,0,1,95),(7,169,34,7,9,3053),(7,171,6,2,3,536),(7,172,36,7,8,3193),(7,174,3,0,1,258),(7,191,37,5,9,3304),(7,192,25,6,11,1571),(7,234,37,8,16,3292),(7,235,1,0,0,90),(7,236,13,2,2,981),(7,237,1,0,0,22),(7,238,39,13,0,3364),(7,239,34,0,2,1665),(9,6,17,13,1,1518),(9,7,1,0,0,59),(9,9,3,3,0,231),(9,10,5,1,0,450),(9,15,1,1,0,15),(9,16,4,4,0,273),(9,17,6,1,2,540),(9,18,37,17,9,3232),(9,22,35,23,14,3086),(9,23,2,1,0,99),(9,24,4,1,0,290),(9,25,5,6,0,450),(9,26,9,5,1,778),(9,27,7,7,2,597),(9,29,3,2,0,263),(9,45,5,3,2,312),(9,52,7,2,1,358),(9,53,4,4,1,265),(9,55,29,18,2,2590),(9,68,2,0,0,180),(9,69,30,29,7,2536),(9,71,38,25,1,3370),(9,72,4,1,0,209),(9,74,9,7,0,602),(9,76,7,0,2,185),(9,80,6,1,0,291),(9,82,28,17,4,2427),(9,84,37,30,3,3083),(9,85,3,4,0,175),(9,98,10,3,2,497),(9,99,NULL,0,0,NULL),(9,100,3,0,0,135),(9,102,2,1,1,122),(9,103,NULL,0,0,NULL),(9,135,2,0,0,47),(9,136,1,0,0,45),(9,137,5,2,3,385),(9,165,34,21,5,2582),(9,166,13,2,0,529),(9,167,22,7,2,1612),(9,168,NULL,0,0,NULL),(9,171,NULL,0,0,NULL),(9,192,NULL,0,0,NULL),(12,6,9,0,0,628),(12,7,1,0,0,90),(12,9,4,0,0,313),(12,10,NULL,0,0,NULL),(12,13,1,0,0,63),(12,14,2,0,0,180),(12,15,1,0,0,90),(12,18,30,1,1,2658),(12,22,25,0,3,1612),(12,23,4,0,0,365),(12,24,2,0,0,138),(12,55,27,0,1,1839),(12,69,26,4,4,2317),(12,70,1,0,0,90),(12,71,28,1,3,2386),(12,72,3,0,0,263),(12,74,5,2,0,450),(12,82,29,2,2,2560),(12,84,12,0,1,1035),(12,85,1,0,0,90),(12,98,36,6,2,3229),(12,99,3,1,0,262),(12,100,26,0,5,2164),(12,102,NULL,0,0,NULL),(12,107,3,0,0,270),(12,135,2,0,0,210),(12,136,3,1,0,270),(12,137,4,0,0,184),(12,165,35,3,3,3065),(12,168,4,1,0,333),(12,169,34,4,3,2259),(12,170,9,1,5,810),(12,171,1,0,0,10),(12,191,3,0,1,105),(12,192,18,0,0,1131),(13,6,NULL,0,NULL,NULL),(13,7,NULL,0,NULL,NULL),(13,26,13,0,NULL,1170),(13,82,19,0,NULL,1710),(13,86,33,0,NULL,2912),(14,6,2,0,0,2),(14,7,1,0,0,90),(14,9,1,0,0,78),(14,13,4,0,1,305),(14,14,1,0,0,45),(14,15,3,1,1,272),(14,16,2,0,0,180),(14,18,18,0,2,1334),(14,22,18,0,3,1351),(14,23,1,0,0,74),(14,24,2,0,1,170),(14,55,18,2,1,1314),(14,70,3,2,2,243),(14,71,37,4,6,2976),(14,72,3,0,0,106),(14,82,36,2,8,2940),(14,84,35,3,6,2812),(14,85,3,2,0,124),(14,99,2,0,1,128),(14,103,1,0,0,43),(14,134,46,15,17,3728),(14,135,2,0,0,13),(14,136,1,0,0,41),(14,137,4,1,3,360),(14,152,30,9,2,2410),(14,161,5,0,1,214),(14,164,42,12,8,3546),(14,168,3,1,1,235),(14,171,2,0,1,122),(14,174,3,1,1,233),(14,191,2,0,0,81),(15,6,16,7,3,930),(15,7,1,0,0,17),(15,9,4,1,2,284),(15,10,2,1,2,108),(15,13,4,1,3,230),(15,14,5,0,2,364),(15,15,3,3,0,195),(15,16,NULL,0,0,NULL),(15,17,5,1,0,285),(15,18,28,9,5,2134),(15,19,11,3,2,658),(15,21,13,3,3,1066),(15,22,28,9,5,1612),(15,23,5,2,0,336),(15,24,4,2,2,360),(15,25,5,2,2,253),(15,26,4,1,0,118),(15,27,3,0,0,194),(15,29,NULL,0,0,NULL),(15,55,23,5,2,892),(15,82,13,1,0,327),(15,84,5,0,1,43),(15,102,5,2,1,392),(15,103,2,0,0,91),(16,9,1,0,0,30),(16,10,NULL,0,0,NULL),(16,13,1,1,0,90),(16,14,2,0,0,135),(16,15,2,0,0,92),(16,16,2,0,0,177),(16,18,4,0,0,161),(16,19,NULL,0,0,NULL),(16,26,3,0,0,270),(16,27,NULL,0,0,NULL),(16,31,2,0,0,108),(16,35,8,1,0,540),(16,37,3,0,0,270),(16,38,6,1,1,387),(16,55,2,0,0,135),(16,68,3,0,0,206),(16,69,18,0,0,1585),(16,70,3,0,0,270),(16,71,10,0,0,528),(16,72,NULL,0,0,NULL),(16,80,3,0,0,270),(16,82,18,0,1,1261),(16,84,23,0,0,1975),(16,85,2,0,0,161),(16,87,3,0,0,202),(16,98,26,1,2,2174),(16,100,17,0,2,1206),(16,102,1,0,0,90),(16,103,NULL,0,0,NULL),(16,135,2,0,0,134),(16,136,4,0,0,312),(16,137,1,0,0,90),(16,165,22,0,1,1879),(16,169,26,0,0,2175),(16,171,1,0,0,90),(16,191,9,0,0,662),(16,192,29,1,3,2105),(17,6,NULL,0,0,NULL),(17,7,1,0,0,90),(17,9,NULL,0,0,NULL),(17,14,1,0,0,12),(17,16,1,0,0,90),(17,18,3,0,0,198),(17,22,15,1,0,1256),(17,23,1,0,0,120),(17,55,16,0,0,1229),(17,70,1,0,0,58),(17,71,23,1,0,1896),(17,72,1,0,0,90),(17,82,26,0,0,1986),(17,84,20,0,0,1603),(17,85,NULL,0,0,NULL),(17,98,18,1,1,1138),(17,99,NULL,0,0,NULL),(17,102,NULL,0,0,NULL),(17,135,1,0,0,90),(17,136,1,0,0,44),(17,164,45,0,0,3925),(17,165,25,0,0,2109),(18,14,2,0,0,180),(18,17,1,0,0,17),(18,19,2,0,0,8),(18,26,1,0,0,90),(18,27,1,0,0,90),(18,45,10,0,0,653),(18,55,2,0,0,162),(18,58,NULL,0,0,NULL),(18,59,5,0,0,341),(18,60,21,0,0,1346),(18,61,11,0,0,627),(18,62,5,1,0,311),(18,86,25,1,1,2055),(18,87,NULL,0,0,NULL),(18,250,7,0,0,630),(18,286,NULL,0,0,NULL),(19,6,NULL,0,NULL,NULL),(19,7,1,0,NULL,90),(19,15,1,0,NULL,90),(19,72,NULL,0,NULL,NULL),(19,82,10,0,NULL,900),(19,133,42,0,NULL,3780),(19,152,NULL,0,NULL,NULL),(20,6,1,0,NULL,90),(20,7,1,0,NULL,90),(20,47,6,0,NULL,540),(20,87,7,0,NULL,630),(20,100,NULL,0,NULL,NULL),(20,103,4,0,NULL,360),(20,169,NULL,0,NULL,NULL),(21,17,5,0,NULL,450),(21,21,8,0,NULL,720),(21,26,9,0,NULL,810),(21,31,13,0,NULL,1170),(21,58,15,0,NULL,1350),(21,89,34,0,NULL,3060),(22,9,3,1,0,186),(22,10,1,0,0,66),(22,13,2,0,0,145),(22,15,2,0,1,180),(22,16,3,0,0,230),(22,17,3,0,0,218),(22,18,19,0,0,1494),(22,19,8,1,1,603),(22,20,2,0,0,180),(22,21,7,0,0,591),(22,22,17,0,0,1371),(22,23,3,0,0,198),(22,25,4,0,0,360),(22,27,6,0,0,454),(22,29,4,0,0,360),(22,31,5,0,0,450),(22,46,15,0,0,1334),(22,55,21,0,0,1752),(22,58,6,0,1,409),(22,68,3,2,0,270),(22,82,8,0,0,615),(22,84,27,0,0,2071),(22,86,31,2,0,2782),(22,88,31,3,1,2790),(22,100,NULL,0,0,NULL),(22,102,4,0,0,310),(22,103,4,0,0,341),(22,135,1,0,0,90),(22,165,1,0,0,12),(23,10,1,1,0,72),(23,17,5,3,1,184),(23,18,4,2,1,305),(23,19,1,0,0,71),(23,21,6,4,0,360),(23,22,24,7,2,1307),(23,23,3,1,0,244),(23,24,3,1,1,200),(23,25,6,2,2,480),(23,26,3,0,0,105),(23,46,4,0,0,260),(23,54,6,2,2,477),(23,58,14,2,0,595),(23,59,18,4,4,1417),(23,61,34,4,5,2256),(23,62,24,2,1,842),(23,250,13,0,1,302),(24,17,4,0,0,236),(24,19,12,15,2,1106),(24,21,10,6,0,841),(24,25,8,5,2,643),(24,26,8,4,2,587),(24,27,9,5,0,600),(24,29,13,5,1,953),(24,31,9,4,0,603),(24,33,9,6,2,663),(24,35,11,5,5,913),(24,37,10,5,5,531),(24,38,11,7,5,760),(24,39,8,6,1,372),(24,40,5,1,1,315),(24,58,8,7,1,718),(24,59,32,27,12,2603),(24,60,34,23,9,2902),(24,61,37,21,8,3156),(24,62,36,21,7,2962),(24,63,29,11,5,1914),(24,64,2,2,1,200),(24,113,8,5,2,704),(24,193,35,17,10,2767),(24,194,30,11,13,1777),(24,195,34,21,11,2251),(24,214,27,24,8,1990),(24,217,27,8,5,1309),(24,219,7,4,1,594),(24,220,3,2,0,101),(24,221,1,1,0,90),(24,222,NULL,0,0,NULL),(24,229,36,17,4,2764),(24,230,36,20,9,2596),(24,250,32,5,11,2156),(24,251,29,15,11,2315),(24,286,2,0,1,180),(24,287,2,0,0,160),(24,288,2,1,0,180),(24,289,33,15,6,1885),(24,290,21,5,5,1158),(24,291,13,1,4,526),(24,292,6,0,1,107),(25,9,5,0,0,510),(25,10,3,1,0,300),(25,13,4,0,0,348),(25,15,2,0,0,180),(25,16,6,0,0,570),(25,17,4,1,0,314),(25,18,34,3,2,3036),(25,19,9,1,2,840),(25,20,2,0,0,210),(25,21,11,0,1,922),(25,22,19,1,0,1710),(25,23,4,0,0,314),(25,25,2,0,0,180),(25,27,6,0,0,388),(25,31,6,0,0,540),(25,46,4,0,0,360),(25,55,20,2,0,1709),(25,58,13,1,0,772),(25,68,5,0,1,376),(25,76,2,0,0,180),(25,78,4,0,0,281),(25,82,33,1,0,2874),(25,84,27,2,1,2336),(25,89,19,0,1,1601),(25,90,30,2,0,2694),(25,91,16,0,0,996),(25,102,4,0,0,390),(25,103,5,1,1,450),(25,109,1,0,0,79),(26,4,30,2,1,2529),(26,5,27,0,4,2120),(26,17,5,0,0,347),(26,19,10,0,3,867),(26,21,11,1,0,963),(26,25,5,0,0,408),(26,26,8,0,1,707),(26,47,7,0,0,386),(26,58,12,0,1,979),(26,59,22,2,2,1737),(26,60,26,1,0,2207),(26,61,25,1,4,1804),(28,17,4,0,0,292),(28,19,6,0,0,487),(28,21,6,0,0,334),(28,25,7,0,0,507),(28,26,12,0,1,1034),(28,27,10,0,0,768),(28,29,8,0,0,691),(28,31,9,0,0,712),(28,33,10,0,0,788),(28,35,9,1,1,793),(28,37,8,0,0,718),(28,38,10,1,1,875),(28,39,12,0,3,1080),(28,40,10,0,0,691),(28,54,6,1,0,401),(28,58,13,0,1,948),(28,59,36,2,0,3202),(28,60,36,0,5,2527),(28,61,33,2,2,2492),(28,62,35,0,1,2719),(28,63,33,0,3,2693),(28,113,8,2,1,621),(28,124,2,0,1,180),(28,193,32,1,1,2652),(28,194,31,1,2,2245),(28,195,31,1,2,2434),(28,214,35,0,4,2909),(28,217,33,0,2,2320),(28,218,2,1,0,169),(28,231,24,1,0,1538),(28,250,31,1,4,2600),(28,251,33,1,2,2492),(28,289,28,1,3,2300),(28,301,1,0,0,90),(29,17,2,0,1,147),(29,19,5,0,1,375),(29,21,7,0,2,484),(29,25,5,0,2,355),(29,26,11,1,5,990),(29,27,8,0,0,638),(29,29,6,0,0,436),(29,31,9,0,1,734),(29,33,11,0,2,962),(29,35,4,0,0,360),(29,37,9,2,0,807),(29,38,4,0,0,226),(29,39,3,0,0,169),(29,54,6,1,0,540),(29,58,11,0,1,759),(29,59,30,2,10,2648),(29,60,35,3,7,3030),(29,61,27,2,6,2189),(29,62,36,2,10,2987),(29,63,26,1,6,1966),(29,80,6,1,1,522),(29,107,9,0,0,445),(29,124,2,0,0,166),(29,193,15,0,2,1195),(29,194,29,2,5,2499),(29,195,32,2,5,2542),(29,214,31,0,8,2591),(29,217,15,1,1,1120),(29,250,33,2,8,2744),(29,251,27,1,3,2334),(29,289,27,2,0,1413),(30,17,4,0,0,256),(30,19,5,1,0,393),(30,21,3,1,0,236),(30,25,7,0,0,630),(30,26,11,2,0,990),(30,27,9,1,0,736),(30,29,8,1,0,651),(30,31,7,1,0,596),(30,33,11,1,0,990),(30,35,9,2,0,722),(30,37,10,0,0,684),(30,38,5,0,1,371),(30,39,12,1,0,1026),(30,40,11,2,1,988),(30,54,5,1,0,328),(30,58,6,0,0,338),(30,59,27,1,0,2096),(30,60,18,0,0,1485),(30,61,35,1,0,3096),(30,62,35,4,4,3150),(30,63,25,2,0,2192),(30,113,12,1,0,1080),(30,124,2,0,0,180),(30,193,26,2,0,2311),(30,194,28,2,0,2403),(30,195,22,2,0,1472),(30,214,30,2,1,2591),(30,217,32,2,1,2478),(30,218,2,0,1,156),(30,219,3,2,0,252),(30,221,NULL,0,0,NULL),(30,222,1,0,0,25),(30,231,25,1,0,2207),(30,233,22,2,0,1565),(30,234,9,0,1,480),(30,250,30,3,0,2633),(30,251,27,5,1,2384),(30,252,3,0,0,95),(30,253,2,0,0,180),(30,255,1,0,0,90),(30,289,31,3,1,2650),(30,301,1,0,0,56),(34,1,22,2,1,530),(34,2,14,1,0,283),(34,4,1,0,0,7),(34,5,2,0,0,31),(34,47,1,0,0,45),(37,44,NULL,0,NULL,NULL),(37,46,5,0,NULL,450),(37,65,NULL,0,NULL,NULL),(39,1,26,0,0,1829),(39,2,28,5,1,2084),(39,3,20,2,0,1756),(39,44,4,0,0,295),(39,54,6,0,0,414),(39,61,1,0,0,90),(39,62,23,2,2,2008),(39,65,12,2,0,946),(39,250,19,0,0,1527),(40,1,28,0,1,1188),(40,44,4,0,1,36),(40,47,NULL,0,0,NULL),(40,50,23,1,1,1726),(40,54,3,0,0,117),(40,56,20,2,2,1678),(40,65,14,0,1,433),(42,1,37,25,5,2542),(42,2,37,20,8,2625),(42,3,26,18,7,2171),(42,27,9,8,0,651),(42,29,5,2,0,230),(42,30,35,17,5,2893),(42,32,36,14,5,2872),(42,34,38,16,5,3003),(42,36,34,15,5,2501),(42,44,6,3,0,423),(42,46,8,8,0,620),(42,54,7,0,0,361),(42,62,35,18,9,2818),(42,63,31,11,5,1668),(42,65,14,7,2,859),(42,104,9,1,0,186),(42,105,4,0,0,73),(42,250,25,9,3,1699),(43,3,19,1,0,1451),(43,4,35,1,1,2994),(43,5,21,0,0,1316),(43,9,4,0,0,390),(43,10,5,0,0,450),(43,18,8,0,0,546),(43,19,2,0,0,100),(43,20,2,0,0,32),(43,21,6,0,0,418),(43,28,27,1,1,2208),(43,44,2,0,0,171),(43,47,3,0,0,270),(43,65,8,0,0,332),(43,68,4,0,1,360),(44,21,7,1,0,301),(44,26,5,1,0,385),(44,33,8,1,1,443),(44,44,6,1,2,186),(44,49,29,9,4,2166),(44,50,31,5,6,1433),(44,52,8,2,2,621),(44,56,28,8,8,1552),(44,57,20,5,4,1349),(44,65,17,7,2,1274),(44,68,2,0,1,180),(44,76,4,0,0,24),(44,83,21,3,3,912),(44,86,7,2,1,340),(44,87,5,0,0,305),(48,19,4,0,0,161),(48,27,1,0,0,16),(48,30,31,38,13,2553),(48,31,10,5,3,880),(48,32,24,19,6,2004),(48,33,6,2,1,477),(48,34,33,26,15,2770),(48,35,8,10,0,668),(48,36,34,30,10,2974),(48,37,9,3,7,793),(48,38,8,5,4,720),(48,39,8,4,0,652),(48,40,10,4,2,762),(48,45,5,0,1,242),(48,68,11,5,4,897),(48,69,28,17,5,2437),(48,70,5,4,1,395),(48,84,5,0,0,102),(48,85,1,1,0,28),(48,103,1,1,0,69),(48,113,8,1,3,674),(48,217,29,16,9,2030),(48,218,2,0,1,210),(48,219,7,5,0,602),(48,220,7,0,1,553),(48,221,9,3,1,701),(48,222,10,0,3,833),(48,223,3,3,1,251),(48,224,22,13,7,1408),(48,225,6,1,1,451),(48,226,25,13,1,1808),(48,227,13,5,2,1015),(49,1,34,9,11,2450),(49,2,35,16,8,2794),(49,25,6,1,0,458),(49,29,6,1,0,330),(49,44,4,3,0,228),(49,46,5,0,2,358),(49,54,8,2,0,604),(49,56,27,10,8,2050),(49,57,34,14,12,2818),(49,65,6,2,2,283),(49,83,31,14,2,2599),(49,86,23,6,2,1471),(49,87,3,0,2,265),(49,88,33,8,10,2731),(49,89,32,8,7,2670),(49,90,33,11,9,2877),(49,91,34,6,12,2691),(50,1,28,0,2,2136),(50,2,33,1,4,2228),(50,3,19,0,2,1066),(50,4,29,1,5,2532),(50,5,31,0,1,2457),(50,44,1,0,0,44),(50,54,6,0,0,365),(50,65,9,0,0,417),(54,44,6,0,NULL,540),(54,57,NULL,0,NULL,NULL),(54,65,17,0,NULL,1530),(56,1,35,3,2,2931),(56,2,36,2,4,3073),(56,3,3,0,0,62),(56,4,10,0,0,706),(56,5,NULL,0,0,NULL),(56,17,5,0,0,383),(56,46,4,0,0,282),(56,54,7,0,0,585),(56,58,13,0,2,906),(57,17,6,1,0,141),(57,284,31,5,4,2341),(60,17,4,1,0,208),(60,19,NULL,0,0,NULL),(60,45,2,0,0,180),(60,47,NULL,0,0,NULL),(61,17,2,0,0,180),(61,19,3,0,0,270),(61,25,1,0,0,90),(61,27,6,1,0,540),(61,32,31,1,0,2710),(61,34,35,0,1,3125),(61,45,7,1,0,551),(61,46,7,0,0,660),(61,52,8,0,0,720),(61,62,26,0,0,2015),(61,68,8,2,0,675),(61,74,5,1,0,450),(61,91,22,2,2,1680),(61,109,3,0,0,270),(61,110,32,1,0,2831),(61,250,20,2,0,1571),(64,16,1,0,0,1),(64,17,4,0,0,152),(64,19,5,1,1,352),(64,25,1,0,0,17),(64,26,NULL,0,0,NULL),(64,27,3,0,0,52),(64,45,8,3,0,394),(64,61,6,0,0,59),(64,62,9,1,2,377),(64,70,1,0,0,10),(64,84,5,0,0,49),(64,102,3,2,0,199),(64,103,1,0,0,88),(65,1,36,1,8,2261),(65,2,35,2,5,2417),(65,3,21,3,3,1018),(65,4,7,0,0,213),(65,5,1,0,0,7),(66,9,1,0,1,84),(66,10,3,2,1,203),(66,13,3,0,1,250),(66,14,1,2,0,90),(66,15,1,1,0,90),(66,17,4,0,0,69),(66,18,7,3,1,126),(66,19,7,1,1,185),(66,21,4,0,1,211),(66,22,9,0,0,181),(66,23,2,0,0,25),(66,24,2,1,1,119),(66,25,6,0,0,187),(66,26,8,3,0,217),(66,32,33,8,4,2152),(66,34,30,5,0,1278),(66,36,10,1,0,151),(66,52,12,2,2,596),(66,55,28,4,3,703),(66,69,34,7,4,1457),(66,70,6,3,0,354),(66,71,16,5,1,663),(66,72,1,0,0,61),(66,74,5,1,0,445),(66,81,2,0,0,100),(66,82,12,3,1,366),(66,83,31,6,2,1967),(66,84,1,0,0,9),(66,85,3,1,0,270),(68,17,2,0,0,147),(68,19,4,0,0,315),(68,45,3,0,0,208),(68,46,4,0,0,360),(68,47,4,0,0,349),(71,17,2,0,NULL,180),(71,25,6,0,NULL,522),(72,2,21,2,1,1542),(72,19,4,0,0,88),(72,21,10,0,0,814),(72,25,1,0,0,11),(72,26,8,0,1,618),(72,27,10,0,0,708),(72,31,8,1,0,644),(72,33,6,0,0,351),(72,61,12,0,0,754),(72,68,3,1,0,122),(72,74,3,0,1,195),(72,87,2,0,0,96),(72,285,35,11,2,2873),(74,17,4,0,0,232),(74,19,2,1,0,117),(74,45,5,0,2,261),(74,46,9,1,2,503),(74,52,2,0,0,171),(74,56,1,0,0,90),(74,57,28,9,4,1985),(74,83,25,6,3,1761),(74,86,24,2,2,1406),(75,13,3,1,1,248),(75,14,NULL,0,0,NULL),(75,15,1,0,1,8),(75,16,4,2,2,254),(75,17,6,4,2,431),(75,19,5,0,0,260),(75,21,8,6,0,254),(75,22,17,4,0,746),(75,23,4,0,0,106),(75,24,2,1,0,94),(75,25,3,0,0,87),(75,27,1,0,0,67),(75,29,6,2,1,312),(75,31,7,5,0,383),(75,33,2,1,0,150),(75,35,7,2,1,630),(75,37,7,2,4,384),(75,46,14,11,5,1125),(75,47,6,3,0,540),(75,55,18,8,0,999),(75,69,29,12,4,1194),(75,70,1,0,1,24),(75,71,38,16,6,2425),(75,72,5,3,0,361),(75,82,27,2,4,832),(75,84,13,3,1,611),(75,85,4,2,1,250),(75,98,36,16,9,3083),(75,99,5,3,2,214),(75,100,34,11,5,2327),(75,102,3,0,0,191),(75,103,3,0,0,288),(75,104,36,21,12,3203),(75,105,37,12,5,2913),(75,135,5,3,1,230),(75,136,4,2,2,360),(75,165,27,14,3,1865),(76,3,20,1,2,1722),(76,16,5,0,0,371),(76,19,3,0,0,56),(76,27,5,1,1,361),(76,28,32,2,1,2220),(76,29,10,1,0,842),(76,30,19,1,0,1361),(76,32,12,0,0,836),(76,33,3,0,0,180),(76,34,24,1,0,1727),(76,45,7,0,1,463),(76,46,6,0,0,495),(76,52,1,0,0,90),(76,84,29,2,2,2123),(76,103,4,0,0,215),(78,2,24,0,4,645),(78,3,21,0,0,1676),(78,4,18,0,3,1595),(78,5,27,0,0,2057),(78,17,4,0,0,132),(78,19,2,0,0,91),(78,28,NULL,0,0,NULL),(79,17,5,2,2,428),(79,19,11,0,1,804),(79,21,7,0,0,489),(79,25,6,0,0,348),(79,26,4,0,0,139),(79,58,15,6,2,1195),(79,59,31,0,1,1831),(79,60,24,3,1,1330),(79,61,33,2,5,1905),(79,62,16,0,0,650),(79,250,24,0,0,1226),(79,286,NULL,0,0,NULL),(80,17,5,0,2,355),(80,19,11,0,1,958),(80,21,2,0,0,167),(80,25,7,0,1,623),(80,26,6,0,1,419),(80,27,8,0,3,643),(80,29,11,0,5,975),(80,31,8,1,1,682),(80,33,5,0,1,437),(80,35,10,0,1,787),(80,58,13,0,1,937),(80,59,24,1,3,1550),(80,60,13,0,4,952),(80,61,31,1,6,2739),(80,62,24,1,3,2106),(80,63,23,0,5,2014),(80,64,2,0,0,210),(80,78,2,0,0,164),(80,91,32,1,8,2780),(80,193,31,2,2,2233),(80,214,22,0,4,1635),(80,250,25,0,2,2223),(80,251,30,0,3,2274),(80,286,2,0,0,180),(80,287,1,0,0,90),(80,288,2,0,1,163),(82,2,37,20,12,2932),(82,3,13,9,2,1021),(82,4,36,10,10,2737),(82,5,36,19,13,2561),(82,17,1,0,0,15),(82,19,6,0,0,525),(82,25,8,6,0,594),(82,26,8,1,4,618),(82,28,17,5,8,1189),(82,31,6,1,0,326),(82,47,10,3,3,689),(82,52,3,2,1,270),(82,54,3,1,0,80),(82,58,2,1,0,116),(82,59,28,12,2,1848),(82,68,3,0,0,59),(82,69,4,0,0,20),(82,70,1,0,0,55),(82,71,29,2,1,1475),(82,72,3,0,1,134),(82,73,30,22,6,2565),(82,74,8,5,1,674),(82,75,32,12,8,2704),(82,76,6,1,1,531),(82,77,20,2,3,489),(82,78,5,0,3,234),(82,79,8,3,1,130),(82,80,NULL,0,0,NULL),(83,17,6,2,1,248),(83,19,8,1,2,206),(83,21,11,2,0,620),(83,25,1,0,0,29),(83,26,7,2,0,301),(83,27,12,1,1,472),(83,29,8,3,1,255),(83,58,10,1,2,238),(83,59,31,10,0,1704),(83,60,35,5,2,1875),(83,61,9,3,1,334),(83,62,30,1,8,1778),(83,63,23,3,2,1078),(83,64,NULL,0,0,NULL),(83,214,34,4,13,2822),(83,250,32,6,5,1839),(83,286,1,0,0,14),(83,287,1,0,0,22),(84,17,6,0,2,445),(84,19,12,2,0,902),(84,21,12,0,2,961),(84,25,6,1,2,540),(84,26,8,1,2,645),(84,27,12,0,3,952),(84,29,12,1,1,1028),(84,31,12,0,2,995),(84,33,12,0,3,968),(84,35,12,1,2,986),(84,37,9,3,0,590),(84,38,12,2,8,1073),(84,39,7,0,2,484),(84,58,12,1,2,953),(84,59,28,1,3,2107),(84,60,28,3,10,2120),(84,61,35,4,5,2656),(84,62,28,0,4,2227),(84,63,29,3,12,2500),(84,64,2,0,2,192),(84,90,29,2,4,2064),(84,91,24,6,8,1924),(84,108,2,0,0,118),(84,109,31,4,10,2351),(84,110,27,1,5,1725),(84,111,33,9,12,2356),(84,112,10,1,1,588),(84,113,1,0,0,11),(84,132,12,0,2,353),(84,214,32,1,11,2746),(84,250,27,5,7,2268),(84,251,36,2,8,3064),(84,286,2,0,0,160),(84,287,1,0,0,90),(84,288,2,0,2,163),(88,6,3,0,0,98),(88,7,1,0,0,90),(88,9,1,0,0,120),(88,10,2,0,0,106),(88,13,2,0,0,180),(88,14,3,0,1,240),(88,15,NULL,0,0,NULL),(88,16,2,0,0,168),(88,18,31,4,0,2630),(88,22,36,1,1,3101),(88,23,5,0,0,437),(88,24,1,0,0,90),(88,55,34,1,1,3058),(88,82,25,0,1,2150),(88,84,5,1,0,428),(88,102,2,0,0,180),(88,103,1,0,0,73),(89,6,14,0,0,814),(89,7,1,0,0,33),(89,9,5,0,0,302),(89,10,5,0,0,306),(89,13,NULL,0,0,NULL),(89,16,1,0,0,25),(89,17,3,0,1,208),(89,18,35,2,5,2602),(89,19,12,1,2,666),(89,21,6,0,0,363),(89,22,21,1,1,1706),(89,23,1,0,0,45),(89,25,6,0,0,514),(89,26,11,0,2,799),(89,27,10,0,0,868),(89,33,5,1,0,428),(89,52,6,0,0,463),(89,55,30,4,5,2244),(89,69,24,1,4,2118),(89,70,3,0,0,237),(89,71,17,2,3,1293),(89,72,NULL,0,0,NULL),(89,74,1,0,0,90),(89,78,9,1,1,741),(89,81,2,0,0,210),(89,82,32,1,3,1982),(89,84,27,1,1,2172),(89,98,35,4,7,3130),(89,99,3,0,0,208),(89,100,30,5,4,1530),(89,102,1,0,0,30),(89,103,1,0,0,90),(89,135,7,0,3,576),(89,136,2,0,0,126),(89,137,5,0,0,332),(89,165,37,6,10,3255),(89,168,1,0,0,30),(89,169,37,3,4,3218),(89,171,2,0,1,180),(89,172,1,0,0,44),(89,174,3,0,0,270),(89,191,33,1,5,2182),(89,192,37,2,2,2659),(89,197,10,1,2,800),(90,6,5,0,1,106),(90,7,1,0,0,90),(90,17,4,0,0,280),(90,26,1,0,0,NULL),(90,57,NULL,0,0,NULL),(90,60,29,0,1,768),(90,83,2,0,0,7),(93,6,5,0,0,350),(93,7,2,0,0,177),(93,9,1,0,0,90),(93,10,1,0,0,90),(93,13,5,0,1,450),(93,14,3,0,0,246),(93,15,3,0,0,270),(93,16,3,0,0,270),(93,18,28,0,2,2354),(93,19,5,0,0,426),(93,21,5,0,0,393),(93,22,29,1,1,2586),(93,23,3,0,0,300),(93,24,2,0,0,180),(93,26,7,0,0,630),(93,27,5,0,0,450),(93,29,8,0,0,720),(93,31,4,0,0,360),(93,44,5,0,0,418),(93,45,6,0,1,570),(93,55,35,1,0,3093),(93,82,30,1,1,2602),(93,84,17,0,0,1281),(93,87,4,0,0,319),(93,103,3,0,0,270),(94,4,35,1,1,2972),(94,6,1,0,0,NULL),(94,7,1,0,0,39),(94,9,1,0,0,90),(94,10,1,0,0,90),(94,13,2,0,0,180),(94,14,1,0,0,50),(94,18,20,0,1,1639),(94,22,16,1,0,1291),(94,23,1,0,0,68),(94,24,3,0,0,252),(94,55,17,0,1,1018),(94,78,2,0,0,155),(95,6,NULL,0,NULL,NULL),(95,7,2,0,NULL,180),(95,14,NULL,0,NULL,NULL),(95,55,38,0,NULL,3420),(96,6,2,0,0,52),(96,7,1,0,0,80),(96,19,3,0,0,79),(96,29,6,0,3,540),(96,50,23,0,4,1959),(96,54,2,0,0,123),(96,56,12,0,1,924),(96,57,34,1,5,3028),(96,59,19,0,1,788),(96,68,4,0,0,360),(96,83,29,1,1,2535),(98,1,33,0,4,2520),(98,2,13,1,4,1116),(98,4,34,1,2,2918),(98,5,36,1,3,3240),(98,10,1,1,1,82),(98,13,NULL,0,0,NULL),(98,14,4,2,0,311),(98,18,NULL,0,0,NULL),(98,22,NULL,0,0,NULL),(98,24,2,0,0,180),(98,28,23,0,1,2043),(98,30,30,0,0,2507),(98,32,3,0,0,170),(98,52,3,0,0,180),(98,55,25,0,2,2041),(102,6,2,0,0,27),(102,7,1,0,0,90),(102,9,1,0,0,90),(102,10,4,0,2,281),(102,13,1,0,0,15),(102,14,2,1,0,180),(102,15,2,0,0,210),(102,16,4,1,0,360),(102,18,21,1,1,1484),(102,22,10,0,1,745),(102,23,2,0,0,210),(102,24,2,0,0,180),(102,33,5,0,1,450),(102,44,1,0,0,2),(102,45,9,0,1,612),(102,46,4,0,0,253),(102,55,5,1,0,250),(102,68,1,0,0,90),(102,69,30,0,3,2520),(102,70,3,0,0,270),(102,71,24,0,2,1971),(102,72,NULL,0,0,NULL),(102,74,2,0,0,180),(102,78,7,0,0,630),(102,82,18,1,2,1494),(102,84,32,0,3,2797),(102,85,NULL,0,0,NULL),(102,102,2,0,0,119),(102,103,NULL,0,0,NULL),(102,107,NULL,0,0,NULL),(102,196,2,0,1,73),(103,6,8,1,0,332),(103,7,NULL,0,0,NULL),(103,10,1,3,1,76),(103,13,2,4,0,180),(103,15,1,1,0,90),(103,17,6,2,1,410),(103,18,14,4,1,1040),(103,22,29,10,3,2337),(103,23,1,1,0,120),(103,27,6,4,0,540),(103,29,9,7,1,708),(103,33,8,3,2,616),(103,35,9,1,0,384),(103,36,37,19,12,3214),(103,45,8,3,1,471),(103,46,12,8,3,934),(103,52,10,8,2,772),(103,54,6,2,0,422),(103,55,36,22,3,3139),(103,58,1,0,0,8),(103,59,17,11,1,1092),(103,82,36,22,5,2731),(103,83,16,13,3,1417),(103,84,13,10,4,1059),(103,86,32,31,2,2783),(103,87,6,3,0,406),(103,88,31,25,6,2473),(103,89,33,16,7,2721),(103,90,32,13,4,1955),(103,102,2,0,0,104),(103,103,1,0,0,90),(103,104,36,16,11,3119),(103,105,14,2,0,775),(103,106,14,2,0,494),(103,107,7,0,0,352),(104,6,8,0,0,308),(104,7,1,0,0,90),(104,10,2,0,1,154),(104,13,NULL,0,0,NULL),(104,14,2,1,0,180),(104,15,1,0,0,45),(104,16,1,0,0,4),(104,18,6,1,0,233),(104,22,25,0,1,1424),(104,23,2,0,0,186),(104,24,3,0,0,150),(104,47,3,0,0,248),(104,55,30,1,0,2026),(104,69,24,2,3,1543),(104,71,2,0,0,97),(104,82,16,0,0,975),(104,84,33,2,1,1896),(104,85,1,0,0,90),(104,102,2,0,1,180),(104,103,2,0,1,180),(105,6,9,0,0,189),(105,7,1,0,0,81),(105,9,3,0,0,226),(105,10,1,0,0,32),(105,14,2,0,0,112),(105,15,4,0,0,316),(105,16,2,0,0,171),(105,18,30,2,4,2538),(105,22,29,2,3,2452),(105,23,3,1,0,269),(105,24,2,0,0,110),(105,30,16,2,2,945),(105,32,35,3,6,2750),(105,34,20,6,5,1170),(105,36,4,1,0,318),(105,55,37,4,2,3166),(105,69,20,1,0,1358),(105,70,1,0,0,120),(105,82,35,5,6,3062),(105,84,37,7,4,3325),(105,85,2,0,0,180),(105,102,1,0,0,8),(105,214,15,0,2,1157),(106,6,9,0,0,407),(106,7,2,0,0,138),(106,49,28,1,4,1862),(106,50,24,1,3,2110),(106,83,20,0,0,767),(110,6,3,0,0,184),(110,7,1,0,1,72),(110,9,NULL,0,0,NULL),(110,10,NULL,0,0,NULL),(110,13,2,0,0,169),(110,14,4,0,0,360),(110,15,1,0,0,90),(110,16,NULL,0,0,NULL),(110,18,20,0,0,1794),(110,19,6,0,0,419),(110,21,6,0,1,473),(110,22,34,2,4,3060),(110,23,3,0,0,270),(110,24,2,0,0,180),(110,44,NULL,0,0,NULL),(110,45,9,0,1,726),(110,55,35,0,4,3071),(110,69,NULL,0,0,NULL),(110,82,35,0,3,3135),(110,84,7,0,0,628),(110,85,NULL,0,0,NULL),(110,87,5,0,0,447),(110,102,3,0,1,248),(111,6,10,0,2,753),(111,7,1,0,0,90),(111,17,5,1,0,340),(111,19,4,0,0,345),(111,21,8,0,0,562),(111,25,9,1,0,720),(111,26,12,0,0,1000),(111,27,9,1,0,810),(111,28,18,0,0,1620),(111,29,1,0,0,55),(111,54,2,0,0,76),(111,59,21,0,1,814),(111,60,33,1,0,2476),(111,61,28,2,1,2428),(111,62,23,1,0,1935),(111,63,17,0,0,1357),(111,250,35,3,1,3001),(113,6,17,0,NULL,1530),(113,7,2,0,NULL,180),(113,72,NULL,0,NULL,NULL),(113,82,35,0,NULL,3114),(113,152,1,0,NULL,19),(114,6,12,6,2,819),(114,7,1,0,0,76),(114,13,2,1,0,38),(114,14,2,0,0,90),(114,16,1,0,0,19),(114,18,18,8,0,1389),(114,22,26,12,5,2085),(114,24,2,0,0,118),(114,55,35,8,3,2897),(114,69,20,6,1,1366),(114,71,13,5,0,770),(114,82,30,14,10,2535),(114,84,28,8,2,1991),(114,85,1,0,0,44),(114,99,2,1,0,174),(114,102,3,1,0,125),(114,103,2,1,1,109),(114,134,45,20,13,3908),(114,135,1,1,0,30),(114,161,1,0,0,19),(114,170,NULL,0,0,NULL),(118,5,35,0,1,3104),(118,6,2,0,0,162),(118,49,30,4,0,2567),(118,50,32,3,1,2867),(118,56,33,1,2,2970),(118,57,33,1,1,2789),(119,6,16,2,1,788),(119,7,2,0,0,129),(119,10,2,0,0,165),(119,13,1,0,0,10),(119,14,1,0,0,90),(119,15,2,0,0,180),(119,18,38,0,1,3112),(119,22,36,2,5,3071),(119,23,2,0,0,176),(119,24,2,0,0,172),(119,55,38,2,6,3345),(119,82,21,3,5,1598),(119,84,1,0,0,NULL),(119,102,1,0,0,90),(120,6,7,3,2,347),(120,7,2,1,0,134),(120,10,1,0,0,90),(120,13,5,1,4,221),(120,14,4,1,0,213),(120,15,2,1,0,108),(120,16,4,0,1,145),(120,18,8,1,0,210),(120,19,2,0,0,67),(120,21,5,2,2,429),(120,22,22,4,6,1487),(120,23,4,0,0,236),(120,24,2,1,1,113),(120,26,8,1,0,506),(120,27,8,1,2,343),(120,30,3,0,1,202),(120,31,6,2,0,516),(120,32,35,9,4,1822),(120,33,7,0,1,415),(120,34,11,2,1,566),(120,36,3,0,0,47),(120,44,1,1,0,29),(120,45,3,0,0,157),(120,52,3,1,0,270),(120,54,3,1,0,178),(120,55,32,17,7,2640),(120,59,9,0,1,495),(120,68,10,1,0,438),(120,69,25,4,6,1560),(120,70,3,2,0,207),(120,71,31,11,4,2632),(120,72,7,2,5,641),(120,78,1,0,0,10),(120,82,27,10,3,1623),(120,84,30,9,5,1582),(120,85,3,1,2,242),(120,87,7,4,1,492),(120,102,1,0,0,90),(120,103,3,1,1,267),(123,6,16,0,NULL,1440),(123,7,NULL,0,NULL,NULL),(123,21,5,0,NULL,450),(123,26,6,0,NULL,540),(123,29,6,0,NULL,540),(123,45,2,0,NULL,180),(123,135,5,0,NULL,450),(123,165,28,0,NULL,2520),(123,194,38,0,NULL,3420),(124,6,7,0,0,563),(124,7,NULL,0,0,NULL),(124,9,3,0,0,270),(124,10,1,0,0,45),(124,13,2,0,0,161),(124,14,4,0,2,335),(124,15,5,0,0,405),(124,16,3,0,0,152),(124,18,20,0,2,1755),(124,19,7,1,0,578),(124,21,11,0,0,982),(124,22,24,1,1,1946),(124,23,3,1,0,270),(124,24,4,0,0,259),(124,25,6,0,0,443),(124,26,10,0,0,745),(124,27,7,0,1,630),(124,29,3,0,0,270),(124,52,NULL,0,0,NULL),(124,55,29,1,4,2395),(124,68,2,0,0,180),(124,69,33,0,5,2704),(124,71,33,1,3,2943),(124,72,2,0,0,180),(124,74,3,0,0,181),(124,76,4,0,1,313),(124,78,11,0,0,1050),(124,80,5,0,0,383),(124,82,33,1,1,2777),(124,84,32,0,6,2787),(124,85,1,0,0,22),(124,98,26,1,3,2298),(124,99,1,0,0,90),(124,100,36,0,5,3160),(124,102,3,1,0,284),(124,103,6,0,0,273),(124,136,1,0,0,24),(124,137,5,0,1,415),(124,161,20,0,4,1800),(124,165,15,0,0,1307),(124,168,3,1,0,187),(124,169,15,1,3,1338),(124,170,26,0,2,2243),(124,171,2,0,0,100),(124,174,2,0,1,180),(124,191,2,0,0,180),(124,192,37,2,1,3229),(124,197,2,0,0,180),(125,6,4,0,0,320),(125,7,1,0,0,51),(125,9,2,1,0,180),(125,10,2,0,0,180),(125,13,1,0,0,90),(125,14,4,1,0,360),(125,15,2,0,0,91),(125,16,1,0,0,90),(125,18,25,2,1,2134),(125,22,28,1,0,2288),(125,23,3,0,0,190),(125,24,NULL,0,0,NULL),(125,47,4,0,0,360),(125,55,27,0,3,2053),(125,69,18,0,1,1371),(125,70,2,0,0,149),(125,71,NULL,0,0,NULL),(125,82,5,0,0,407),(125,84,15,0,0,1182),(125,85,1,0,0,45),(125,102,1,0,0,90),(125,103,1,0,0,90),(125,135,2,0,0,180),(125,173,19,1,3,1659),(127,6,16,5,0,736),(127,7,2,1,1,141),(127,9,1,0,0,90),(127,13,2,1,1,180),(127,14,2,2,0,105),(127,16,1,0,0,25),(127,18,30,7,6,1905),(127,22,29,12,4,2183),(127,23,3,1,0,258),(127,24,1,0,0,90),(127,27,4,0,1,54),(127,52,2,0,0,78),(127,55,38,22,2,2814),(127,70,2,0,0,49),(127,71,6,2,0,339),(127,82,24,7,3,1666),(127,84,8,1,0,265),(127,99,1,1,0,90),(127,102,1,1,0,90),(127,103,1,0,0,17),(127,135,1,0,0,79),(127,136,1,0,0,90),(127,152,40,21,7,3539),(127,165,35,11,4,3035),(127,166,32,3,1,1626),(127,167,15,3,1,931),(128,6,6,0,0,439),(128,7,1,0,0,90),(128,9,1,0,0,29),(128,10,4,0,0,256),(128,13,1,0,0,79),(128,16,2,0,0,180),(128,17,3,1,0,224),(128,18,31,3,3,2790),(128,19,7,0,0,630),(128,21,2,0,0,175),(128,22,10,1,2,691),(128,25,1,0,0,90),(128,26,8,0,1,720),(128,27,6,0,0,465),(128,33,3,0,0,270),(128,35,6,1,0,540),(128,37,6,0,1,540),(128,39,11,1,0,613),(128,52,5,1,0,450),(128,55,9,1,0,703),(128,69,29,1,0,2455),(128,70,3,0,0,270),(128,80,13,1,1,1142),(128,82,22,1,0,1532),(128,84,25,1,0,1994),(128,88,34,3,5,3060),(128,89,21,2,0,1544),(128,90,31,3,2,2790),(128,91,32,3,0,2873),(128,102,1,0,0,90),(128,109,30,3,4,2630),(128,110,26,0,1,1480),(128,111,20,3,0,1390),(128,112,NULL,0,0,NULL),(129,6,14,2,0,320),(129,7,1,1,0,90),(129,9,1,0,0,90),(129,10,5,5,0,307),(129,12,17,3,1,495),(129,13,4,2,0,211),(129,14,2,2,0,168),(129,15,1,0,0,64),(129,16,1,0,0,25),(129,18,21,5,1,826),(129,22,17,2,1,413),(129,23,1,0,0,90),(129,24,2,1,0,172),(129,44,6,2,1,520),(129,45,8,3,0,461),(129,46,2,0,0,180),(129,47,5,0,0,50),(129,55,13,2,0,633),(129,82,5,1,0,62),(129,84,3,0,0,17),(129,87,NULL,0,0,NULL),(129,102,1,0,0,25),(129,103,1,2,0,35),(130,6,2,1,0,146),(130,7,1,0,0,90),(130,9,1,1,0,76),(130,10,NULL,0,0,NULL),(130,13,1,0,0,90),(130,14,3,0,0,221),(130,15,2,0,0,135),(130,18,13,0,0,847),(130,22,24,2,0,1939),(130,23,4,1,0,354),(130,24,1,0,0,90),(130,55,29,2,1,2282),(130,82,13,1,0,890),(130,250,5,0,1,370),(131,6,14,0,0,585),(131,7,1,0,0,71),(131,18,19,5,3,1338),(131,19,4,0,0,107),(131,21,2,1,0,136),(131,25,11,3,3,515),(131,26,12,3,3,860),(131,27,5,5,2,347),(131,33,5,0,0,237),(131,38,3,0,0,79),(131,39,6,0,1,284),(131,52,13,2,2,959),(131,56,23,8,6,1414),(131,59,12,2,0,501),(131,60,12,2,2,656),(131,62,34,5,2,2019),(131,69,31,13,7,2243),(131,70,3,1,1,179),(131,71,26,8,5,2003),(131,72,1,1,0,59),(131,74,1,0,0,63),(131,78,7,1,1,484),(131,84,14,7,6,1117),(131,85,2,0,1,109),(131,98,33,5,7,2333),(131,99,3,0,0,218),(131,100,13,3,7,930),(131,103,1,0,0,45),(131,135,7,3,0,619),(131,165,35,5,5,2800),(131,195,16,5,1,1178),(131,250,18,7,6,1303),(132,6,17,2,0,1414),(132,7,2,2,0,114),(132,9,3,1,1,266),(132,10,2,0,0,32),(132,13,4,0,0,248),(132,14,4,1,2,205),(132,15,1,0,0,30),(132,16,5,0,0,365),(132,18,34,5,4,2351),(132,22,1,0,0,18),(132,24,1,0,0,90),(132,29,5,0,0,156),(132,45,2,0,0,117),(132,50,10,1,2,437),(132,55,21,2,3,607),(132,69,30,1,4,1034),(132,70,1,0,0,90),(132,71,12,0,1,176),(132,72,2,0,1,155),(132,82,34,4,1,1992),(132,84,35,3,2,1692),(132,85,4,1,1,314),(132,99,1,0,0,1),(132,102,4,0,0,249),(132,103,4,1,2,318),(132,133,24,1,1,1891),(132,134,41,6,2,2557),(132,135,1,0,0,20),(132,152,7,1,0,172),(133,6,14,2,1,1085),(133,9,3,0,0,295),(133,10,5,0,0,450),(133,14,1,0,0,90),(133,15,1,0,0,90),(133,16,3,0,0,167),(133,17,5,0,0,290),(133,18,29,1,1,2539),(133,22,20,0,2,1340),(133,23,3,0,0,281),(133,24,2,1,0,109),(133,25,3,0,1,270),(133,26,9,0,1,567),(133,27,5,0,0,450),(133,29,3,0,0,270),(133,45,10,0,1,900),(133,52,8,0,2,643),(133,53,4,0,0,307),(133,55,18,0,0,1432),(133,68,2,0,0,148),(133,69,23,1,3,1735),(133,70,2,0,0,170),(133,71,17,0,2,1288),(133,72,2,0,0,180),(133,74,9,0,0,810),(133,76,6,0,0,485),(133,82,27,0,0,1839),(133,84,29,2,6,2323),(133,85,4,1,0,360),(133,98,34,2,1,2873),(133,99,NULL,0,0,NULL),(133,100,37,1,2,3049),(133,102,3,0,0,213),(133,103,1,0,0,90),(133,135,2,0,0,180),(133,136,1,0,0,90),(133,165,14,0,1,891),(135,6,2,0,0,51),(135,7,1,0,0,20),(135,9,4,0,0,269),(135,10,3,0,0,156),(135,13,NULL,0,0,NULL),(135,14,2,0,0,118),(135,15,1,0,0,90),(135,18,23,3,1,1174),(135,19,10,1,2,487),(135,21,4,0,0,147),(135,22,10,0,0,521),(135,24,1,0,0,15),(135,25,4,1,0,251),(135,26,6,1,0,244),(135,27,5,2,0,419),(135,47,5,0,2,446),(135,55,18,2,3,813),(135,74,6,1,1,310),(135,81,2,1,0,190),(135,82,25,2,1,1393),(135,83,27,6,5,1966),(135,86,31,8,8,2413),(135,88,29,12,8,2179),(135,89,30,5,2,2296),(135,102,1,0,0,90),(139,6,2,0,0,143),(139,7,1,0,0,68),(139,17,1,1,0,71),(139,19,1,0,0,9),(139,21,5,0,0,289),(139,49,16,2,1,1394),(139,50,25,1,1,1417),(139,56,23,2,2,1947),(139,57,31,4,1,1955),(139,68,5,0,0,440),(139,83,30,2,3,2305),(139,87,6,0,0,540),(142,6,17,1,4,1507),(142,7,3,0,2,165),(142,9,1,0,0,90),(142,15,1,0,0,90),(142,16,6,0,0,540),(142,18,6,2,0,430),(142,19,3,0,0,220),(142,21,7,0,0,609),(142,25,6,0,1,540),(142,26,8,0,2,626),(142,27,3,0,3,270),(142,29,3,0,0,270),(142,52,10,0,0,900),(142,59,15,0,0,978),(142,60,28,0,6,2477),(142,61,25,0,4,1980),(142,68,NULL,0,0,NULL),(142,69,12,0,5,564),(142,70,2,0,1,180),(142,71,6,1,1,458),(142,72,2,0,1,180),(142,82,27,1,3,2278),(142,84,24,0,5,1914),(142,85,5,0,1,450),(142,99,1,0,1,90),(142,102,2,0,0,180),(142,103,2,0,1,180),(142,135,2,0,1,158),(142,136,1,0,0,90),(142,152,41,1,12,3678),(142,161,39,2,6,3281),(142,165,38,0,4,3416),(142,166,45,0,12,3974),(142,167,46,3,4,4079),(142,168,1,0,0,69),(142,170,3,0,0,202),(142,171,NULL,0,0,NULL),(143,6,8,0,NULL,675),(143,17,5,0,NULL,450),(143,23,6,0,NULL,540),(143,24,NULL,0,NULL,NULL),(143,46,NULL,0,NULL,NULL),(143,62,30,0,NULL,2700),(145,6,13,0,0,1012),(145,7,2,0,0,173),(145,19,6,1,1,528),(145,21,7,0,1,525),(145,25,8,1,0,669),(145,47,8,1,1,720),(145,54,6,0,0,443),(147,6,14,0,0,867),(147,7,2,2,2,161),(147,9,1,0,0,5),(147,10,1,0,0,72),(147,13,4,1,0,253),(147,14,5,0,1,289),(147,15,2,1,0,174),(147,16,6,2,0,362),(147,18,16,2,0,355),(147,19,4,0,1,116),(147,21,NULL,0,0,NULL),(147,22,16,9,5,1425),(147,23,1,0,0,80),(147,24,2,0,0,99),(147,26,6,0,0,296),(147,27,6,0,0,243),(147,31,4,0,1,350),(147,52,3,0,1,266),(147,55,22,1,0,931),(147,68,10,2,1,525),(147,69,25,1,2,1366),(147,70,4,1,0,183),(147,71,25,4,1,1634),(147,72,7,2,1,510),(147,82,27,4,3,1668),(147,84,33,8,6,1822),(147,85,2,0,0,71),(147,87,9,2,1,415),(147,98,NULL,0,0,NULL),(147,102,1,0,1,63),(147,103,2,3,1,180),(147,134,14,2,1,655),(147,135,1,0,1,90),(147,152,15,3,4,1226),(147,165,1,0,0,24),(147,166,5,0,0,76),(147,192,NULL,0,0,NULL),(151,6,17,0,4,1010),(151,7,1,0,0,59),(151,17,5,0,3,431),(151,19,8,0,1,531),(151,21,6,1,0,244),(151,25,10,3,3,423),(151,26,6,0,0,501),(151,37,5,0,0,144),(151,38,6,1,0,319),(151,46,4,1,1,328),(151,56,22,4,6,1202),(151,68,5,0,0,195),(151,74,9,1,2,512),(151,88,2,1,0,164),(151,89,24,5,6,1725),(151,90,33,10,5,2197),(151,91,11,2,1,540),(151,107,8,4,2,720),(151,109,28,7,3,956),(151,196,6,0,0,487),(152,6,4,0,0,107),(152,7,2,0,0,180),(152,9,NULL,0,0,NULL),(152,10,3,1,0,204),(152,14,1,0,3,90),(152,15,1,0,0,90),(152,16,NULL,0,0,NULL),(152,18,11,1,0,830),(152,22,10,0,2,752),(152,23,NULL,0,0,NULL),(152,31,3,0,0,11),(152,33,5,0,1,450),(152,45,6,0,1,298),(152,47,8,0,0,600),(152,55,14,1,1,1102),(152,69,24,1,1,2160),(152,71,12,0,0,312),(152,72,5,1,0,427),(152,82,31,2,0,2586),(152,84,12,0,0,869),(152,85,2,0,0,180),(152,87,3,0,0,192),(152,98,22,0,0,1640),(152,99,NULL,0,0,NULL),(152,100,NULL,0,0,NULL),(152,102,1,0,0,90),(152,103,4,0,0,290),(152,135,4,0,1,294),(152,165,23,1,1,1569),(153,6,5,0,0,13),(153,7,1,0,0,90),(153,9,1,0,0,90),(153,10,5,0,0,408),(153,13,5,0,0,247),(153,14,2,1,0,180),(153,16,1,0,0,90),(153,18,15,1,0,840),(153,22,30,0,0,2557),(153,23,1,0,0,90),(153,24,2,0,0,180),(153,29,1,0,0,90),(153,44,6,1,0,514),(153,45,5,0,0,404),(153,46,5,0,0,420),(153,47,8,1,0,595),(153,55,8,0,0,580),(153,69,9,0,0,810),(153,70,3,0,0,270),(153,72,3,0,1,270),(153,82,10,0,0,807),(153,84,12,0,0,820),(153,85,5,0,0,390),(153,87,3,0,0,270),(153,102,1,0,0,90),(153,103,4,0,0,390),(153,133,26,1,0,2238),(155,6,10,0,0,421),(155,7,2,0,0,135),(155,9,1,0,0,90),(155,10,1,0,0,90),(155,14,4,1,0,313),(155,15,2,0,0,100),(155,16,NULL,0,0,NULL),(155,18,16,0,0,1440),(155,22,38,0,2,3405),(155,24,NULL,0,0,NULL),(155,55,28,1,2,2295),(155,68,2,0,0,180),(155,69,5,0,0,374),(155,70,1,0,0,90),(155,71,14,0,2,1068),(155,72,1,0,0,90),(155,82,16,1,3,1185),(155,84,2,0,0,167),(155,98,NULL,0,0,NULL),(155,102,3,0,0,241),(155,135,2,0,0,134),(155,163,18,1,2,1463),(155,165,6,0,0,224),(157,6,17,1,1,496),(157,7,2,0,0,104),(157,9,1,0,0,60),(157,10,NULL,0,0,NULL),(157,12,39,9,6,2293),(157,13,3,0,0,233),(157,14,2,0,0,124),(157,15,3,0,1,267),(157,16,2,0,0,103),(157,18,33,1,2,1457),(157,22,26,2,3,1621),(157,23,1,0,0,52),(157,24,4,1,1,302),(157,70,1,1,0,65),(157,72,1,1,0,90),(157,82,9,0,1,301),(157,84,25,1,1,1144),(157,85,2,0,0,38),(157,99,1,0,0,11),(157,102,1,0,0,13),(157,103,1,0,0,120),(157,134,NULL,0,0,NULL),(157,164,37,8,8,2621),(157,173,13,2,1,724),(158,6,8,0,0,311),(158,9,1,0,0,90),(158,10,1,0,0,83),(158,13,2,0,0,170),(158,14,2,0,0,119),(158,15,1,0,0,90),(158,16,2,0,0,168),(158,18,27,2,3,1470),(158,22,18,0,3,926),(158,24,4,1,0,257),(158,55,28,1,4,2062),(158,69,28,3,8,1767),(158,70,1,0,0,89),(158,72,1,1,0,32),(158,82,38,7,14,3173),(158,84,26,5,3,2009),(158,99,2,1,0,52),(158,102,3,1,1,121),(158,103,4,1,1,366),(158,133,18,4,5,1244),(158,134,21,1,0,695),(158,135,2,1,0,178),(158,152,37,3,2,1976),(162,1,26,3,1,1642),(162,2,28,2,1,1585),(162,3,20,1,2,1654),(162,6,12,0,1,902),(162,15,2,0,0,180),(162,19,7,1,0,401),(162,21,10,0,0,489),(162,25,7,0,1,567),(162,32,32,4,3,2734),(162,34,37,1,1,3330),(162,36,29,0,1,1949),(162,37,3,0,0,270),(162,38,3,0,0,113),(162,47,2,0,0,106),(162,69,33,1,2,2686),(162,70,2,0,0,180),(162,71,35,0,1,3075),(162,72,3,1,0,224),(162,74,6,0,0,533),(162,82,33,0,2,2825),(162,84,33,2,1,2757),(162,102,NULL,0,0,NULL),(162,103,NULL,0,0,NULL),(162,104,25,0,0,1380),(162,105,11,0,0,355),(162,106,NULL,0,0,NULL),(162,107,NULL,0,0,NULL),(162,196,6,1,0,500),(164,6,16,1,0,1426),(164,7,1,0,0,90),(164,9,1,0,0,90),(164,10,NULL,0,0,NULL),(164,13,4,0,0,390),(164,14,1,0,0,90),(164,15,3,0,0,219),(164,18,25,2,2,2161),(164,22,18,1,0,1243),(164,24,1,0,0,18),(164,33,7,0,1,598),(164,35,6,0,1,540),(164,55,22,2,0,1671),(164,76,2,0,0,192),(164,78,13,4,0,1147),(164,82,24,4,1,2002),(164,86,6,0,0,282),(164,88,24,1,0,1728),(164,102,1,0,0,90),(164,250,25,2,2,2221),(165,6,13,0,0,796),(165,7,1,0,0,21),(165,9,4,1,0,306),(165,10,4,0,0,327),(165,13,5,0,1,349),(165,14,NULL,0,0,NULL),(165,15,3,0,1,187),(165,16,4,0,1,420),(165,17,5,0,0,260),(165,18,27,1,2,2074),(165,19,9,1,1,679),(165,20,2,0,0,210),(165,21,11,0,0,965),(165,22,26,1,2,2190),(165,23,4,0,1,283),(165,24,2,0,0,180),(165,25,7,2,0,613),(165,27,8,1,0,705),(165,31,8,0,0,720),(165,33,4,0,0,390),(165,35,10,0,3,821),(165,36,2,0,0,180),(165,37,1,0,0,60),(165,38,8,0,0,710),(165,39,4,0,1,360),(165,46,9,0,0,695),(165,55,36,2,6,3230),(165,69,38,1,5,3420),(165,70,3,1,2,300),(165,71,37,2,4,3201),(165,72,3,0,1,270),(165,78,8,0,0,720),(165,82,38,1,6,3403),(165,84,37,2,6,3330),(165,85,6,0,0,378),(165,98,29,0,1,2324),(165,99,2,0,0,180),(165,100,27,0,6,2197),(165,102,6,0,2,492),(165,103,2,0,0,180),(165,104,30,1,2,2511),(165,105,15,0,1,1008),(165,135,2,0,1,180),(165,136,5,0,0,371),(165,165,29,0,3,2484),(165,217,33,0,1,2970),(165,228,2,0,0,97),(165,231,36,0,1,3192),(165,232,29,0,1,2584),(165,233,1,0,0,23),(166,6,12,1,0,559),(166,7,2,0,0,106),(166,8,43,3,3,3837),(166,9,2,0,0,63),(166,10,2,0,0,141),(166,11,42,3,3,3512),(166,12,38,2,4,3210),(166,13,1,0,0,83),(166,14,NULL,0,0,NULL),(166,15,4,0,0,420),(166,16,NULL,0,0,NULL),(167,6,5,0,0,109),(167,7,1,0,0,90),(167,10,3,0,0,252),(167,15,1,0,0,90),(167,16,1,0,0,90),(167,18,14,0,2,800),(167,22,23,1,0,1542),(167,23,2,0,0,178),(167,24,3,0,0,178),(167,29,5,0,1,81),(167,31,1,1,0,90),(167,33,8,0,0,713),(167,35,3,0,0,167),(167,44,1,0,0,63),(167,45,12,2,0,415),(167,46,7,0,1,460),(167,47,12,1,2,838),(167,52,5,2,0,450),(167,69,14,0,1,694),(167,70,3,0,0,223),(167,71,11,0,1,794),(167,72,4,0,0,337),(167,76,6,0,0,441),(167,78,8,0,0,490),(167,82,8,0,0,379),(167,84,13,0,1,870),(167,85,2,0,0,45),(167,87,6,0,0,404),(167,102,1,0,0,84),(167,103,5,0,1,423),(167,169,21,2,0,1718),(167,192,14,0,3,1260),(169,6,1,0,0,22),(169,7,2,0,0,180),(169,9,4,0,0,389),(169,10,2,0,0,100),(169,13,NULL,0,0,NULL),(169,14,3,0,0,229),(169,15,1,0,0,90),(169,18,32,3,2,2792),(169,22,35,3,1,2990),(169,23,2,0,0,240),(169,24,4,1,1,360),(169,47,3,0,0,270),(169,55,31,2,0,2556),(169,69,35,2,1,3150),(169,72,2,0,0,180),(169,82,33,1,2,2970),(169,84,30,0,1,2560),(169,85,4,0,0,360),(169,98,NULL,0,0,NULL),(169,99,1,0,0,90),(169,102,1,0,0,90),(169,103,1,0,0,90),(169,133,44,5,3,3897),(169,135,2,0,0,180),(169,136,3,1,0,270),(169,137,NULL,0,0,NULL),(169,152,13,3,0,1170),(169,165,21,0,1,1594),(169,166,22,2,0,1942),(171,6,5,0,0,158),(171,7,2,0,0,134),(171,9,2,0,0,154),(171,10,4,1,1,285),(171,13,2,0,0,39),(171,14,2,1,1,163),(171,16,2,0,1,155),(171,18,17,2,1,787),(171,19,6,0,1,300),(171,21,3,0,0,26),(171,22,13,1,1,244),(171,23,1,0,0,16),(171,25,5,3,1,282),(171,26,NULL,0,0,NULL),(171,27,7,2,0,320),(171,29,7,1,1,377),(171,31,5,0,0,238),(171,33,7,2,2,396),(171,35,2,0,0,158),(171,37,4,0,0,248),(171,38,4,1,2,256),(171,55,30,4,1,1490),(171,69,29,2,7,1562),(171,70,3,3,1,198),(171,71,22,1,1,924),(171,72,3,0,1,197),(171,81,2,0,0,165),(171,82,2,0,0,19),(171,84,32,3,7,1483),(171,85,6,0,2,431),(171,98,14,2,3,523),(171,99,4,1,3,344),(171,100,25,1,5,1062),(171,103,1,0,0,90),(171,135,3,0,2,66),(171,136,2,0,0,138),(171,137,3,0,0,247),(171,165,23,1,1,1495),(171,168,4,0,0,226),(171,192,16,2,1,558),(173,2,12,2,3,829),(173,3,27,5,5,2186),(173,4,33,5,3,2406),(173,5,33,9,2,2174),(173,6,1,0,0,NULL),(173,7,NULL,0,0,NULL),(173,9,NULL,0,0,NULL),(173,10,1,0,0,42),(173,18,10,0,0,352),(173,21,6,0,0,370),(173,22,9,0,0,291),(173,28,17,1,7,1358),(173,30,14,3,0,554),(173,32,32,6,4,2742),(173,34,32,1,2,2464),(173,46,2,0,1,135),(173,47,13,0,1,1066),(175,10,2,0,0,180),(175,13,NULL,0,0,NULL),(175,14,2,0,0,155),(175,18,9,0,0,505),(175,21,5,0,0,200),(175,22,9,0,0,400),(175,23,1,0,0,90),(175,24,1,0,0,90),(175,27,1,0,0,18),(175,45,3,0,0,138),(175,55,5,0,0,186),(175,69,4,0,0,305),(175,71,NULL,0,0,NULL),(175,84,1,0,0,NULL),(175,85,1,0,0,22),(175,87,3,0,0,270),(175,102,2,0,0,180),(175,103,1,0,0,90),(175,163,5,0,0,300),(175,173,25,0,1,2094),(176,6,4,0,0,104),(176,7,2,1,0,160),(176,10,1,0,0,90),(176,13,5,0,0,447),(176,14,NULL,0,0,NULL),(176,15,2,0,0,101),(176,16,2,0,0,120),(176,18,26,1,0,2056),(176,22,19,2,0,1627),(176,23,1,0,0,45),(176,24,1,1,1,90),(176,55,24,1,0,2079),(176,70,3,0,0,214),(176,71,18,2,0,1145),(176,72,1,0,0,44),(176,82,32,0,1,2745),(176,84,33,3,0,2928),(176,85,1,0,0,90),(176,99,3,0,1,270),(176,103,NULL,0,0,NULL),(176,134,25,1,0,1792),(176,135,NULL,0,0,NULL),(176,136,NULL,0,0,NULL),(176,152,29,2,0,2540),(176,164,43,3,2,3674),(176,166,2,0,0,9),(176,167,1,0,0,90),(177,6,16,0,NULL,1440),(177,7,NULL,0,NULL,NULL),(177,15,NULL,0,NULL,NULL),(177,23,1,0,NULL,120),(177,36,37,0,NULL,3330),(177,38,8,0,NULL,720),(177,74,5,0,NULL,450),(177,82,36,0,NULL,3240),(177,106,NULL,0,NULL,NULL),(177,165,27,0,NULL,2430),(178,6,2,2,1,63),(178,7,1,0,1,90),(178,13,2,1,1,157),(178,14,1,1,1,90),(178,16,1,0,0,90),(178,18,1,0,0,19),(178,22,2,0,0,69),(178,23,1,0,0,56),(178,24,1,0,0,72),(178,26,5,0,0,112),(178,44,4,0,0,162),(178,45,4,1,1,243),(178,47,8,0,0,314),(178,53,10,2,3,605),(178,55,17,1,0,626),(178,57,23,7,1,628),(178,84,3,0,0,146),(178,87,2,0,1,169),(178,103,3,0,0,181),(178,282,21,2,4,906),(180,6,3,0,0,34),(180,7,2,0,0,88),(180,9,1,0,0,90),(180,13,2,0,0,40),(180,14,1,0,0,90),(180,15,1,0,0,33),(180,16,2,1,0,161),(180,18,24,2,1,1986),(180,22,30,1,3,2617),(180,24,2,1,0,180),(180,55,26,6,2,2124),(180,70,4,0,1,358),(180,71,15,0,3,1048),(180,72,1,0,0,90),(180,76,7,0,1,378),(180,78,9,4,1,662),(180,82,16,1,1,944),(180,84,30,1,3,2267),(180,85,1,0,2,90),(180,98,32,6,7,2475),(180,99,1,0,0,64),(180,100,19,1,0,917),(180,135,1,0,0,90),(180,136,2,0,1,108),(180,137,2,1,1,104),(180,164,42,5,9,3369),(180,165,31,3,5,2456),(180,167,10,6,3,850),(180,168,1,0,0,29),(180,169,15,0,1,326),(180,171,1,0,0,68),(180,174,3,1,0,172),(180,192,13,1,0,728),(180,196,4,0,0,360),(180,197,16,3,2,1118),(180,198,2,0,0,174),(181,9,4,2,1,178),(181,10,2,2,1,180),(181,14,1,0,0,90),(181,15,4,1,1,348),(181,16,1,0,0,45),(181,18,21,3,2,1457),(181,22,34,1,5,2258),(181,23,1,0,0,5),(181,24,1,0,0,20),(181,52,3,0,1,169),(181,55,24,1,1,1289),(181,69,36,3,6,2526),(181,70,1,0,0,90),(181,71,13,4,2,1089),(181,74,9,2,1,674),(181,76,7,1,3,540),(181,78,3,0,0,68),(181,80,6,1,3,423),(181,82,38,6,5,3018),(181,84,36,2,8,3129),(181,85,3,0,1,204),(181,98,25,1,2,1225),(181,100,12,2,2,1017),(181,102,3,2,0,203),(181,103,2,0,1,123),(181,135,3,1,0,163),(181,136,1,0,0,20),(181,137,1,0,0,90),(181,161,11,2,2,946),(181,165,17,2,2,751),(181,167,15,0,4,990),(181,168,1,1,0,90),(181,171,NULL,0,0,NULL),(181,191,NULL,0,0,NULL),(181,192,NULL,0,0,NULL),(184,6,1,0,0,10),(184,7,1,0,0,66),(184,9,1,0,0,12),(184,10,1,0,0,76),(184,13,2,0,0,180),(184,14,1,0,0,40),(184,15,3,0,0,300),(184,16,2,0,0,167),(184,18,19,1,2,1259),(184,22,13,0,0,826),(184,24,2,0,0,180),(184,30,31,0,1,2672),(184,33,4,0,1,360),(184,35,1,0,0,90),(184,52,4,0,1,264),(184,55,21,0,1,1599),(184,69,20,1,0,1427),(184,70,NULL,0,0,NULL),(184,74,1,0,0,44),(184,78,2,0,0,179),(184,82,18,0,3,1096),(184,84,21,0,1,1759),(184,85,2,0,0,180),(184,103,NULL,0,0,NULL),(184,135,2,0,1,139),(184,165,10,0,0,761),(184,193,3,0,0,270),(184,194,3,0,1,197),(184,195,NULL,0,0,NULL),(186,6,12,0,0,959),(186,7,1,0,0,12),(186,8,14,0,0,1161),(186,9,3,0,0,270),(186,10,1,0,0,90),(186,11,42,0,2,3653),(186,13,2,0,0,102),(186,15,1,0,0,90),(186,16,2,1,0,180),(186,23,3,0,0,270),(186,24,1,0,0,26),(186,55,29,1,0,2430),(186,69,38,2,1,3420),(186,71,36,4,1,3195),(186,72,1,0,0,6),(186,82,31,1,1,2787),(186,84,34,2,1,2766),(186,85,NULL,0,0,NULL),(186,99,1,0,0,90),(186,102,3,1,0,201),(186,103,4,0,0,390),(186,134,46,5,1,4103),(186,135,2,0,1,180),(186,136,4,0,0,360),(186,152,38,3,1,3420),(186,167,1,0,0,90),(186,168,1,0,0,90),(186,174,1,0,0,8),(187,6,12,1,0,707),(187,7,1,0,0,69),(187,9,3,1,0,246),(187,10,1,0,0,90),(187,13,1,0,0,90),(187,14,NULL,0,0,NULL),(187,15,4,0,0,264),(187,16,1,0,0,90),(187,18,27,0,1,1978),(187,22,36,1,0,3122),(187,23,1,0,0,44),(187,35,6,0,0,499),(187,37,6,0,0,528),(187,55,35,1,1,2535),(187,69,31,1,0,2728),(187,70,2,1,0,180),(187,71,34,5,3,3010),(187,72,5,0,1,367),(187,80,10,0,0,895),(187,82,31,0,3,1897),(187,84,33,2,3,2802),(187,102,2,0,0,180),(187,103,3,0,0,197),(187,107,9,0,1,523),(187,135,1,0,0,90),(187,165,31,4,3,2662),(187,196,4,0,0,279),(191,6,12,0,1,463),(191,7,1,0,1,38),(191,9,3,0,0,157),(191,10,4,0,1,160),(191,13,2,0,0,29),(191,14,2,2,1,180),(191,15,1,0,0,90),(191,16,2,1,0,102),(191,17,6,0,0,150),(191,18,24,0,1,843),(191,19,8,0,1,211),(191,21,6,0,0,363),(191,22,26,0,1,1060),(191,23,2,0,0,180),(191,24,1,0,0,90),(191,25,8,0,1,415),(191,26,12,2,2,901),(191,27,11,0,8,875),(191,33,8,1,0,590),(191,35,6,1,4,357),(191,37,2,0,1,79),(191,38,4,0,0,210),(191,52,12,2,3,1012),(191,55,22,2,2,926),(191,69,36,7,3,3159),(191,70,4,0,1,278),(191,71,28,5,11,2416),(191,72,1,0,0,18),(191,80,2,0,0,122),(191,81,2,0,0,94),(191,82,31,5,5,1785),(191,84,32,0,3,1763),(191,85,NULL,0,0,NULL),(191,98,31,1,7,1359),(191,99,4,0,0,307),(191,100,26,4,4,1722),(191,102,1,0,0,60),(191,103,NULL,0,0,NULL),(191,135,2,2,0,180),(191,136,6,0,1,410),(191,137,1,0,0,90),(191,165,32,5,8,1741),(191,168,3,2,1,270),(191,169,32,0,6,2048),(191,171,5,0,1,437),(191,172,36,3,9,2878),(191,174,3,3,0,270),(191,191,36,7,12,3174),(191,192,26,3,5,1581),(191,196,5,0,1,266),(191,234,29,2,2,2230),(191,235,2,1,1,180),(191,236,35,3,7,2683),(191,237,2,1,1,180),(191,252,27,1,1,2337),(191,253,3,0,0,270),(191,254,25,1,1,1262),(191,255,4,0,0,114),(191,256,30,3,0,2380),(191,257,1,0,0,84),(191,258,18,2,0,507),(191,259,3,0,0,53),(195,3,21,0,0,1574),(195,4,25,0,1,2079),(195,5,25,1,0,2114),(195,6,14,0,2,1253),(195,7,NULL,0,0,NULL),(195,9,3,0,0,218),(195,10,2,0,0,144),(195,17,5,0,0,385),(195,18,32,3,1,2648),(195,19,9,0,1,757),(195,20,2,0,0,210),(195,21,8,0,0,567),(195,22,23,2,0,1938),(195,23,2,0,0,178),(195,24,1,0,0,61),(195,25,9,0,0,810),(195,26,7,0,0,616),(195,27,6,0,0,522),(195,28,27,3,2,2385),(195,29,7,0,0,585),(195,30,30,1,1,2622),(195,31,9,0,0,810),(195,32,26,1,0,2309),(195,33,6,1,0,501),(195,34,28,3,0,2386),(195,35,7,0,0,568),(195,36,22,0,0,1900),(195,37,9,2,0,801),(195,38,7,1,0,590),(195,39,6,0,0,540),(195,40,7,0,0,560),(200,6,16,0,NULL,1440),(200,14,NULL,0,NULL,NULL),(200,23,NULL,0,NULL,NULL),(200,44,2,0,NULL,180),(200,103,NULL,0,NULL,NULL),(201,6,7,1,0,410),(201,9,1,0,0,44),(201,13,1,0,0,90),(201,14,4,2,0,276),(201,15,2,0,1,110),(201,16,1,0,0,82),(201,18,17,5,2,1287),(201,22,33,16,3,2876),(201,23,3,2,2,212),(201,24,3,3,0,225),(201,47,5,0,0,229),(201,55,36,13,1,2630),(201,69,11,1,0,345),(201,70,1,0,0,37),(201,72,2,1,0,117),(201,82,35,6,2,1774),(201,84,32,4,7,1873),(201,99,NULL,0,0,NULL),(201,102,1,2,0,90),(201,103,2,3,0,92),(202,6,12,0,0,636),(202,7,2,1,1,180),(202,9,2,1,0,210),(202,10,NULL,0,0,NULL),(202,13,2,0,0,168),(202,14,1,0,0,90),(202,15,3,0,0,94),(202,16,3,0,0,270),(202,18,30,1,1,2391),(202,19,5,0,0,400),(202,21,5,0,0,341),(202,22,32,4,1,2125),(202,23,4,2,0,253),(202,24,2,1,0,165),(202,26,3,0,0,270),(202,27,4,0,0,203),(202,44,5,1,0,121),(202,45,6,0,1,540),(202,55,27,4,1,1771),(202,69,2,0,0,96),(202,82,16,2,0,860),(202,84,13,0,0,628),(202,87,7,1,0,424),(202,102,NULL,0,0,NULL),(202,103,3,0,0,206),(205,5,24,2,1,1555),(205,6,16,0,0,772),(205,7,1,0,0,90),(205,9,1,1,0,90),(205,10,1,0,0,27),(205,13,1,0,0,63),(205,15,5,1,1,436),(205,17,3,0,0,89),(205,18,26,1,2,2116),(205,22,36,1,0,3114),(205,23,3,1,0,221),(205,28,23,1,0,748),(205,55,22,1,0,1262),(205,82,28,0,0,1769),(205,102,1,0,0,90),(207,6,9,0,1,642),(207,7,1,0,0,18),(207,9,4,0,0,210),(207,10,1,0,0,90),(207,13,1,1,0,90),(207,14,2,0,0,180),(207,15,4,0,0,303),(207,16,1,0,0,72),(207,18,15,0,4,1042),(207,19,8,0,1,501),(207,21,9,0,1,586),(207,22,20,0,0,1474),(207,23,1,0,0,90),(207,24,2,0,1,180),(207,25,2,0,0,114),(207,26,5,0,2,336),(207,27,1,0,0,90),(207,29,4,0,0,172),(207,44,1,0,0,21),(207,55,19,0,0,1272),(207,82,14,0,3,1153),(207,84,8,0,0,533),(207,102,6,1,0,547),(207,103,4,0,0,409),(207,249,12,0,4,493),(208,6,11,1,0,923),(208,7,1,0,0,90),(208,17,4,0,0,335),(208,25,7,0,0,630),(208,26,6,0,0,540),(208,27,5,0,0,450),(208,29,8,0,0,720),(208,45,7,0,0,630),(208,46,5,0,0,450),(208,47,1,0,0,90),(208,52,7,0,1,608),(208,54,7,0,0,630),(208,74,7,0,1,548),(208,76,9,0,0,789),(208,78,9,0,0,764),(211,6,2,0,0,111),(211,9,6,1,1,570),(211,10,4,0,0,207),(211,17,2,0,0,169),(211,18,11,0,0,990),(211,19,8,2,0,720),(211,21,6,0,0,475),(211,25,2,0,0,114),(211,27,NULL,0,0,NULL),(211,46,3,1,0,270),(211,47,4,0,0,314),(211,50,14,1,0,692),(211,56,8,0,0,567),(211,57,28,1,1,2430),(211,83,16,0,0,1225),(213,17,3,0,NULL,270),(213,21,NULL,0,NULL,NULL),(213,26,11,0,NULL,990),(213,48,3,0,NULL,270),(213,57,29,0,NULL,2610),(213,86,28,0,NULL,2520),(213,89,34,0,NULL,3060),(215,6,16,2,0,1440),(215,9,5,0,0,450),(215,10,3,0,0,300),(215,13,1,0,0,90),(215,16,2,1,0,180),(215,17,6,0,0,540),(215,18,34,3,4,3060),(215,19,9,0,1,810),(215,22,5,1,0,371),(215,24,2,0,0,106),(215,25,8,0,0,750),(215,26,12,2,2,1080),(215,27,6,0,0,540),(215,35,6,0,0,540),(215,55,38,5,1,3420),(215,68,6,2,0,540),(215,69,21,1,0,1854),(215,70,2,0,0,180),(215,71,34,3,0,3060),(215,72,1,0,0,90),(215,74,8,0,0,666),(215,77,32,2,3,2781),(215,79,23,3,1,1962),(215,81,1,0,0,120),(215,82,38,4,2,3385),(215,84,14,0,0,1260),(215,85,1,1,0,90),(215,206,2,0,0,31),(217,6,3,2,0,244),(217,27,1,0,0,8),(217,45,8,0,0,470),(217,47,3,0,0,57),(217,54,6,3,0,411),(217,58,2,1,0,154),(217,59,31,6,2,2067),(217,60,34,17,2,2356),(217,61,37,9,1,1498),(217,83,5,0,0,116),(217,86,NULL,0,0,NULL),(217,101,16,13,7,1369),(218,6,10,1,5,705),(218,7,1,0,0,31),(218,9,2,0,0,127),(218,17,2,0,0,47),(218,18,18,5,8,1267),(218,19,5,1,0,77),(218,21,6,0,1,268),(222,2,4,0,0,314),(222,3,14,1,0,1214),(222,4,2,0,0,160),(222,6,2,0,0,180),(222,17,2,1,0,128),(222,18,7,0,0,630),(222,22,28,0,1,2265),(222,23,4,0,0,350),(222,45,6,0,0,469),(222,53,5,1,0,438),(222,87,2,0,0,180),(223,6,15,4,1,1068),(223,7,1,0,0,15),(223,9,3,0,1,177),(223,10,3,2,0,255),(223,17,6,1,0,335),(223,18,29,8,4,1810),(223,19,9,3,0,672),(223,20,2,1,0,210),(223,21,12,1,2,787),(223,22,27,4,5,1519),(223,23,5,1,1,147),(223,24,1,3,0,66),(223,25,5,0,0,434),(223,29,3,0,0,80),(223,46,6,3,3,423),(223,56,30,12,6,2463),(223,57,34,17,4,2902),(223,83,30,3,9,2138),(223,86,24,4,6,1449),(223,87,5,4,2,450),(226,6,16,1,0,1157),(226,9,3,0,1,300),(226,10,3,0,2,285),(226,13,NULL,0,0,NULL),(226,15,NULL,0,0,NULL),(226,16,2,0,0,103),(226,17,5,1,0,447),(226,18,32,2,12,2854),(226,19,9,0,4,795),(226,21,8,0,2,712),(226,22,36,2,7,3033),(226,23,1,0,0,90),(226,24,NULL,0,0,NULL),(226,25,7,0,1,582),(226,26,11,0,4,921),(226,27,10,1,1,820),(226,55,38,4,13,3176),(226,69,7,0,0,162),(226,70,3,0,1,248),(226,81,2,0,1,136),(226,82,29,1,12,2467),(226,84,19,1,1,1576),(226,85,2,0,0,180),(226,103,NULL,0,0,NULL),(227,6,14,0,5,1016),(227,7,1,0,0,90),(227,9,4,0,2,312),(227,10,4,0,0,324),(227,13,1,0,0,90),(227,16,1,0,0,90),(227,17,3,0,2,199),(227,18,29,3,10,2541),(227,19,10,0,3,826),(227,21,10,0,0,753),(227,22,38,1,7,3386),(227,23,1,0,0,90),(227,24,NULL,0,0,NULL),(227,25,8,1,0,649),(227,26,12,0,2,1008),(227,27,6,0,0,540),(227,55,36,2,12,3113),(227,69,33,1,2,2735),(227,70,4,0,0,317),(227,72,2,0,0,99),(227,74,NULL,0,0,NULL),(227,81,2,0,0,210),(227,82,36,0,11,3219),(227,84,22,1,5,1943),(227,85,2,0,1,180),(227,103,1,0,0,90),(227,133,42,2,5,3571),(227,165,24,0,2,1526),(229,6,14,4,2,1115),(229,7,1,0,0,22),(229,9,3,1,0,202),(229,10,2,0,1,180),(229,13,4,1,0,221),(229,14,5,3,1,419),(229,15,4,3,2,270),(229,16,2,1,0,180),(229,17,6,2,1,467),(229,18,30,13,6,2127),(229,19,12,3,2,579),(229,21,11,1,3,648),(229,22,31,10,8,2536),(229,23,3,1,0,226),(229,24,4,2,1,293),(229,25,9,6,5,599),(229,26,10,5,3,871),(229,27,8,4,1,495),(229,29,7,2,4,577),(229,31,10,3,2,579),(229,33,6,0,1,463),(229,55,33,20,4,2658),(229,69,33,7,10,2515),(229,70,1,0,0,27),(229,71,31,6,2,1923),(229,72,2,1,2,151),(229,74,2,0,0,133),(229,78,9,0,0,303),(229,82,34,17,11,2777),(229,84,33,18,15,2593),(229,85,5,1,4,418),(229,98,33,9,7,2220),(229,99,3,0,2,186),(229,100,24,2,6,1747),(229,102,3,0,1,179),(229,103,3,0,1,300),(229,135,5,1,1,450),(229,136,1,0,0,72),(229,165,35,7,8,3053),(229,192,3,0,0,27),(230,17,5,0,3,450),(230,19,8,0,0,702),(230,21,7,1,4,617),(230,25,11,2,4,903),(230,26,7,0,2,630),(230,27,11,4,3,897),(230,29,8,3,0,320),(230,31,9,0,0,631),(230,48,15,2,3,1276),(230,49,28,3,12,2478),(230,50,27,4,10,2196),(230,51,2,0,0,180),(230,56,33,4,9,2821),(230,57,34,2,14,3060),(230,83,29,1,12,2331),(230,86,27,6,1,1542),(230,88,23,0,2,1422),(231,6,15,0,2,1030),(231,7,1,0,0,90),(231,9,2,0,0,155),(231,10,1,0,1,21),(231,17,4,0,0,200),(231,18,35,1,1,3092),(231,59,1,0,0,22),(231,60,37,3,2,3249),(231,61,37,1,6,3250),(231,62,31,1,2,2356),(231,87,8,0,0,409),(232,6,10,2,1,723),(232,9,1,1,0,100),(232,10,1,0,0,90),(232,18,29,3,3,1898),(232,19,7,1,0,394),(232,21,6,2,3,386),(232,25,8,2,2,647),(232,26,7,1,1,438),(232,44,4,1,0,184),(232,50,26,8,12,2071),(232,56,32,17,17,2290),(232,57,34,12,18,2460),(232,83,12,1,4,685),(233,6,13,2,0,1125),(233,7,NULL,0,0,NULL),(233,10,2,0,0,76),(233,18,24,2,1,2033),(233,22,24,0,2,1535),(233,23,1,0,0,32),(233,25,8,1,1,736),(233,26,6,0,1,418),(233,27,6,1,0,435),(233,29,6,0,0,180),(233,31,5,0,0,47),(233,44,4,0,0,89),(233,45,8,0,1,542),(233,47,8,0,0,476),(233,60,3,0,0,199),(233,61,35,3,0,2551),(233,62,32,3,4,2064),(233,63,16,1,2,627),(233,214,13,2,1,435),(233,250,33,3,0,2380),(233,251,31,4,0,2368),(235,6,9,1,2,416),(235,10,2,0,0,113),(235,13,3,0,1,270),(235,14,3,0,0,270),(235,16,4,0,0,310),(235,17,4,0,0,340),(235,18,7,3,1,541),(235,19,4,0,0,187),(235,21,10,1,0,774),(235,22,27,3,5,2291),(235,23,3,0,1,202),(235,24,2,0,1,90),(235,29,2,0,1,134),(235,55,27,3,3,2375),(235,69,12,1,0,694),(235,70,1,0,0,120),(235,71,NULL,0,0,NULL),(235,72,2,0,0,180),(235,82,36,0,5,3240),(235,84,24,0,2,1852),(235,85,4,0,0,390),(235,103,4,0,0,342),(235,133,8,0,0,660),(236,6,14,4,2,1186),(236,7,1,0,0,44),(236,9,1,0,0,13),(236,17,6,1,0,506),(236,18,17,0,4,1365),(236,19,5,0,1,384),(236,21,7,0,0,474),(236,25,7,0,0,419),(236,26,7,0,0,550),(236,27,5,0,0,291),(237,6,16,6,3,1261),(237,7,2,2,0,167),(237,9,2,0,0,167),(237,13,4,0,0,172),(237,14,3,4,1,232),(237,15,4,1,1,224),(237,16,5,1,0,263),(237,18,25,4,2,1233),(237,19,5,1,0,257),(237,21,6,6,0,416),(237,22,37,11,11,2923),(237,23,3,1,2,226),(237,24,4,1,1,145),(237,26,10,2,1,724),(237,27,8,3,2,344),(237,44,4,3,1,210),(237,45,7,2,1,436),(237,52,3,2,0,225),(237,55,31,17,9,2655),(237,68,11,2,4,767),(237,69,32,5,2,1702),(237,70,6,1,1,310),(237,71,11,5,2,861),(237,72,4,1,0,329),(237,82,33,10,8,2343),(237,84,35,7,5,1804),(237,85,3,3,0,269),(237,87,6,1,2,414),(237,103,3,2,2,221),(239,6,15,3,0,1076),(239,7,1,0,0,52),(239,9,4,0,1,315),(239,10,1,0,0,90),(239,11,11,0,0,513),(239,14,1,0,0,6),(239,18,35,4,2,2286),(239,22,3,0,0,87),(239,23,2,0,1,75),(239,24,2,0,3,134),(239,47,1,0,0,2),(239,55,11,0,1,437),(240,4,34,6,5,2913),(240,5,30,3,7,2270),(240,6,9,1,3,411),(240,7,2,0,0,123),(240,9,1,0,0,90),(240,10,1,0,0,14),(240,13,4,1,2,308),(240,18,35,5,5,2811),(240,22,25,3,4,1567),(240,24,1,0,0,17),(240,28,34,3,3,2705),(240,32,9,0,2,425),(240,34,3,0,0,30),(240,47,4,2,1,338),(240,55,26,3,5,1874),(240,74,1,0,0,41),(240,76,1,0,0,13),(240,88,16,1,0,430),(241,6,12,0,1,660),(241,7,1,0,0,90),(241,9,5,0,0,288),(241,10,5,0,0,334),(241,13,6,0,0,404),(241,14,1,0,0,90),(241,15,2,0,0,161),(241,17,5,1,0,364),(241,18,25,2,5,1554),(241,19,6,0,1,425),(241,20,2,0,0,180),(241,21,10,0,1,604),(241,22,27,0,1,1818),(241,23,3,0,0,106),(241,24,2,0,0,160),(241,25,8,1,0,612),(241,27,7,0,1,257),(241,29,6,1,0,217),(241,31,8,1,0,339),(241,37,6,0,0,456),(241,38,6,1,0,411),(241,46,12,0,0,915),(241,55,31,1,3,2074),(241,63,27,1,3,1688),(241,64,1,0,0,15),(241,74,8,3,0,394),(241,78,4,0,1,312),(241,82,32,0,2,1743),(241,102,5,0,0,268),(241,196,NULL,0,0,NULL),(241,214,25,0,2,1030),(241,250,21,0,2,988),(241,287,1,0,0,68),(244,6,16,4,2,1423),(244,7,1,0,0,45),(244,9,2,0,1,210),(244,10,5,0,1,368),(244,13,2,0,0,180),(244,14,3,0,0,270),(244,16,5,1,0,401),(244,17,6,1,2,535),(244,18,36,2,2,3199),(244,22,38,2,4,3420),(244,23,2,0,1,164),(244,24,4,0,0,287),(244,33,3,0,0,182),(244,35,NULL,0,0,NULL),(244,45,7,0,0,299),(244,52,6,0,0,358),(244,53,4,1,0,182),(244,55,33,0,1,2750),(244,68,6,0,0,412),(244,69,22,0,0,1299),(244,70,5,0,0,176),(244,82,31,4,4,2764),(244,84,23,0,0,1671),(244,85,2,0,1,180),(244,88,23,0,2,1275),(244,89,16,2,3,1007),(244,90,7,0,1,281),(244,91,2,0,0,19),(244,102,2,0,0,180),(244,108,NULL,0,0,NULL),(246,6,16,3,2,985),(246,7,2,1,0,50),(246,18,18,1,2,754),(246,25,3,0,0,114),(246,29,2,0,0,15),(246,45,8,5,2,510),(246,46,8,0,3,536),(246,50,30,9,9,2143),(246,56,22,5,3,1090),(246,57,29,5,2,1916),(246,68,6,4,0,532),(246,83,30,9,6,2219),(246,86,8,0,1,133),(246,87,5,1,0,98),(247,3,24,1,0,2087),(247,4,14,1,0,1063),(247,5,1,0,0,83),(247,6,16,2,0,1440),(247,7,1,0,0,27),(247,10,3,0,0,197),(247,18,35,5,0,3067),(247,22,23,2,0,1996),(247,23,1,0,0,90),(247,24,2,0,0,180),(247,25,6,0,0,540),(247,28,1,0,0,8),(247,44,5,0,0,376),(247,45,6,1,1,540),(248,6,14,2,2,987),(248,7,2,0,0,138),(248,9,4,2,1,353),(248,10,1,0,0,90),(248,13,4,1,1,308),(248,14,5,0,1,359),(248,15,6,0,4,441),(248,16,3,0,2,256),(248,17,6,0,0,413),(248,18,27,8,3,1854),(248,19,10,0,2,659),(248,21,12,3,1,977),(248,22,28,13,3,2031),(248,23,4,1,1,195),(248,24,2,0,0,180),(248,25,9,2,2,810),(248,26,8,0,1,590),(248,27,9,2,2,503),(248,29,6,2,1,520),(248,33,6,0,1,384),(248,37,12,1,1,982),(248,38,2,0,0,147),(248,52,6,0,0,324),(248,55,31,2,1,2015),(248,69,10,3,1,710),(248,70,NULL,0,0,NULL),(248,82,31,6,3,2135),(248,84,30,4,1,1508),(248,88,25,1,3,1992),(248,89,23,3,4,1911),(248,90,1,0,0,57),(248,91,28,3,3,2126),(248,102,4,0,0,177),(248,103,6,0,2,487),(248,109,28,3,3,1907),(248,110,25,5,2,1827),(248,111,22,1,2,1613),(249,1,34,1,1,2780),(249,2,35,0,2,2905),(249,3,24,1,2,2141),(249,4,31,1,0,2409),(249,5,6,0,1,455),(249,6,11,0,0,847),(249,7,2,0,0,161),(249,21,5,0,0,388),(249,28,NULL,0,0,NULL),(249,46,5,0,0,368),(249,47,6,0,0,537),(249,53,7,0,0,494),(249,54,5,0,0,347),(251,6,12,0,0,851),(251,9,2,0,0,180),(251,18,22,1,1,1829),(251,19,5,0,0,352),(251,21,9,0,0,810),(251,25,8,0,0,720),(251,26,4,0,0,360),(251,27,11,0,1,938),(251,29,10,2,0,900),(251,31,7,0,0,437),(251,33,12,0,0,1014),(251,35,7,0,0,422),(251,37,11,0,0,916),(251,38,4,0,1,360),(251,44,1,0,0,90),(251,60,31,2,0,2716),(251,61,32,2,1,2823),(251,62,32,2,0,2755),(251,63,23,1,2,1927),(251,64,2,0,0,210),(251,105,23,2,0,1976),(251,193,14,0,1,1085),(251,194,15,0,0,1123),(251,195,9,1,0,680),(251,214,26,0,0,2182),(251,250,27,0,1,2323),(251,251,27,0,0,2032),(251,286,2,0,0,180),(251,287,2,0,0,180),(251,288,2,0,0,27),(252,6,11,0,0,554),(252,7,1,0,0,90),(252,9,1,0,0,90),(252,10,5,0,0,450),(252,13,4,0,0,300),(252,14,1,0,0,90),(252,15,2,0,0,169),(252,16,2,0,0,180),(252,17,1,0,0,12),(252,18,23,2,0,1625),(252,22,18,0,0,1485),(252,23,2,2,0,210),(252,24,2,0,0,180),(252,25,5,0,0,450),(252,26,8,0,0,630),(252,27,8,0,0,720),(252,45,7,0,0,660),(252,53,3,0,0,197),(252,55,29,0,0,2429),(252,68,12,0,0,1110),(252,82,23,1,1,1943),(252,84,31,0,0,2534),(252,102,4,0,0,280),(252,103,NULL,0,0,NULL),(252,249,32,6,2,2762),(253,6,15,0,0,1350),(253,7,2,0,0,121),(253,9,1,0,0,90),(253,14,3,0,0,270),(253,18,36,1,3,3188),(253,22,36,2,2,3195),(253,24,1,0,0,90),(253,55,33,2,2,2903),(253,69,7,0,0,505),(253,70,1,0,0,105),(253,71,1,0,0,11),(253,82,5,0,0,140),(253,84,4,0,0,201),(253,85,1,0,0,90),(253,99,2,0,0,180),(253,102,2,0,0,180),(253,103,1,0,0,90),(253,134,40,1,5,3477),(253,135,2,0,1,125),(253,152,16,0,2,438),(253,166,1,0,0,90),(253,173,15,2,0,1294),(254,6,14,0,0,957),(254,7,1,0,0,90),(254,9,5,1,1,302),(254,10,3,0,0,115),(254,13,2,0,0,22),(254,15,2,0,0,67),(254,17,5,0,1,183),(254,18,24,0,3,1386),(254,19,8,0,1,357),(254,22,30,1,0,1912),(254,23,2,0,0,112),(254,31,1,0,0,77),(254,33,1,0,0,7),(254,46,11,4,3,716),(254,55,7,0,1,205),(254,69,6,0,0,30),(254,70,2,0,1,149),(254,71,13,1,1,404),(254,72,2,1,1,134),(254,82,24,6,2,982),(254,84,24,2,4,1875),(254,85,3,0,1,164),(254,102,3,0,0,190),(254,103,1,0,1,90),(254,135,NULL,0,0,NULL),(254,165,3,0,0,133),(255,6,17,1,5,1513),(255,7,2,0,1,128),(255,9,2,0,1,19),(255,10,2,1,0,180),(255,14,4,1,1,340),(255,15,2,1,0,150),(255,16,1,0,0,90),(255,18,28,2,2,2035),(255,22,30,1,2,1540),(255,23,3,0,0,134),(255,24,3,1,1,209),(255,29,7,1,1,410),(255,31,2,0,0,79),(255,33,NULL,0,0,NULL),(255,46,11,2,2,556),(255,47,6,0,2,334),(255,55,25,1,0,1601),(255,69,26,3,3,1462),(255,70,2,0,0,180),(255,71,13,2,2,630),(255,72,5,0,1,324),(255,82,35,3,7,1968),(255,84,26,3,5,1844),(255,85,3,0,2,182),(255,102,3,0,0,165),(255,103,5,0,0,310),(257,6,12,0,1,964),(257,7,1,0,0,18),(257,9,2,0,0,210),(257,13,3,1,2,290),(257,14,2,0,0,141),(257,15,3,0,1,270),(257,16,4,0,0,315),(257,18,20,0,3,1604),(257,19,5,0,2,397),(257,21,4,0,1,331),(257,22,32,1,5,2654),(257,23,3,0,0,146),(257,24,2,0,0,96),(257,26,8,0,0,720),(257,27,1,0,0,90),(257,31,1,0,0,24),(257,44,5,0,1,211),(257,45,6,0,0,406),(257,55,24,0,0,1735),(257,68,4,0,0,390),(257,69,11,0,2,690),(257,70,2,0,0,135),(257,71,5,0,1,450),(257,82,29,1,4,2592),(257,84,11,0,0,788),(257,85,1,0,0,90),(257,87,4,0,1,360),(257,98,35,0,2,2992),(257,99,3,0,0,270),(257,100,25,0,0,1951),(257,103,3,0,0,137),(257,135,4,0,0,184),(257,136,1,0,0,90),(257,137,1,0,0,13),(257,165,16,0,0,1127),(258,6,4,0,0,285),(258,7,2,0,0,171),(258,9,2,0,0,127),(258,10,NULL,0,0,NULL),(258,13,2,0,0,180),(258,15,4,0,0,281),(258,16,1,0,0,90),(258,17,3,0,1,268),(258,18,33,4,0,2834),(258,19,9,0,0,796),(258,21,4,0,0,277),(258,22,16,0,0,1342),(258,23,4,0,0,360),(258,24,3,2,0,270),(258,25,3,0,0,213),(258,26,10,2,0,882),(258,27,3,0,0,270),(258,33,5,0,0,450),(258,47,6,0,0,540),(258,52,9,0,0,810),(258,55,15,1,0,1104),(258,63,33,2,0,2865),(258,68,6,0,0,540),(258,74,2,0,0,180),(258,78,2,0,0,180),(258,82,35,3,3,3057),(258,84,9,0,0,807),(258,102,1,0,0,45),(258,103,NULL,0,0,NULL),(258,193,35,2,0,2945),(258,194,15,0,0,1213),(258,214,26,3,1,2214),(258,250,19,0,3,1710),(258,251,33,0,1,2960),(260,6,16,3,4,1349),(260,7,1,0,0,10),(260,10,3,0,0,125),(260,13,6,0,0,453),(260,15,1,0,0,90),(260,18,27,1,2,2331),(260,22,31,1,2,2526),(260,23,2,0,0,144),(260,24,1,0,0,90),(260,29,7,1,0,479),(260,31,5,0,1,450),(260,38,8,0,0,681),(260,39,2,0,0,47),(260,44,5,1,0,360),(260,45,10,0,0,846),(260,46,9,0,3,760),(260,47,6,1,0,494),(260,55,31,1,2,2590),(260,69,32,2,2,2486),(260,70,2,1,0,137),(260,74,9,3,2,768),(260,78,7,0,0,276),(260,82,29,4,2,2501),(260,84,38,1,7,3266),(260,85,5,0,1,451),(260,87,4,0,0,390),(260,88,28,3,1,2368),(260,89,30,2,1,2639),(260,90,28,0,1,2025),(260,91,22,1,0,1473),(260,102,1,0,0,90),(260,103,3,1,0,270),(260,196,2,0,0,166),(262,6,6,0,0,293),(262,7,1,0,0,90),(262,9,1,0,0,120),(262,13,5,2,2,454),(262,14,3,0,0,270),(262,16,3,0,0,300),(262,18,30,1,0,2515),(262,19,6,1,0,534),(262,21,5,0,1,450),(262,22,34,2,1,3048),(262,23,4,0,0,345),(262,24,3,0,0,270),(262,44,4,0,0,141),(262,45,6,0,0,540),(262,55,38,1,1,3420),(262,69,29,2,2,2306),(262,70,6,1,1,570),(262,72,4,0,1,275),(262,74,1,0,0,90),(262,82,31,3,0,2599),(262,84,38,2,3,3420),(262,85,1,0,0,80),(262,87,9,0,0,818),(262,99,8,1,2,707),(262,102,1,0,0,90),(262,103,3,0,0,291),(262,133,22,0,1,1635),(262,134,16,1,1,1440),(262,135,1,0,0,90),(262,136,4,0,0,360),(262,137,4,0,1,360),(262,161,5,0,0,371),(262,165,3,0,0,91),(263,6,17,2,2,1268),(263,7,3,0,0,131),(263,9,1,0,0,30),(263,10,1,0,0,14),(263,13,5,0,0,275),(263,14,2,2,0,180),(263,15,1,2,0,90),(263,16,1,0,0,65),(263,18,29,2,0,2045),(263,22,14,8,0,979),(263,23,1,0,0,66),(263,24,3,0,0,258),(263,45,5,3,3,344),(263,46,3,1,0,192),(263,47,5,0,0,273),(263,55,29,1,1,840),(263,82,2,0,0,64),(263,84,2,0,0,82),(263,87,8,2,0,560),(263,102,NULL,0,0,NULL),(263,103,3,0,0,96),(265,6,14,0,0,899),(265,7,2,0,0,180),(265,9,2,0,0,180),(265,10,4,0,0,284),(265,13,2,0,0,180),(265,14,2,0,0,180),(265,16,1,0,0,77),(265,17,4,0,1,225),(265,18,8,0,1,327),(265,19,7,0,0,245),(265,21,3,0,1,270),(265,22,7,0,0,590),(265,24,1,0,0,29),(265,25,7,0,0,511),(265,26,9,0,0,523),(265,27,5,0,0,371),(265,52,2,0,0,180),(265,55,28,0,0,1998),(265,69,NULL,0,0,NULL),(265,70,NULL,0,0,NULL),(265,71,5,0,1,438),(265,81,2,0,0,210),(265,82,16,0,0,1060),(265,84,23,0,2,1900),(265,85,3,0,0,270),(265,102,NULL,0,0,NULL),(265,103,1,0,0,90),(265,134,21,0,1,1478),(265,135,1,0,0,6),(266,6,11,1,1,548),(266,7,2,2,0,180),(266,9,4,4,1,202),(266,10,2,2,1,162),(266,13,5,0,0,286),(266,14,5,1,0,351),(266,15,5,2,1,389),(266,16,3,0,2,291),(266,17,6,2,1,371),(266,18,28,11,5,1491),(266,19,12,7,2,986),(266,21,12,4,2,812),(266,22,27,9,6,1955),(266,23,4,0,1,240),(266,24,5,1,0,439),(266,25,7,1,4,572),(266,26,6,1,4,388),(266,29,9,4,2,777),(266,55,33,11,12,1940),(266,69,36,6,4,2834),(266,70,NULL,0,0,NULL),(266,71,37,17,10,3054),(266,72,NULL,0,0,NULL),(266,82,27,7,4,1339),(266,84,36,12,11,2960),(266,85,2,0,1,65),(266,102,5,2,3,367),(266,103,2,1,0,88),(266,135,1,0,0,90),(266,152,19,3,5,1161),(266,165,30,4,3,2082),(267,6,10,0,0,751),(267,7,2,1,0,99),(267,9,5,0,0,318),(267,10,1,0,0,90),(267,13,1,0,0,90),(267,14,NULL,0,0,NULL),(267,15,NULL,0,0,NULL),(267,16,1,0,0,90),(267,17,3,0,0,182),(267,18,14,2,0,920),(267,19,6,1,0,321),(267,21,2,0,0,180),(267,22,10,1,0,797),(267,23,NULL,0,0,NULL),(267,24,1,0,0,16),(267,33,1,0,1,30),(267,35,NULL,0,0,NULL),(267,55,29,2,2,2505),(267,69,2,0,1,98),(267,70,2,0,0,210),(267,71,24,1,0,1873),(267,72,3,0,0,270),(267,78,2,0,0,98),(267,82,38,4,1,3412),(267,84,38,2,3,3353),(267,85,3,0,0,270),(267,98,1,0,0,11),(267,100,3,0,0,91),(267,102,1,0,0,90),(267,103,1,0,0,6),(267,134,5,0,0,450),(267,135,1,0,0,10),(267,136,1,0,0,90),(267,165,1,0,0,17),(268,6,10,0,1,882),(268,7,1,0,0,61),(268,17,4,0,0,314),(268,19,5,0,0,450),(268,21,7,0,0,630),(268,25,6,0,0,524),(268,26,5,0,0,450),(268,27,6,0,1,540),(268,49,26,1,0,2262),(268,50,28,2,0,2351),(268,52,1,0,0,90),(268,54,1,0,0,55),(268,56,29,0,1,2306),(268,57,25,1,0,2205),(268,83,11,0,0,903),(270,6,16,2,0,1374),(270,7,1,0,0,90),(270,9,1,0,0,120),(270,10,1,0,0,90),(270,13,5,0,0,387),(270,14,1,0,0,90),(270,15,1,0,0,63),(270,16,4,0,0,360),(270,17,6,0,0,528),(270,18,35,0,0,3072),(270,22,28,0,0,2520),(270,23,NULL,0,0,NULL),(270,24,4,0,0,360),(270,25,5,0,0,312),(270,26,6,0,0,266),(270,27,7,0,1,614),(270,29,5,0,0,441),(270,45,6,0,0,499),(270,52,9,0,0,669),(270,53,2,0,0,126),(270,55,19,0,2,1341),(270,68,2,0,1,179),(270,69,36,2,0,3044),(270,70,1,0,0,67),(270,71,37,3,2,3268),(270,72,4,1,0,338),(270,74,4,0,0,360),(270,82,20,3,0,1509),(270,84,34,0,2,2827),(270,85,4,0,1,360),(270,102,1,0,0,90),(270,103,2,0,0,101),(270,135,1,0,0,10),(270,165,28,2,2,2290),(271,6,11,0,2,911),(271,7,1,0,0,29),(271,9,4,1,0,314),(271,10,1,0,0,90),(271,13,3,0,1,196),(271,14,3,0,0,101),(271,15,5,0,1,277),(271,16,2,0,0,180),(271,17,2,1,0,180),(271,18,14,1,0,1118),(271,19,8,0,0,637),(271,21,11,0,0,795),(271,22,22,4,0,1934),(271,23,1,0,0,44),(271,24,1,1,0,90),(271,25,1,0,0,49),(271,26,6,0,0,421),(271,27,5,3,0,450),(271,29,7,1,0,557),(271,55,16,0,0,1118),(271,69,27,0,0,2013),(271,70,1,0,0,90),(271,71,33,0,0,2778),(271,72,2,0,0,92),(271,74,3,0,0,243),(271,82,24,0,0,1762),(271,84,18,0,0,1305),(271,85,4,1,0,360),(271,98,21,0,0,1368),(271,99,3,0,0,270),(271,100,NULL,0,0,NULL),(271,102,3,0,0,270),(271,103,4,0,0,299),(271,135,2,0,0,139),(271,136,2,0,0,115),(271,161,NULL,0,0,NULL),(271,165,23,1,0,2044),(271,166,22,0,0,1757),(271,167,2,0,0,53),(276,6,12,1,0,993),(276,7,2,1,0,100),(276,10,2,1,0,76),(276,13,1,0,0,90),(276,14,3,1,1,270),(276,15,1,0,0,90),(276,18,16,0,4,1273),(276,22,30,0,7,2682),(276,23,3,0,0,263),(276,24,3,0,0,246),(276,27,3,1,0,270),(276,29,4,0,0,284),(276,31,8,0,2,720),(276,32,15,0,1,1270),(276,33,1,0,0,4),(276,34,15,0,2,1336),(276,35,2,0,1,180),(276,36,33,2,1,2804),(276,37,5,0,1,368),(276,55,35,0,7,3036),(276,63,17,0,0,1175),(276,82,35,4,4,2966),(276,102,1,0,1,90),(276,104,16,0,1,1203),(276,250,12,0,2,702),(277,6,4,0,0,169),(277,9,4,0,0,196),(277,10,4,0,0,296),(277,13,4,2,0,340),(277,14,2,0,1,125),(277,15,1,0,0,70),(277,17,2,0,0,100),(277,18,15,1,1,853),(277,19,4,0,3,185),(277,21,5,1,2,405),(277,22,24,1,2,1177),(277,23,2,0,1,151),(277,24,2,2,0,180),(277,25,NULL,0,0,NULL),(277,55,6,1,0,122),(277,81,NULL,0,0,NULL),(277,82,NULL,0,0,NULL),(277,84,NULL,0,0,NULL),(277,102,NULL,0,0,NULL),(279,6,15,1,5,1186),(279,7,2,1,0,118),(279,13,2,0,0,180),(279,14,1,0,0,24),(279,15,NULL,0,0,NULL),(279,16,3,2,1,209),(279,18,11,1,4,938),(279,21,4,0,0,99),(279,25,5,1,1,295),(279,26,12,2,4,1003),(279,27,6,2,1,535),(279,29,6,0,1,451),(279,37,6,1,4,540),(279,38,6,1,2,530),(279,39,4,0,0,104),(279,44,6,0,2,418),(279,52,7,1,1,574),(279,55,20,2,2,1091),(279,68,2,1,1,100),(279,69,36,8,16,3167),(279,70,1,2,0,60),(279,71,35,6,15,2942),(279,72,4,1,0,300),(279,74,4,0,0,257),(279,75,4,2,3,360),(279,76,9,3,3,455),(279,77,33,10,16,2893),(279,78,2,0,1,210),(279,79,33,7,19,2837),(279,80,2,0,0,151),(279,82,35,8,12,2772),(279,84,37,10,11,3226),(279,85,3,1,6,260),(279,87,6,2,1,240),(279,98,25,7,9,1982),(279,99,1,0,0,90),(279,102,4,0,1,354),(279,103,1,0,0,9),(279,107,2,0,0,107),(279,135,2,0,0,116),(279,165,38,10,2,3137),(279,196,4,1,2,333),(279,206,28,6,11,1967),(279,266,15,0,1,605),(281,6,17,0,0,1530),(281,7,1,0,0,26),(281,9,1,0,0,90),(281,10,1,0,0,90),(281,13,2,0,0,180),(281,15,2,0,0,180),(281,18,35,1,2,3107),(281,22,36,1,0,3240),(281,23,2,0,0,206),(281,24,1,0,0,90),(281,55,38,2,2,3420),(281,69,19,0,0,553),(281,70,1,0,0,120),(281,82,35,3,1,3087),(281,84,31,0,0,2790),(281,85,4,0,0,360),(281,99,5,0,0,450),(281,103,2,0,0,210),(281,133,4,0,0,239),(281,134,34,1,2,3022),(281,135,1,0,0,90),(281,136,3,0,0,270),(281,137,NULL,0,0,NULL),(285,6,2,0,0,175),(285,9,3,0,0,88),(285,10,4,0,0,192),(285,13,1,0,0,90),(285,15,2,0,0,95),(285,16,5,0,1,411),(285,18,26,2,4,1777),(285,19,6,0,1,427),(285,20,2,0,0,164),(285,21,13,0,1,709),(285,22,30,0,2,2145),(285,23,4,0,0,277),(285,24,1,0,0,20),(285,25,4,0,0,360),(285,27,6,0,0,498),(285,32,37,2,5,3183),(285,46,10,0,0,579),(285,55,22,3,0,1733),(285,69,35,1,1,3139),(285,70,1,0,0,90),(285,71,37,1,4,3020),(285,72,1,0,0,45),(285,82,36,4,4,3095),(285,84,34,1,1,2998),(285,85,5,1,0,297),(285,102,5,1,0,416),(285,103,2,0,0,180),(286,6,16,0,NULL,1440),(286,13,2,0,NULL,180),(286,18,35,0,NULL,3150),(286,82,38,0,NULL,3420),(286,85,1,0,NULL,90),(286,135,NULL,0,NULL,NULL),(287,2,29,2,2,2237),(287,6,9,0,0,722),(287,7,1,0,0,69),(287,9,2,0,0,113),(287,10,4,0,0,390),(287,12,36,1,1,2737),(287,13,1,0,0,90),(287,14,1,0,0,90),(287,16,NULL,0,0,NULL),(287,17,4,0,0,322),(287,18,20,3,1,1447),(287,19,3,1,0,175),(287,20,NULL,0,0,NULL),(287,84,NULL,0,0,NULL),(287,102,1,0,0,90),(287,173,43,2,1,3275),(289,17,3,0,NULL,270),(289,25,8,0,NULL,720),(289,29,11,0,NULL,1020),(289,48,12,0,NULL,1080),(289,51,2,0,NULL,180),(289,83,34,0,NULL,3021),(289,90,34,0,NULL,3060),(289,109,34,0,NULL,3060),(289,112,NULL,0,NULL,NULL),(289,124,2,0,NULL,180),(290,3,9,3,1,450),(290,4,22,3,0,790),(290,16,1,0,0,18),(290,17,4,3,0,224),(290,19,4,1,0,48),(290,21,7,4,0,381),(290,25,6,1,0,126),(290,26,4,0,0,49),(290,33,8,1,0,515),(290,48,10,6,2,519),(290,49,20,4,2,359),(290,50,22,3,0,810),(290,51,2,0,0,45),(290,52,6,3,0,477),(290,68,5,0,2,344),(290,84,30,5,5,2248),(290,86,23,3,5,1689),(290,88,28,6,2,1864),(290,89,31,9,7,2555),(290,90,32,10,3,2033),(290,91,8,0,0,408),(290,103,1,0,0,90),(290,109,34,10,4,2303),(290,110,10,2,0,374),(290,111,25,5,0,1413),(290,112,NULL,0,0,NULL),(290,132,13,0,0,315),(294,2,2,0,0,74),(294,3,27,1,3,2168),(294,4,29,1,1,2244),(294,5,29,0,3,1784),(294,19,5,0,0,123),(294,21,5,0,0,185),(294,28,26,0,2,931),(294,30,25,2,1,990),(294,32,30,2,3,2070),(294,46,6,0,0,276),(294,47,15,1,0,1000),(294,48,NULL,0,0,NULL),(294,49,5,0,0,59),(294,50,8,0,1,450),(294,51,NULL,0,0,NULL),(294,52,3,0,0,31),(295,9,3,1,0,284),(295,10,5,0,1,414),(295,13,4,0,0,360),(295,14,2,0,0,156),(295,15,2,0,0,180),(295,16,3,1,1,300),(295,17,5,1,0,406),(295,18,28,4,5,2172),(295,19,8,0,0,548),(295,20,1,0,0,87),(295,21,2,0,0,180),(295,22,13,2,0,959),(295,23,2,0,0,113),(295,25,5,0,0,398),(295,27,7,0,1,598),(295,46,4,2,1,335),(295,52,7,0,0,558),(295,55,18,4,3,1430),(295,58,8,1,0,537),(295,69,31,6,3,2694),(295,70,1,0,0,120),(295,74,10,1,0,723),(295,76,6,0,0,465),(295,82,31,2,6,2761),(295,84,33,7,2,2860),(295,85,3,0,0,270),(295,98,16,0,2,1440),(295,99,1,0,0,13),(295,102,1,0,0,90),(295,103,2,0,0,180),(295,136,3,0,0,270),(295,137,1,0,0,90),(295,166,26,4,2,2257),(295,168,3,0,0,212),(295,169,4,0,0,360),(295,192,5,1,0,331),(295,217,1,0,0,NULL),(296,17,3,0,1,185),(296,19,8,0,0,350),(296,21,8,0,2,720),(296,25,4,0,0,100),(296,26,6,1,1,386),(296,27,10,1,3,543),(296,29,10,1,1,366),(296,31,7,0,2,330),(296,58,9,2,0,398),(296,59,29,3,0,1834),(296,60,24,2,6,1850),(296,61,18,2,2,839),(296,62,31,1,3,1500),(296,63,33,2,9,1383),(296,64,2,0,1,171),(296,193,NULL,0,0,NULL),(296,214,25,4,8,1227),(296,250,33,4,8,1665),(296,251,33,3,6,2738),(296,286,2,0,0,152),(296,287,2,0,1,39),(297,17,4,0,0,273),(297,19,9,0,0,574),(297,21,8,0,1,720),(297,25,1,0,0,45),(297,26,5,0,0,450),(297,27,8,1,0,596),(297,29,4,0,0,344),(297,31,5,1,0,358),(297,33,6,0,1,200),(297,35,3,0,0,242),(297,37,1,0,0,90),(297,39,NULL,0,0,NULL),(297,58,7,0,0,141),(297,59,28,3,0,1547),(297,60,24,1,0,1999),(297,61,6,1,0,437),(297,62,20,0,1,1700),(297,63,28,2,3,2301),(297,64,2,0,0,102),(297,193,12,0,1,812),(297,194,9,0,0,556),(297,195,NULL,0,0,NULL),(297,214,16,0,0,1155),(297,250,27,3,0,2071),(297,251,14,1,0,636),(297,286,NULL,0,0,NULL),(297,287,1,0,0,90),(297,288,NULL,0,0,NULL),(297,289,2,0,0,142),(298,13,5,1,0,296),(298,14,2,0,0,37),(298,17,2,0,0,29),(298,19,5,0,0,36),(298,22,25,0,3,1613),(298,24,3,0,0,170),(298,26,3,0,0,185),(298,27,4,0,0,82),(298,45,12,0,0,586),(298,55,24,0,2,1699),(298,58,9,0,1,244),(298,59,11,0,0,268),(298,62,23,3,0,1245),(298,63,30,2,2,2335),(298,87,6,1,0,310),(298,193,1,0,0,9),(298,214,34,0,2,2128),(298,250,12,2,0,396),(298,286,1,0,0,20),(298,287,NULL,0,0,NULL),(299,17,4,2,0,260),(299,19,13,0,4,1078),(299,21,12,1,3,911),(299,25,6,1,0,391),(299,26,6,0,1,467),(299,27,11,1,1,958),(299,29,11,0,1,983),(299,31,12,1,0,904),(299,33,6,0,1,448),(299,35,11,1,3,971),(299,37,11,1,1,594),(299,39,8,1,1,563),(299,58,14,3,2,934),(299,59,28,2,8,2046),(299,60,35,5,3,2743),(299,61,31,3,8,1999),(299,62,34,3,6,2618),(299,63,25,1,2,1892),(299,64,2,0,1,195),(299,80,2,1,0,107),(299,137,3,0,1,225),(299,168,2,0,0,134),(299,169,32,3,1,2798),(299,171,7,0,3,633),(299,172,34,3,9,2784),(299,174,2,1,0,135),(299,191,25,3,4,1913),(299,192,36,4,5,3216),(299,193,34,1,6,2647),(299,194,33,3,4,2181),(299,214,32,2,4,2626),(299,250,26,1,6,1976),(299,251,16,1,4,1306),(299,286,2,1,1,180),(299,287,2,0,1,180),(300,17,NULL,0,0,NULL),(300,21,2,0,0,31),(300,25,1,0,1,19),(300,26,3,0,0,227),(300,47,6,1,0,540),(300,56,3,0,0,153),(300,58,NULL,0,0,NULL),(300,59,NULL,0,0,NULL),(300,60,13,2,0,829),(300,61,4,0,1,344),(300,62,14,0,4,1179),(300,63,15,0,5,1286),(300,214,NULL,0,0,NULL),(300,250,35,0,4,2895),(300,286,NULL,0,0,NULL),(302,17,3,0,2,207),(302,19,3,0,0,169),(302,21,3,0,0,182),(302,25,6,0,0,409),(302,26,9,0,0,709),(302,27,8,0,0,594),(302,29,8,1,0,632),(302,31,8,1,0,344),(302,33,2,0,0,114),(302,35,4,0,0,114),(302,37,1,0,0,90),(302,38,1,1,0,79),(302,39,1,0,0,NULL),(302,58,10,2,0,448),(302,59,9,2,1,398),(302,60,15,1,2,943),(302,61,30,1,2,2341),(302,62,29,0,7,2085),(302,63,32,0,6,2381),(302,124,2,0,0,96),(302,193,17,0,0,265),(302,194,1,0,0,10),(302,195,1,0,0,90),(302,214,31,0,5,1915),(302,250,30,1,7,2227),(302,251,12,0,0,507),(302,289,1,0,1,90),(303,17,6,2,0,336),(303,19,10,0,1,764),(303,21,7,0,2,570),(303,25,8,0,2,638),(303,28,NULL,0,0,NULL),(303,30,13,0,0,631),(303,32,8,0,0,508),(303,48,13,1,0,1016),(303,49,25,0,1,2081),(303,50,24,0,0,1943),(303,51,2,1,0,180),(303,56,32,4,5,2790),(303,57,29,0,0,2606),(303,83,34,1,0,3060),(304,17,2,1,0,174),(304,19,8,0,0,571),(304,21,10,1,0,693),(304,25,3,0,1,155),(304,26,5,0,0,450),(304,27,3,0,1,270),(304,29,4,0,0,305),(304,31,4,0,0,222),(304,33,NULL,0,0,NULL),(304,35,NULL,0,0,NULL),(304,47,8,0,1,613),(304,48,7,0,0,478),(304,49,25,0,2,2039),(304,50,23,0,3,1599),(304,51,1,0,0,90),(304,56,19,0,1,913),(304,62,14,1,0,1118),(304,63,15,0,0,1253),(304,193,NULL,0,0,NULL),(304,214,10,0,0,835),(304,250,27,0,1,2114),(304,251,1,0,0,2),(305,17,3,0,1,196),(305,19,9,2,3,632),(305,21,7,3,3,550),(305,25,9,3,1,552),(305,26,3,1,0,130),(305,27,6,2,3,388),(305,29,2,0,0,34),(305,31,8,2,6,426),(305,33,2,0,0,2),(305,34,2,0,0,36),(305,35,NULL,0,0,NULL),(305,36,1,0,0,3),(305,48,9,1,4,527),(305,49,21,6,3,1369),(305,50,29,5,12,1762),(305,51,2,0,0,152),(305,56,24,4,4,1506),(305,57,21,6,5,1387),(305,83,21,3,4,1148),(305,86,19,2,1,913),(305,88,23,4,6,1690),(306,17,5,2,3,246),(306,19,6,0,0,468),(306,21,7,2,2,439),(306,25,8,1,1,521),(306,26,6,0,0,325),(306,33,1,0,0,33),(306,35,4,0,0,47),(306,48,11,3,1,706),(306,49,19,3,3,1405),(306,50,24,5,6,1704),(306,52,7,0,1,565),(306,56,24,6,9,1513),(306,57,30,8,5,2020),(306,68,9,3,1,667),(306,83,26,4,4,1981),(306,86,30,5,4,2567),(306,88,25,1,4,1993),(306,89,10,0,0,380),(306,90,25,4,1,1489),(307,17,5,1,3,239),(307,19,8,3,1,390),(307,21,6,0,1,359),(307,25,10,9,2,766),(307,26,7,0,2,447),(307,35,2,0,0,14),(307,37,1,0,0,7),(307,47,1,0,0,44),(307,48,15,8,4,833),(307,49,34,14,5,2189),(307,50,27,10,5,1655),(307,51,2,0,1,126),(307,56,31,12,11,2203),(307,57,30,10,7,1770),(307,71,1,0,0,12),(307,83,22,10,7,1519),(307,86,27,11,2,1970),(307,98,9,1,1,464),(307,99,2,0,1,180),(307,100,1,0,0,7),(308,9,3,2,0,211),(308,10,1,0,0,80),(308,13,1,0,0,90),(308,15,NULL,0,0,NULL),(308,16,2,0,0,155),(308,17,6,3,1,496),(308,18,34,16,4,2825),(308,19,13,5,1,822),(308,21,10,3,1,715),(308,22,35,11,8,2812),(308,23,2,2,0,102),(308,25,8,2,2,630),(308,26,13,4,3,1152),(308,27,11,10,1,940),(308,48,14,6,3,913),(308,55,35,18,9,2755),(308,69,27,13,6,2247),(308,70,2,0,2,180),(308,71,37,11,7,2606),(308,72,1,0,0,90),(308,76,11,5,3,865),(308,81,2,0,1,142),(308,82,36,22,2,3086),(308,84,29,10,7,2208),(308,89,4,2,4,295),(308,90,33,13,13,2521),(308,91,26,16,9,2123),(308,102,1,0,0,71),(308,165,30,10,4,2135),(309,13,NULL,0,0,NULL),(309,15,4,2,1,197),(309,16,3,1,1,180),(309,17,4,4,2,292),(309,19,10,6,6,799),(309,21,8,3,1,578),(309,26,8,4,4,395),(309,27,9,0,2,653),(309,29,4,2,2,281),(309,33,1,1,0,61),(309,48,13,5,3,838),(309,49,32,7,7,1979),(309,50,32,6,10,1804),(309,51,2,0,1,101),(309,52,7,1,1,547),(309,55,1,0,0,11),(309,69,26,5,5,1787),(309,70,2,0,0,153),(309,82,31,10,12,1867),(309,84,32,10,15,2424),(309,85,5,2,1,376),(309,88,33,8,6,2314),(309,89,13,3,1,608),(309,90,1,0,0,13),(309,102,3,0,2,190),(309,103,5,3,1,361),(310,13,3,0,0,270),(310,14,2,0,1,103),(310,17,2,0,0,180),(310,18,NULL,0,0,NULL),(310,22,25,1,3,2093),(310,23,1,0,0,72),(310,24,1,0,0,3),(310,29,5,0,0,450),(310,31,6,0,1,528),(310,33,4,0,0,360),(310,45,7,0,1,549),(310,46,NULL,0,0,NULL),(310,47,8,1,2,720),(310,54,4,0,2,274),(310,55,15,1,0,1159),(310,58,3,0,0,141),(310,59,23,0,2,1979),(310,69,33,1,4,2498),(310,71,36,1,5,3240),(310,72,1,0,2,90),(310,82,19,0,5,1533),(310,84,35,2,3,3051),(310,85,4,0,1,285),(310,87,3,0,0,264),(310,98,NULL,0,0,NULL),(310,102,NULL,0,0,NULL),(310,103,3,0,0,270),(310,135,3,0,0,246),(310,152,8,0,1,517),(310,165,20,2,1,1561),(312,15,2,0,0,138),(312,16,5,1,2,393),(312,17,3,1,1,131),(312,19,3,0,0,83),(312,21,5,1,0,275),(312,25,6,0,1,459),(312,27,8,3,4,611),(312,31,8,0,1,525),(312,33,7,3,3,654),(312,35,9,2,0,681),(312,37,6,0,3,457),(312,38,6,0,2,540),(312,46,8,2,2,451),(312,58,3,0,0,98),(312,59,18,0,1,712),(312,60,14,3,1,532),(312,61,16,1,6,1086),(312,69,36,16,5,3005),(312,70,3,0,1,73),(312,71,31,4,4,2191),(312,72,2,2,3,154),(312,78,7,1,2,448),(312,82,37,16,15,2926),(312,84,34,12,4,2433),(312,85,4,1,1,295),(312,98,35,14,9,2897),(312,99,3,0,1,215),(312,100,34,9,14,2638),(312,102,5,3,0,363),(312,103,4,1,3,293),(312,104,38,20,18,3212),(312,105,38,7,11,3083),(312,106,37,5,10,2688),(312,107,9,2,3,658),(312,135,1,0,0,14),(312,136,6,1,2,365),(312,165,38,14,10,3379),(312,196,7,0,1,384),(312,228,2,0,1,177),(312,229,30,4,2,1261),(312,230,4,0,0,33),(314,17,6,0,0,278),(314,19,5,0,0,132),(314,21,7,0,1,567),(314,25,9,4,3,807),(314,27,5,0,3,395),(314,46,5,0,1,272),(314,47,5,0,0,261),(314,48,14,1,1,624),(314,49,25,1,1,896),(314,50,27,8,4,2029),(314,56,32,9,8,2506),(314,57,30,4,5,2353),(314,74,8,1,0,516),(314,76,8,2,1,571),(314,83,22,3,6,1791),(314,86,32,8,4,2601),(314,89,33,19,16,2321),(314,90,29,7,4,2344),(314,91,16,3,3,1049),(314,109,20,5,3,1252),(316,17,4,1,1,235),(316,19,10,4,4,779),(316,21,9,2,3,632),(316,25,10,4,3,709),(316,26,6,0,1,353),(316,27,10,3,2,734),(316,29,9,3,0,462),(316,31,12,8,2,925),(316,33,10,7,3,777),(316,35,12,5,1,708),(316,37,13,8,2,1045),(316,38,12,2,2,717),(316,39,8,3,4,620),(316,40,12,2,3,934),(316,48,8,2,3,588),(316,49,32,8,21,2578),(316,50,32,11,21,2685),(316,51,1,0,0,62),(316,56,33,8,21,2261),(316,57,32,6,12,2389),(316,83,29,8,16,1962),(316,86,29,5,15,2264),(316,88,31,20,7,2342),(316,89,32,13,14,2372),(316,90,31,13,11,2166),(316,91,28,13,13,2098),(316,108,1,0,0,76),(316,109,34,7,13,2700),(316,110,34,12,13,2795),(316,111,34,13,11,2642),(316,112,4,0,0,28),(316,113,1,1,0,18);
 /*!40000 ALTER TABLE `seasonperformance` ENABLE KEYS */;
 UNLOCK TABLES;
+/*!50003 SET @saved_cs_client      = @@character_set_client */ ;
+/*!50003 SET @saved_cs_results     = @@character_set_results */ ;
+/*!50003 SET @saved_col_connection = @@collation_connection */ ;
+/*!50003 SET character_set_client  = utf8mb4 */ ;
+/*!50003 SET character_set_results = utf8mb4 */ ;
+/*!50003 SET collation_connection  = utf8mb4_0900_ai_ci */ ;
+/*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
+/*!50003 SET sql_mode              = 'ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION' */ ;
+DELIMITER ;;
+/*!50003 CREATE*/ /*!50017 DEFINER=`root`@`localhost`*/ /*!50003 TRIGGER `trg_season_performance_nonnegative_insert` BEFORE INSERT ON `seasonperformance` FOR EACH ROW BEGIN
+    IF NEW.goal_count IS NOT NULL AND NEW.goal_count < 0 THEN
+        SIGNAL SQLSTATE '45000'
+            SET MESSAGE_TEXT = 'Invalid data: goal_count cannot be negative.';
+    END IF;
+    IF NEW.assist_count IS NOT NULL AND NEW.assist_count < 0 THEN
+        SIGNAL SQLSTATE '45000'
+            SET MESSAGE_TEXT = 'Invalid data: assist_count cannot be negative.';
+    END IF;
+    IF NEW.appearance_count IS NOT NULL AND NEW.appearance_count < 0 THEN
+        SIGNAL SQLSTATE '45000'
+            SET MESSAGE_TEXT = 'Invalid data: appearance_count cannot be negative.';
+    END IF;
+    IF NEW.play_time IS NOT NULL AND NEW.play_time < 0 THEN
+        SIGNAL SQLSTATE '45000'
+            SET MESSAGE_TEXT = 'Invalid data: play_time cannot be negative.';
+    END IF;
+END */;;
+DELIMITER ;
+/*!50003 SET sql_mode              = @saved_sql_mode */ ;
+/*!50003 SET character_set_client  = @saved_cs_client */ ;
+/*!50003 SET character_set_results = @saved_cs_results */ ;
+/*!50003 SET collation_connection  = @saved_col_connection */ ;
+/*!50003 SET @saved_cs_client      = @@character_set_client */ ;
+/*!50003 SET @saved_cs_results     = @@character_set_results */ ;
+/*!50003 SET @saved_col_connection = @@collation_connection */ ;
+/*!50003 SET character_set_client  = utf8mb4 */ ;
+/*!50003 SET character_set_results = utf8mb4 */ ;
+/*!50003 SET collation_connection  = utf8mb4_0900_ai_ci */ ;
+/*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
+/*!50003 SET sql_mode              = 'ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION' */ ;
+DELIMITER ;;
+/*!50003 CREATE*/ /*!50017 DEFINER=`root`@`localhost`*/ /*!50003 TRIGGER `trg_season_performance_nonnegative_update` BEFORE UPDATE ON `seasonperformance` FOR EACH ROW BEGIN
+    IF NEW.goal_count IS NOT NULL AND NEW.goal_count < 0 THEN
+        SIGNAL SQLSTATE '45000'
+            SET MESSAGE_TEXT = 'Invalid data: goal_count cannot be negative.';
+    END IF;
+    IF NEW.assist_count IS NOT NULL AND NEW.assist_count < 0 THEN
+        SIGNAL SQLSTATE '45000'
+            SET MESSAGE_TEXT = 'Invalid data: assist_count cannot be negative.';
+    END IF;
+    IF NEW.appearance_count IS NOT NULL AND NEW.appearance_count < 0 THEN
+        SIGNAL SQLSTATE '45000'
+            SET MESSAGE_TEXT = 'Invalid data: appearance_count cannot be negative.';
+    END IF;
+    IF NEW.play_time IS NOT NULL AND NEW.play_time < 0 THEN
+        SIGNAL SQLSTATE '45000'
+            SET MESSAGE_TEXT = 'Invalid data: play_time cannot be negative.';
+    END IF;
+END */;;
+DELIMITER ;
+/*!50003 SET sql_mode              = @saved_sql_mode */ ;
+/*!50003 SET character_set_client  = @saved_cs_client */ ;
+/*!50003 SET character_set_results = @saved_cs_results */ ;
+/*!50003 SET collation_connection  = @saved_col_connection */ ;
 
 --
 -- Table structure for table `stadium`
@@ -388,6 +651,37 @@ LOCK TABLES `transfer` WRITE;
 INSERT INTO `transfer` VALUES (0,293,17,5,'2022-07-01',18.50),(1,304,18,5,'2019-07-01',80.00),(2,305,36,5,'2017-07-01',21.00),(3,315,36,5,'2022-07-19',67.00),(4,315,17,36,'2019-07-18',85.50),(5,309,6,5,'2020-07-15',49.00),(6,308,8,5,'2022-07-01',32.00),(7,308,49,8,'2016-07-01',41.20),(8,308,47,49,'2014-09-01',23.00),(9,314,43,5,'2021-08-30',15.00),(10,48,2,42,'2012-07-18',21.00),(11,48,15,2,'2011-07-01',24.00),(12,48,34,15,'2009-07-27',69.50),(13,48,36,34,'2006-08-10',24.80),(14,48,17,36,'2004-08-31',16.00),(15,61,48,2,'2020-09-01',3.68),(16,75,9,2,'2021-07-17',2.85),(17,75,3,9,'2018-01-31',17.00),(18,72,16,2,'2022-07-01',2.70),(19,181,11,26,'2016-07-01',15.60),(20,181,14,11,'2016-01-27',15.70),(21,184,18,11,'2017-07-21',5.00),(22,4,24,4,'2019-08-01',8.80),(23,7,7,34,'2020-01-17',1.70),(24,7,4,7,'2011-07-01',18.00),(25,7,55,4,'2007-01-23',13.20),(28,2,40,4,'2013-07-01',0.54),(29,19,12,11,'2014-08-09',5.00),(30,3,57,26,'2014-01-31',3.65),(31,166,32,12,'2022-07-20',9.40),(32,20,25,49,'2014-08-09',12.50),(33,20,11,25,'2012-07-05',2.50),(34,176,12,11,'2014-08-09',5.00),(35,180,53,11,'2016-01-12',16.00),(36,180,8,53,'2013-07-03',5.80),(37,182,5,12,'2022-07-10',8.50),(38,194,16,4,'2022-07-01',3.50),(39,191,4,6,'2010-08-17',22.00),(40,191,11,4,'2008-08-29',15.00),(41,191,37,11,'2004-07-02',7.40),(42,195,2,42,'2012-07-14',42.00),(43,188,51,12,'2022-01-31',1.85),(44,187,56,26,'2018-08-02',10.70),(45,189,32,12,'2022-07-20',2.40),(46,11,21,6,'2022-07-01',60.00),(47,11,47,21,'2020-01-01',20.00),(48,102,50,49,'2015-07-01',7.00),(51,101,57,50,'2022-07-01',10.00),(52,64,6,13,'2019-01-06',17.00),(54,74,28,2,'2020-09-12',6.70),(55,198,31,8,'2022-07-01',5.90),(56,274,30,7,'2022-07-05',15.00),(57,89,52,8,'2011-07-01',18.00),(58,233,18,3,'2020-10-05',50.00),(60,235,38,9,'2020-08-26',50.20),(61,241,13,9,'2019-07-01',45.00),(62,241,34,13,'2015-08-18',38.00),(63,93,20,7,'2017-07-01',35.00),(64,278,23,3,'2021-07-30',58.50),(65,272,29,3,'2022-07-01',35.00),(66,196,12,4,'2020-09-03',15.75),(67,246,19,4,'2021-08-04',32.00),(68,252,17,14,'2017-08-23',42.00),(69,248,21,6,'2016-07-01',27.00),(70,91,4,9,'2022-08-04',18.00),(71,251,13,7,'2021-08-14',40.00),(72,256,57,12,'2022-08-19',29.50),(73,257,49,7,'2014-07-01',37.50),(74,236,36,14,'2022-01-31',19.00),(75,205,23,14,'2022-07-01',29.20),(76,211,43,8,'2021-07-01',40.00),(77,243,37,6,'2022-07-04',49.00),(78,244,49,14,'2020-08-11',16.60),(79,244,5,49,'2016-07-11',15.00),(80,123,18,7,'2011-07-01',25.00),(81,124,14,6,'2017-07-14',52.70),(82,127,49,4,'2021-08-04',29.42),(83,127,8,49,'2019-07-01',25.10),(84,127,24,8,'2015-07-01',8.30),(85,204,29,7,'2018-07-01',22.00),(86,282,57,4,'2022-09-01',15.00),(87,284,31,14,'2019-08-08',27.00),(88,110,26,7,'2019-07-01',55.00),(89,113,24,11,'2022-07-01',11.50),(90,115,32,57,'2015-07-03',2.80),(91,276,42,15,'2016-07-13',16.50),(92,117,8,12,'2022-07-10',20.00),(93,260,22,3,'2016-07-01',45.00),(94,261,40,4,'2021-07-01',38.40),(95,263,3,11,'2021-08-13',29.40),(96,264,25,3,'2019-08-08',27.00),(97,268,21,6,'2022-09-01',17.50),(98,270,50,14,'2014-07-31',5.00),(99,262,38,7,'2019-08-05',87.00),(100,262,33,38,'2017-07-01',13.70),(101,131,15,4,'2022-07-01',20.00),(102,131,8,15,'2018-01-08',135.00),(103,131,34,8,'2013-01-30',13.00),(104,285,38,9,'2016-07-16',35.80),(105,133,53,14,'2014-07-23',12.65),(106,134,17,7,'2020-09-02',39.00),(107,266,38,6,'2018-07-10',67.80),(108,139,22,36,'2022-01-31',10.10),(109,92,48,14,'2021-07-26',25.00),(110,111,48,15,'2018-07-12',35.90),(111,135,43,8,'2018-07-01',60.00),(112,135,47,43,'2016-07-01',29.75),(113,103,15,9,'2022-09-01',12.00),(114,103,21,3,'2018-01-31',63.75),(115,108,23,11,'2022-01-31',15.00),(116,107,57,14,'2020-08-30',16.80),(117,149,39,14,'2022-07-19',14.70),(118,141,55,12,'2022-08-13',14.80),(119,169,7,24,'2015-01-12',2.56),(120,132,38,19,'2021-01-31',2.00),(121,142,18,11,'2022-01-07',14.00),(122,142,14,18,'2019-07-17',22.00),(123,142,24,14,'2015-07-01',4.90),(124,152,49,3,'2014-07-28',20.23),(125,164,27,11,'2018-07-26',4.00),(126,155,4,11,'2022-07-01',17.50),(127,155,49,4,'2019-07-01',15.50),(128,157,40,11,'2017-07-19',11.30),(132,171,3,8,'2017-08-31',38.00),(133,171,49,3,'2011-08-08',13.80),(134,215,49,8,'2018-01-01',84.65),(135,215,25,49,'2015-09-01',15.70),(136,216,17,7,'2022-07-27',57.37),(137,217,46,11,'2022-08-26',70.00),(138,217,21,46,'2019-07-01',15.00),(139,231,23,9,'2022-08-05',65.30),(140,227,33,8,'2017-07-21',9.00),(141,219,13,3,'2021-08-20',35.00),(142,232,21,7,'2021-07-23',85.00),(143,232,6,21,'2017-08-31',20.59),(144,223,19,9,'2020-09-04',80.00),(145,224,20,8,'2022-07-01',80.00),(147,229,6,9,'2022-07-13',56.20),(148,229,8,6,'2015-07-14',63.70),(149,222,38,9,'2022-08-31',80.40),(150,53,50,18,'2018-07-25',22.00),(151,51,47,8,'2020-01-01',8.50),(152,80,19,13,'2013-07-01',6.50),(153,21,22,15,'2014-07-01',12.00),(154,312,9,13,'2019-07-01',115.00),(155,25,16,9,'2017-07-09',35.00),(156,29,54,15,'2012-07-01',14.00),(157,23,6,15,'2022-01-01',55.00),(158,23,54,6,'2020-08-04',33.50),(159,84,5,13,'2014-07-17',25.00),(160,82,41,7,'2015-07-01',34.00),(161,299,14,13,'2012-08-27',35.00),(162,298,45,13,'2017-07-14',16.50),(163,300,46,13,'2018-07-05',32.00);
 /*!40000 ALTER TABLE `transfer` ENABLE KEYS */;
 UNLOCK TABLES;
+/*!50003 SET @saved_cs_client      = @@character_set_client */ ;
+/*!50003 SET @saved_cs_results     = @@character_set_results */ ;
+/*!50003 SET @saved_col_connection = @@collation_connection */ ;
+/*!50003 SET character_set_client  = utf8mb4 */ ;
+/*!50003 SET character_set_results = utf8mb4 */ ;
+/*!50003 SET collation_connection  = utf8mb4_0900_ai_ci */ ;
+/*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
+/*!50003 SET sql_mode              = 'ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION' */ ;
+DELIMITER ;;
+/*!50003 CREATE*/ /*!50017 DEFINER=`root`@`localhost`*/ /*!50003 TRIGGER `trg_transfer_validate` BEFORE INSERT ON `transfer` FOR EACH ROW BEGIN
+    DECLARE v_current_club_id INT;
+ 
+    SELECT club_id INTO v_current_club_id
+    FROM Player
+    WHERE player_id = NEW.player_id;
+ 
+    IF v_current_club_id IS NOT NULL AND v_current_club_id = NEW.new_club_id THEN
+        SIGNAL SQLSTATE '45000'
+            SET MESSAGE_TEXT = 'Transfer rejected: player is already at the specified club.';
+    END IF;
+ 
+    IF NEW.transfer_fee IS NOT NULL AND NEW.transfer_fee < 0 THEN
+        SIGNAL SQLSTATE '45000'
+            SET MESSAGE_TEXT = 'Transfer rejected: transfer_fee cannot be negative.';
+    END IF;
+END */;;
+DELIMITER ;
+/*!50003 SET sql_mode              = @saved_sql_mode */ ;
+/*!50003 SET character_set_client  = @saved_cs_client */ ;
+/*!50003 SET character_set_results = @saved_cs_results */ ;
+/*!50003 SET collation_connection  = @saved_col_connection */ ;
 
 --
 -- Table structure for table `user`
@@ -417,15 +711,20 @@ UNLOCK TABLES;
 --
 -- Dumping events for database 'soccer_analytics_db'
 --
-
-DELIMITER //
-
--- Nightly event to backfill results if scores exist but results are NULL
-DROP EVENT IF EXISTS ev_update_match_results;
-CREATE EVENT ev_update_match_results
-ON SCHEDULE EVERY 1 DAY
-DO
-    UPDATE `Match`
+/*!50106 SET @save_time_zone= @@TIME_ZONE */ ;
+/*!50106 DROP EVENT IF EXISTS `ev_update_match_results` */;
+DELIMITER ;;
+/*!50003 SET @saved_cs_client      = @@character_set_client */ ;;
+/*!50003 SET @saved_cs_results     = @@character_set_results */ ;;
+/*!50003 SET @saved_col_connection = @@collation_connection */ ;;
+/*!50003 SET character_set_client  = utf8mb4 */ ;;
+/*!50003 SET character_set_results = utf8mb4 */ ;;
+/*!50003 SET collation_connection  = utf8mb4_0900_ai_ci */ ;;
+/*!50003 SET @saved_sql_mode       = @@sql_mode */ ;;
+/*!50003 SET sql_mode              = 'ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION' */ ;;
+/*!50003 SET @saved_time_zone      = @@time_zone */ ;;
+/*!50003 SET time_zone             = 'SYSTEM' */ ;;
+/*!50106 CREATE*/ /*!50117 DEFINER=`root`@`localhost`*/ /*!50106 EVENT `ev_update_match_results` ON SCHEDULE EVERY 1 DAY STARTS '2026-04-13 17:50:38' ON COMPLETION NOT PRESERVE ENABLE DO UPDATE `Match`
     SET home_result = CASE
             WHEN home_score > away_score THEN 'Win'
             WHEN home_score < away_score THEN 'Loss'
@@ -436,31 +735,262 @@ DO
             WHEN home_score < away_score THEN 'Win'
             ELSE 'Draw'
         END
-    WHERE home_result IS NULL OR away_result IS NULL//
-
+    WHERE home_result IS NULL OR away_result IS NULL */ ;;
+/*!50003 SET time_zone             = @saved_time_zone */ ;;
+/*!50003 SET sql_mode              = @saved_sql_mode */ ;;
+/*!50003 SET character_set_client  = @saved_cs_client */ ;;
+/*!50003 SET character_set_results = @saved_cs_results */ ;;
+/*!50003 SET collation_connection  = @saved_col_connection */ ;;
 DELIMITER ;
+/*!50106 SET TIME_ZONE= @save_time_zone */ ;
 
 --
 -- Dumping routines for database 'soccer_analytics_db'
 --
-
-DELIMITER //
-
--- Compute player age from DOB
-DROP FUNCTION IF EXISTS fn_player_age;
-CREATE FUNCTION fn_player_age(p_dob DATE)
-RETURNS INT
-DETERMINISTIC
+/*!50003 DROP FUNCTION IF EXISTS `fn_player_age` */;
+/*!50003 SET @saved_cs_client      = @@character_set_client */ ;
+/*!50003 SET @saved_cs_results     = @@character_set_results */ ;
+/*!50003 SET @saved_col_connection = @@collation_connection */ ;
+/*!50003 SET character_set_client  = utf8mb4 */ ;
+/*!50003 SET character_set_results = utf8mb4 */ ;
+/*!50003 SET collation_connection  = utf8mb4_0900_ai_ci */ ;
+/*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
+/*!50003 SET sql_mode              = 'ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION' */ ;
+DELIMITER ;;
+CREATE DEFINER=`root`@`localhost` FUNCTION `fn_player_age`(p_dob DATE) RETURNS int
+    DETERMINISTIC
 BEGIN
     IF p_dob IS NULL THEN
         RETURN NULL;
     END IF;
     RETURN TIMESTAMPDIFF(YEAR, p_dob, CURDATE());
-END//
-
--- Record a transfer and update the player's current club
-DROP PROCEDURE IF EXISTS sp_record_transfer;
-CREATE PROCEDURE sp_record_transfer(
+END ;;
+DELIMITER ;
+/*!50003 SET sql_mode              = @saved_sql_mode */ ;
+/*!50003 SET character_set_client  = @saved_cs_client */ ;
+/*!50003 SET character_set_results = @saved_cs_results */ ;
+/*!50003 SET collation_connection  = @saved_col_connection */ ;
+/*!50003 DROP PROCEDURE IF EXISTS `sp_coach_stats` */;
+/*!50003 SET @saved_cs_client      = @@character_set_client */ ;
+/*!50003 SET @saved_cs_results     = @@character_set_results */ ;
+/*!50003 SET @saved_col_connection = @@collation_connection */ ;
+/*!50003 SET character_set_client  = utf8mb4 */ ;
+/*!50003 SET character_set_results = utf8mb4 */ ;
+/*!50003 SET collation_connection  = utf8mb4_0900_ai_ci */ ;
+/*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
+/*!50003 SET sql_mode              = 'ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION' */ ;
+DELIMITER ;;
+CREATE DEFINER=`root`@`localhost` PROCEDURE `sp_coach_stats`(
+    IN p_first_name VARCHAR(50),
+    IN p_last_name VARCHAR(50)
+)
+BEGIN
+    SELECT
+        co.coach_id,
+        co.first_name,
+        co.last_name,
+        co.dob,
+        fn_player_age(co.dob) AS age,
+        co.nationality,
+        c.club_name AS current_club
+    FROM Coach co
+    LEFT JOIN Club c ON co.club_id = c.club_id
+    WHERE co.first_name = p_first_name
+      AND co.last_name = p_last_name;
+END ;;
+DELIMITER ;
+/*!50003 SET sql_mode              = @saved_sql_mode */ ;
+/*!50003 SET character_set_client  = @saved_cs_client */ ;
+/*!50003 SET character_set_results = @saved_cs_results */ ;
+/*!50003 SET collation_connection  = @saved_col_connection */ ;
+/*!50003 DROP PROCEDURE IF EXISTS `sp_match_results` */;
+/*!50003 SET @saved_cs_client      = @@character_set_client */ ;
+/*!50003 SET @saved_cs_results     = @@character_set_results */ ;
+/*!50003 SET @saved_col_connection = @@collation_connection */ ;
+/*!50003 SET character_set_client  = utf8mb4 */ ;
+/*!50003 SET character_set_results = utf8mb4 */ ;
+/*!50003 SET collation_connection  = utf8mb4_0900_ai_ci */ ;
+/*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
+/*!50003 SET sql_mode              = 'ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION' */ ;
+DELIMITER ;;
+CREATE DEFINER=`root`@`localhost` PROCEDURE `sp_match_results`(
+    IN p_league_name VARCHAR(100),
+    IN p_season_name VARCHAR(50)
+)
+BEGIN
+    SELECT
+        m.match_id,
+        m.match_date,
+        hc.club_name AS home_team,
+        m.home_score,
+        ac.club_name AS away_team,
+        m.away_score,
+        m.home_result,
+        m.away_result
+    FROM `Match` m
+    JOIN Club hc ON m.home_team_id = hc.club_id
+    JOIN Club ac ON m.away_team_id = ac.club_id
+    JOIN League l ON m.league_id = l.league_id
+    WHERE l.league_name = p_league_name
+      AND l.season_name = p_season_name
+    ORDER BY m.match_date;
+END ;;
+DELIMITER ;
+/*!50003 SET sql_mode              = @saved_sql_mode */ ;
+/*!50003 SET character_set_client  = @saved_cs_client */ ;
+/*!50003 SET character_set_results = @saved_cs_results */ ;
+/*!50003 SET collation_connection  = @saved_col_connection */ ;
+/*!50003 DROP PROCEDURE IF EXISTS `sp_players_in_league` */;
+/*!50003 SET @saved_cs_client      = @@character_set_client */ ;
+/*!50003 SET @saved_cs_results     = @@character_set_results */ ;
+/*!50003 SET @saved_col_connection = @@collation_connection */ ;
+/*!50003 SET character_set_client  = utf8mb4 */ ;
+/*!50003 SET character_set_results = utf8mb4 */ ;
+/*!50003 SET collation_connection  = utf8mb4_0900_ai_ci */ ;
+/*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
+/*!50003 SET sql_mode              = 'ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION' */ ;
+DELIMITER ;;
+CREATE DEFINER=`root`@`localhost` PROCEDURE `sp_players_in_league`(
+    IN p_league_name VARCHAR(100),
+    IN p_season_name VARCHAR(50)
+)
+BEGIN
+    SELECT 
+        p.player_id,
+        p.first_name,
+        p.last_name,
+        fn_player_age(p.dob) AS age,
+        pos.position_name,
+        pos.position_category,
+        p.preferred_foot,
+        c.club_name
+    FROM Player p
+    LEFT JOIN `Position` pos ON p.position_id = pos.position_id
+    LEFT JOIN Club c ON p.club_id = c.club_id
+    JOIN SeasonPerformance sp ON p.player_id = sp.player_id
+    JOIN League l ON sp.league_id = l.league_id
+    WHERE l.league_name = p_league_name
+      AND l.season_name = p_season_name
+    ORDER BY c.club_name, p.last_name;
+END ;;
+DELIMITER ;
+/*!50003 SET sql_mode              = @saved_sql_mode */ ;
+/*!50003 SET character_set_client  = @saved_cs_client */ ;
+/*!50003 SET character_set_results = @saved_cs_results */ ;
+/*!50003 SET collation_connection  = @saved_col_connection */ ;
+/*!50003 DROP PROCEDURE IF EXISTS `sp_player_market_value` */;
+/*!50003 SET @saved_cs_client      = @@character_set_client */ ;
+/*!50003 SET @saved_cs_results     = @@character_set_results */ ;
+/*!50003 SET @saved_col_connection = @@collation_connection */ ;
+/*!50003 SET character_set_client  = utf8mb4 */ ;
+/*!50003 SET character_set_results = utf8mb4 */ ;
+/*!50003 SET collation_connection  = utf8mb4_0900_ai_ci */ ;
+/*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
+/*!50003 SET sql_mode              = 'ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION' */ ;
+DELIMITER ;;
+CREATE DEFINER=`root`@`localhost` PROCEDURE `sp_player_market_value`(
+    IN p_first_name VARCHAR(50),
+    IN p_last_name VARCHAR(50)
+)
+BEGIN
+    SELECT
+        p.first_name,
+        p.last_name,
+        mv.market_value_date,
+        mv.market_value
+    FROM MarketValue mv
+    JOIN Player p ON mv.player_id = p.player_id
+    WHERE p.first_name = p_first_name
+      AND p.last_name = p_last_name
+    ORDER BY mv.market_value_date DESC;
+END ;;
+DELIMITER ;
+/*!50003 SET sql_mode              = @saved_sql_mode */ ;
+/*!50003 SET character_set_client  = @saved_cs_client */ ;
+/*!50003 SET character_set_results = @saved_cs_results */ ;
+/*!50003 SET collation_connection  = @saved_col_connection */ ;
+/*!50003 DROP PROCEDURE IF EXISTS `sp_player_stats` */;
+/*!50003 SET @saved_cs_client      = @@character_set_client */ ;
+/*!50003 SET @saved_cs_results     = @@character_set_results */ ;
+/*!50003 SET @saved_col_connection = @@collation_connection */ ;
+/*!50003 SET character_set_client  = utf8mb4 */ ;
+/*!50003 SET character_set_results = utf8mb4 */ ;
+/*!50003 SET collation_connection  = utf8mb4_0900_ai_ci */ ;
+/*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
+/*!50003 SET sql_mode              = 'ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION' */ ;
+DELIMITER ;;
+CREATE DEFINER=`root`@`localhost` PROCEDURE `sp_player_stats`(
+    IN p_first_name VARCHAR(50),
+    IN p_last_name VARCHAR(50)
+)
+BEGIN
+    SELECT
+        p.first_name,
+        p.last_name,
+        l.league_name,
+        l.season_name,
+        sp.appearance_count,
+        sp.goal_count,
+        sp.assist_count,
+        sp.play_time
+    FROM SeasonPerformance sp
+    JOIN Player p ON sp.player_id = p.player_id
+    JOIN League l ON sp.league_id = l.league_id
+    WHERE p.first_name = p_first_name
+      AND p.last_name = p_last_name
+    ORDER BY l.season_name DESC;
+END ;;
+DELIMITER ;
+/*!50003 SET sql_mode              = @saved_sql_mode */ ;
+/*!50003 SET character_set_client  = @saved_cs_client */ ;
+/*!50003 SET character_set_results = @saved_cs_results */ ;
+/*!50003 SET collation_connection  = @saved_col_connection */ ;
+/*!50003 DROP PROCEDURE IF EXISTS `sp_player_transfers` */;
+/*!50003 SET @saved_cs_client      = @@character_set_client */ ;
+/*!50003 SET @saved_cs_results     = @@character_set_results */ ;
+/*!50003 SET @saved_col_connection = @@collation_connection */ ;
+/*!50003 SET character_set_client  = utf8mb4 */ ;
+/*!50003 SET character_set_results = utf8mb4 */ ;
+/*!50003 SET collation_connection  = utf8mb4_0900_ai_ci */ ;
+/*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
+/*!50003 SET sql_mode              = 'ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION' */ ;
+DELIMITER ;;
+CREATE DEFINER=`root`@`localhost` PROCEDURE `sp_player_transfers`(
+    IN p_first_name VARCHAR(50),
+    IN p_last_name VARCHAR(50)
+)
+BEGIN
+    SELECT
+        p.first_name,
+        p.last_name,
+        oc.club_name AS from_club,
+        nc.club_name AS to_club,
+        t.transfer_date,
+        t.transfer_fee
+    FROM Transfer t
+    JOIN Player p ON t.player_id = p.player_id
+    LEFT JOIN Club oc ON t.old_club_id = oc.club_id
+    JOIN Club nc ON t.new_club_id = nc.club_id
+    WHERE p.first_name = p_first_name
+      AND p.last_name = p_last_name
+    ORDER BY t.transfer_date DESC;
+END ;;
+DELIMITER ;
+/*!50003 SET sql_mode              = @saved_sql_mode */ ;
+/*!50003 SET character_set_client  = @saved_cs_client */ ;
+/*!50003 SET character_set_results = @saved_cs_results */ ;
+/*!50003 SET collation_connection  = @saved_col_connection */ ;
+/*!50003 DROP PROCEDURE IF EXISTS `sp_record_transfer` */;
+/*!50003 SET @saved_cs_client      = @@character_set_client */ ;
+/*!50003 SET @saved_cs_results     = @@character_set_results */ ;
+/*!50003 SET @saved_col_connection = @@collation_connection */ ;
+/*!50003 SET character_set_client  = utf8mb4 */ ;
+/*!50003 SET character_set_results = utf8mb4 */ ;
+/*!50003 SET collation_connection  = utf8mb4_0900_ai_ci */ ;
+/*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
+/*!50003 SET sql_mode              = 'ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION' */ ;
+DELIMITER ;;
+CREATE DEFINER=`root`@`localhost` PROCEDURE `sp_record_transfer`(
     IN p_player_id INT,
     IN p_new_club_id INT,
     IN p_transfer_date DATE,
@@ -490,54 +1020,112 @@ BEGIN
     UPDATE Player
     SET club_id = p_new_club_id
     WHERE player_id = p_player_id;
-END//
-
--- Enforce that a team cannot play itself and auto-set match results on insert
-DROP TRIGGER IF EXISTS trg_match_validate_insert;
-CREATE TRIGGER trg_match_validate_insert
-BEFORE INSERT ON `Match`
-FOR EACH ROW
-BEGIN
-    IF NEW.home_team_id = NEW.away_team_id THEN
-        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Home and away teams must be different';
-    END IF;
-
-    IF NEW.home_score > NEW.away_score THEN
-        SET NEW.home_result = 'Win';
-        SET NEW.away_result = 'Loss';
-    ELSEIF NEW.home_score < NEW.away_score THEN
-        SET NEW.home_result = 'Loss';
-        SET NEW.away_result = 'Win';
-    ELSE
-        SET NEW.home_result = 'Draw';
-        SET NEW.away_result = 'Draw';
-    END IF;
-END//
-
--- Enforce validation and keep results in sync on updates
-DROP TRIGGER IF EXISTS trg_match_validate_update;
-CREATE TRIGGER trg_match_validate_update
-BEFORE UPDATE ON `Match`
-FOR EACH ROW
-BEGIN
-    IF NEW.home_team_id = NEW.away_team_id THEN
-        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Home and away teams must be different';
-    END IF;
-
-    IF NEW.home_score > NEW.away_score THEN
-        SET NEW.home_result = 'Win';
-        SET NEW.away_result = 'Loss';
-    ELSEIF NEW.home_score < NEW.away_score THEN
-        SET NEW.home_result = 'Loss';
-        SET NEW.away_result = 'Win';
-    ELSE
-        SET NEW.home_result = 'Draw';
-        SET NEW.away_result = 'Draw';
-    END IF;
-END//
-
+END ;;
 DELIMITER ;
-
+/*!50003 SET sql_mode              = @saved_sql_mode */ ;
+/*!50003 SET character_set_client  = @saved_cs_client */ ;
+/*!50003 SET character_set_results = @saved_cs_results */ ;
+/*!50003 SET collation_connection  = @saved_col_connection */ ;
+/*!50003 DROP PROCEDURE IF EXISTS `sp_stadium_stats` */;
+/*!50003 SET @saved_cs_client      = @@character_set_client */ ;
+/*!50003 SET @saved_cs_results     = @@character_set_results */ ;
+/*!50003 SET @saved_col_connection = @@collation_connection */ ;
+/*!50003 SET character_set_client  = utf8mb4 */ ;
+/*!50003 SET character_set_results = utf8mb4 */ ;
+/*!50003 SET collation_connection  = utf8mb4_0900_ai_ci */ ;
+/*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
+/*!50003 SET sql_mode              = 'ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION' */ ;
+DELIMITER ;;
+CREATE DEFINER=`root`@`localhost` PROCEDURE `sp_stadium_stats`(
+    IN p_stadium_name VARCHAR(100)
+)
+BEGIN
+    SELECT
+        s.stadium_id,
+        s.stadium_name,
+        s.capacity,
+        s.city,
+        s.country,
+        s.phone_number,
+        c.club_name AS home_club
+    FROM Stadium s
+    LEFT JOIN Club c ON c.stadium_id = s.stadium_id
+    WHERE s.stadium_name LIKE CONCAT('%', p_stadium_name, '%');
+END ;;
+DELIMITER ;
+/*!50003 SET sql_mode              = @saved_sql_mode */ ;
+/*!50003 SET character_set_client  = @saved_cs_client */ ;
+/*!50003 SET character_set_results = @saved_cs_results */ ;
+/*!50003 SET collation_connection  = @saved_col_connection */ ;
+/*!50003 DROP PROCEDURE IF EXISTS `sp_teams_in_league` */;
+/*!50003 SET @saved_cs_client      = @@character_set_client */ ;
+/*!50003 SET @saved_cs_results     = @@character_set_results */ ;
+/*!50003 SET @saved_col_connection = @@collation_connection */ ;
+/*!50003 SET character_set_client  = utf8mb4 */ ;
+/*!50003 SET character_set_results = utf8mb4 */ ;
+/*!50003 SET collation_connection  = utf8mb4_0900_ai_ci */ ;
+/*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
+/*!50003 SET sql_mode              = 'ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION' */ ;
+DELIMITER ;;
+CREATE DEFINER=`root`@`localhost` PROCEDURE `sp_teams_in_league`(
+    IN p_league_name VARCHAR(100),
+    IN p_season_name VARCHAR(50)
+)
+BEGIN
+    SELECT DISTINCT
+        c.club_id,
+        c.club_name,
+        c.country_abbr
+    FROM Club c
+    JOIN Player p ON p.club_id = c.club_id
+    JOIN SeasonPerformance sp ON sp.player_id = p.player_id
+    JOIN League l ON sp.league_id = l.league_id
+    WHERE l.league_name = p_league_name
+      AND l.season_name = p_season_name
+    ORDER BY c.club_name;
+END ;;
+DELIMITER ;
+/*!50003 SET sql_mode              = @saved_sql_mode */ ;
+/*!50003 SET character_set_client  = @saved_cs_client */ ;
+/*!50003 SET character_set_results = @saved_cs_results */ ;
+/*!50003 SET collation_connection  = @saved_col_connection */ ;
+/*!50003 DROP PROCEDURE IF EXISTS `sp_top_scorers` */;
+/*!50003 SET @saved_cs_client      = @@character_set_client */ ;
+/*!50003 SET @saved_cs_results     = @@character_set_results */ ;
+/*!50003 SET @saved_col_connection = @@collation_connection */ ;
+/*!50003 SET character_set_client  = utf8mb4 */ ;
+/*!50003 SET character_set_results = utf8mb4 */ ;
+/*!50003 SET collation_connection  = utf8mb4_0900_ai_ci */ ;
+/*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
+/*!50003 SET sql_mode              = 'ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION' */ ;
+DELIMITER ;;
+CREATE DEFINER=`root`@`localhost` PROCEDURE `sp_top_scorers`(
+    IN p_league_name VARCHAR(100),
+    IN p_season_name VARCHAR(50),
+    IN p_limit INT
+)
+BEGIN
+    SELECT
+        p.first_name,
+        p.last_name,
+        c.club_name,
+        sp.goal_count,
+        sp.assist_count,
+        sp.appearance_count
+    FROM SeasonPerformance sp
+    JOIN Player p ON sp.player_id = p.player_id
+    JOIN League l ON sp.league_id = l.league_id
+    LEFT JOIN Club c ON p.club_id = c.club_id
+    WHERE l.league_name = p_league_name
+      AND l.season_name = p_season_name
+    ORDER BY sp.goal_count DESC
+    LIMIT p_limit;
+END ;;
+DELIMITER ;
+/*!50003 SET sql_mode              = @saved_sql_mode */ ;
+/*!50003 SET character_set_client  = @saved_cs_client */ ;
+/*!50003 SET character_set_results = @saved_cs_results */ ;
+/*!50003 SET collation_connection  = @saved_col_connection */ ;
 SET @@SESSION.SQL_LOG_BIN = @MYSQLDUMP_TEMP_LOG_BIN;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
 
@@ -549,4 +1137,4 @@ SET @@SESSION.SQL_LOG_BIN = @MYSQLDUMP_TEMP_LOG_BIN;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2026-04-12  3:49:34
+-- Dump completed on 2026-04-13 20:23:12
