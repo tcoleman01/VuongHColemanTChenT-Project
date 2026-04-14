@@ -407,38 +407,7 @@ DELIMITER ;
 CALL sp_player_transfers('Zlatan', 'Ibrahimović');
 
 
-DROP TRIGGER IF EXISTS trg_player_club_country_insert;
-DROP TRIGGER IF EXISTS trg_player_club_country_update;
 DELIMITER //
--- ====Make sure new player's country code exist=========================================
-CREATE TRIGGER trg_player_club_country_insert
-BEFORE INSERT ON Player
-FOR EACH ROW
-BEGIN
-    IF NEW.country_abbr IS NOT NULL THEN
-        IF NOT EXISTS (
-            SELECT 1 FROM Club WHERE country_abbr = NEW.country_abbr
-        ) THEN
-            SIGNAL SQLSTATE '45000'
-                SET MESSAGE_TEXT = 'Invalid country_abbr: not found in any known country.';
-        END IF;
-    END IF;
-END//
- 
-CREATE TRIGGER trg_player_club_country_update
-BEFORE UPDATE ON Player
-FOR EACH ROW
-BEGIN
-    IF NEW.country_abbr IS NOT NULL THEN
-        IF NOT EXISTS (
-            SELECT 1 FROM Club WHERE country_abbr = NEW.country_abbr
-        ) THEN
-            SIGNAL SQLSTATE '45000'
-                SET MESSAGE_TEXT = 'Invalid country_abbr: not found in any known country.';
-        END IF;
-    END IF;
-END//
- 
 -- =======validate transfer club id and fees===========================================
 CREATE TRIGGER trg_transfer_validate
 BEFORE INSERT ON Transfer

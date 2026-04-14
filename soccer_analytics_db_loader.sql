@@ -10,7 +10,7 @@ SET SESSION sql_mode = 'NO_AUTO_VALUE_ON_ZERO';
 -- 1. Country  (no FK dependencies)
 -- ------------------------------------------------------------
 DELETE FROM Country;
-LOAD DATA LOCAL INFILE 'C:/Users/Owner/Desktop/VuongHColemanTChenT-Project/data/country.csv'
+LOAD DATA LOCAL INFILE 'C:/Users/ctr20/Documents/dbdata/country.csv'
 INTO TABLE Country
 FIELDS TERMINATED BY ','
 ENCLOSED BY '"'
@@ -25,14 +25,13 @@ select COUNT(*) from Country;
 -- 2. League  (no FK dependencies)
 -- ------------------------------------------------------------
 DELETE FROM League;
-LOAD DATA LOCAL INFILE 'C:/Users/Owner/Desktop/VuongHColemanTChenT-Project/data/league.csv'
+LOAD DATA LOCAL INFILE 'C:/Users/ctr20/Documents/dbdata/league.csv'
 INTO TABLE League
 FIELDS TERMINATED BY ','
 ENCLOSED BY '"'
 LINES TERMINATED BY '\r\n'
 IGNORE 1 LINES
-(league_id, league_name, season_name, @country_abbr)
-SET country_abbr = NULLIF(@country_abbr, '');
+(league_id, season_name, league_name);
 
 select * from league;
 
@@ -40,14 +39,13 @@ select * from league;
 -- 3. Stadium  (no FK dependencies)
 -- ------------------------------------------------------------
 DELETE FROM Stadium;
-LOAD DATA LOCAL INFILE 'C:/Users/Owner/Desktop/VuongHColemanTChenT-Project/data/stadium.csv'
+LOAD DATA LOCAL INFILE 'C:/Users/ctr20/Documents/dbdata/stadium.csv'
 INTO TABLE Stadium
 FIELDS TERMINATED BY ','
 ENCLOSED BY '"'
 LINES TERMINATED BY '\r\n'
 IGNORE 1 LINES
-(stadium_id, stadium_name, capacity, street_number, street_name, city, @country, @country_abbr, phone_number)
-SET country_abbr = NULLIF(@country_abbr, '');
+(stadium_id, stadium_name, capacity, street_number, street_name, city, @country, phone_number);
 
 select * from Stadium;
 
@@ -55,7 +53,7 @@ select * from Stadium;
 -- 4. Position  (no FK dependencies)
 -- ------------------------------------------------------------
 DELETE FROM `Position`;
-LOAD DATA LOCAL INFILE 'C:/Users/Owner/Desktop/VuongHColemanTChenT-Project/data/position.csv'
+LOAD DATA LOCAL INFILE 'C:/Users/ctr20/Documents/dbdata/position.csv'
 INTO TABLE `Position`
 FIELDS TERMINATED BY ','
 ENCLOSED BY '"'
@@ -70,7 +68,7 @@ select * from Position;
 -- ------------------------------------------------------------
 SET FOREIGN_KEY_CHECKS = 0;
 DELETE FROM Coach;
-LOAD DATA LOCAL INFILE 'C:/Users/Owner/Desktop/VuongHColemanTChenT-Project/data/coach.csv'
+LOAD DATA LOCAL INFILE 'C:/Users/ctr20/Documents/dbdata/coach.csv'
 INTO TABLE Coach
 FIELDS TERMINATED BY ','
 ENCLOSED BY '"'
@@ -85,7 +83,7 @@ select * from Coach;
 -- 6. Club (depends on Country, Stadium, Coach)
 -- ------------------------------------------------------------
 DELETE FROM Club;
-LOAD DATA LOCAL INFILE 'C:/Users/Owner/Desktop/VuongHColemanTChenT-Project/data/club.csv'
+LOAD DATA LOCAL INFILE 'C:/Users/ctr20/Documents/dbdata/club.csv'
 INTO TABLE Club
 FIELDS TERMINATED BY ','
 ENCLOSED BY '"'
@@ -102,7 +100,7 @@ select * from club;
 -- 7. Player  (depends on Position, Country, Club)
 -- ------------------------------------------------------------
 DELETE FROM Player;
-LOAD DATA LOCAL INFILE 'C:/Users/Owner/Desktop/VuongHColemanTChenT-Project/data/player.csv'
+LOAD DATA LOCAL INFILE 'C:/Users/ctr20/Documents/dbdata/player.csv'
 INTO TABLE Player
 FIELDS TERMINATED BY ','
 ENCLOSED BY '"'
@@ -122,7 +120,7 @@ SELECT COUNT(*) FROM Player;
 -- 8. MarketValue  (depends on Player)
 -- ------------------------------------------------------------
 DELETE FROM MarketValue;
-LOAD DATA LOCAL INFILE 'C:/Users/Owner/Desktop/VuongHColemanTChenT-Project/data/marketvalue.csv'
+LOAD DATA LOCAL INFILE 'C:/Users/ctr20/Documents/dbdata/marketvalue.csv'
 INTO TABLE MarketValue
 FIELDS TERMINATED BY ','
 ENCLOSED BY '"'
@@ -138,7 +136,7 @@ select count(*) from MarketValue;
 -- 9. Match  (depends on League, Club x2)
 -- ------------------------------------------------------------
 DELETE FROM `Match`;
-LOAD DATA LOCAL INFILE 'C:/Users/Owner/Desktop/VuongHColemanTChenT-Project/data/match.csv'
+LOAD DATA LOCAL INFILE 'C:/Users/ctr20/Documents/dbdata/match.csv'
 INTO TABLE `Match`
 FIELDS TERMINATED BY ','
 ENCLOSED BY '"'
@@ -158,7 +156,7 @@ select count(*) from `Match`;
 -- 10. Transfer  (depends on Player, Club x2)
 -- ------------------------------------------------------------
 DELETE FROM Transfer;
-LOAD DATA LOCAL INFILE 'C:/Users/Owner/Desktop/VuongHColemanTChenT-Project/data/transfer.csv'
+LOAD DATA LOCAL INFILE 'C:/Users/ctr20/Documents/dbdata/transfer.csv'
 INTO TABLE Transfer
 FIELDS TERMINATED BY ','
 ENCLOSED BY '"'
@@ -173,7 +171,7 @@ select count(*) from `Transfer`;
 -- 11. SeasonPerformance  (depends on Player, League)
 -- ------------------------------------------------------------
 DELETE FROM SeasonPerformance;
-LOAD DATA LOCAL INFILE 'C:/Users/Owner/Desktop/VuongHColemanTChenT-Project/data/seasonperformance.csv'
+LOAD DATA LOCAL INFILE 'C:/Users/ctr20/Documents/dbdata/seasonperformance.csv'
 INTO TABLE SeasonPerformance
 FIELDS TERMINATED BY ','
 ENCLOSED BY '"'
@@ -192,7 +190,7 @@ select count(*) from `SeasonPerformance`;
 -- 12. MatchPerformance  (depends on Match, Player)
 -- ------------------------------------------------------------
 DELETE FROM MatchPerformance;
-LOAD DATA LOCAL INFILE 'C:/Users/Owner/Desktop/VuongHColemanTChenT-Project/data/matchperformance.csv'
+LOAD DATA LOCAL INFILE 'C:/Users/ctr20/Documents/dbdata/matchperformance.csv'
 INTO TABLE MatchPerformance
 FIELDS TERMINATED BY ','
 ENCLOSED BY '"'
@@ -206,7 +204,7 @@ select * from `MatchPerformance`;
 -- 13. User  (no FK dependencies)
 -- ------------------------------------------------------------
 DELETE FROM user;
-LOAD DATA LOCAL INFILE 'C:/Users/Owner/Desktop/VuongHColemanTChenT-Project/data/user.csv'
+LOAD DATA LOCAL INFILE 'C:/Users/ctr20/Documents/dbdata/user.csv'
 INTO TABLE user
 FIELDS TERMINATED BY ','
 ENCLOSED BY '"'
@@ -219,16 +217,16 @@ select * from `user`;
 
 
 -- Johnny's path
--- 'C:/Users/Owner/Desktop/VuongHColemanTChenT-Project/data/country.csv'
--- 'C:/Users/Owner/Desktop/VuongHColemanTChenT-Project/data/league.csv'
--- 'C:/Users/Owner/Desktop/VuongHColemanTChenT-Project/data/stadium.csv'
--- 'C:/Users/Owner/Desktop/VuongHColemanTChenT-Project/data/position.csv'
--- 'C:/Users/Owner/Desktop/VuongHColemanTChenT-Project/data/coach.csv'
--- 'C:/Users/Owner/Desktop/VuongHColemanTChenT-Project/data/club.csv'
--- 'C:/Users/Owner/Desktop/VuongHColemanTChenT-Project/data/player.csv'
--- 'C:/Users/Owner/Desktop/VuongHColemanTChenT-Project/data/marketvalue.csv'
--- 'C:/Users/Owner/Desktop/VuongHColemanTChenT-Project/data/match.csv'
--- 'C:/Users/Owner/Desktop/VuongHColemanTChenT-Project/data/transfer.csv'
--- 'C:/Users/Owner/Desktop/VuongHColemanTChenT-Project/data/seasonperformance.csv'
--- 'C:/Users/Owner/Desktop/VuongHColemanTChenT-Project/data/matchperformance.csv'
--- 'C:/Users/Owner/Desktop/VuongHColemanTChenT-Project/data/user.csv'
+-- 'C:/Users/ctr20/Documents/dbdata/country.csv'
+-- 'C:/Users/ctr20/Documents/dbdata/league.csv'
+-- 'C:/Users/ctr20/Documents/dbdata/stadium.csv'
+-- 'C:/Users/ctr20/Documents/dbdata/position.csv'
+-- 'C:/Users/ctr20/Documents/dbdata/coach.csv'
+-- 'C:/Users/ctr20/Documents/dbdata/club.csv'
+-- 'C:/Users/ctr20/Documents/dbdata/player.csv'
+-- 'C:/Users/ctr20/Documents/dbdata/marketvalue.csv'
+-- 'C:/Users/ctr20/Documents/dbdata/match.csv'
+-- 'C:/Users/ctr20/Documents/dbdata/transfer.csv'
+-- 'C:/Users/ctr20/Documents/dbdata/seasonperformance.csv'
+-- 'C:/Users/ctr20/Documents/dbdata/matchperformance.csv'
+-- 'C:/Users/ctr20/Documents/dbdata/user.csv'
