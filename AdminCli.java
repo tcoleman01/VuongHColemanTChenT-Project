@@ -120,9 +120,7 @@ public class AdminCli {
         return DriverManager.getConnection(url, config.user, config.password);
     }
 
-    // ============================================================
-    // FIX 2: Press Enter to continue helper
-    // ============================================================
+    
     private static void pauseForEnter(Scanner scanner) {
         System.out.print("\nPress Enter to continue...");
         scanner.nextLine();
@@ -273,9 +271,7 @@ public class AdminCli {
         }
     }
 
-    // ============================================================
-    // FIX 4: Removed "Update" option from Market Value menu
-    // ============================================================
+    
     private static void marketValueMenu(Connection conn, Scanner scanner) {
         while (true) {
             System.out.println("\nMarket Value Menu");
@@ -942,9 +938,7 @@ public class AdminCli {
         }
     }
 
-    // ============================================================
-    // FIX 3: Market value view with chart
-    // ============================================================
+   
     private static void viewPlayerMarketValue(Connection conn, Scanner scanner) {
         String listSql = "SELECT p.first_name, p.last_name FROM Player p JOIN MarketValue mv ON p.player_id = mv.player_id GROUP BY p.player_id ORDER BY COUNT(mv.market_value_date) DESC LIMIT 20";
         try (PreparedStatement listStmt = conn.prepareStatement(listSql)) {
@@ -1039,10 +1033,7 @@ public class AdminCli {
         }
     }
 
-    // ============================================================
-    // FIX 3: Smoothed line chart using Java Swing/AWT
-    // Tries to pop up a window first; if headless, saves PNG to disk
-    // ============================================================
+    
     private static void showMarketValueChart(List<String> dates, List<Double> values, String playerName) {
         if (dates.size() < 2) {
             System.out.println("\n[Chart] Not enough data points to draw a chart (need at least 2).");
@@ -1332,11 +1323,7 @@ public class AdminCli {
         System.out.println("SQLState: " + e.getSQLState());
     }
 
-    // ============================================================
-    // FIX 1: Two prompt variants
-    // prompt()         — required field, loops until non-blank
-    // promptOptional() — nullable field, blank is allowed
-    // ============================================================
+    
     private static String prompt(Scanner scanner, String label) {
         String value = "";
         while (value.isBlank()) {
