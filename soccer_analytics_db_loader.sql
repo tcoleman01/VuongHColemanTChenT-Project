@@ -10,7 +10,7 @@ SET SESSION sql_mode = 'NO_AUTO_VALUE_ON_ZERO';
 -- 1. Country  (no FK dependencies)
 -- ------------------------------------------------------------
 DELETE FROM Country;
-LOAD DATA LOCAL INFILE 'C:/Users/ctr20/Documents/dbdata/country.csv'
+LOAD DATA LOCAL INFILE './data/country.csv'
 INTO TABLE Country
 FIELDS TERMINATED BY ','
 ENCLOSED BY '"'
@@ -25,7 +25,7 @@ select COUNT(*) from Country;
 -- 2. League  (no FK dependencies)
 -- ------------------------------------------------------------
 DELETE FROM League;
-LOAD DATA LOCAL INFILE 'C:/Users/ctr20/Documents/dbdata/league.csv'
+LOAD DATA LOCAL INFILE './data/league.csv'
 INTO TABLE League
 FIELDS TERMINATED BY ','
 ENCLOSED BY '"'
@@ -39,7 +39,7 @@ select * from league;
 -- 3. Stadium  (no FK dependencies)
 -- ------------------------------------------------------------
 DELETE FROM Stadium;
-LOAD DATA LOCAL INFILE 'C:/Users/ctr20/Documents/dbdata/stadium.csv'
+LOAD DATA LOCAL INFILE './data/stadium.csv'
 INTO TABLE Stadium
 FIELDS TERMINATED BY ','
 ENCLOSED BY '"'
@@ -53,7 +53,7 @@ select * from Stadium;
 -- 4. Position  (no FK dependencies)
 -- ------------------------------------------------------------
 DELETE FROM `Position`;
-LOAD DATA LOCAL INFILE 'C:/Users/ctr20/Documents/dbdata/position.csv'
+LOAD DATA LOCAL INFILE './data/position.csv'
 INTO TABLE `Position`
 FIELDS TERMINATED BY ','
 ENCLOSED BY '"'
@@ -68,7 +68,7 @@ select * from Position;
 -- ------------------------------------------------------------
 SET FOREIGN_KEY_CHECKS = 0;
 DELETE FROM Coach;
-LOAD DATA LOCAL INFILE 'C:/Users/ctr20/Documents/dbdata/coach.csv'
+LOAD DATA LOCAL INFILE './data/coach.csv'
 INTO TABLE Coach
 FIELDS TERMINATED BY ','
 ENCLOSED BY '"'
@@ -83,7 +83,7 @@ select * from Coach;
 -- 6. Club (depends on Country, Stadium, Coach)
 -- ------------------------------------------------------------
 DELETE FROM Club;
-LOAD DATA LOCAL INFILE 'C:/Users/ctr20/Documents/dbdata/club.csv'
+LOAD DATA LOCAL INFILE './data/club.csv'
 INTO TABLE Club
 FIELDS TERMINATED BY ','
 ENCLOSED BY '"'
@@ -100,7 +100,7 @@ select * from club;
 -- 7. Player  (depends on Position, Country, Club)
 -- ------------------------------------------------------------
 DELETE FROM Player;
-LOAD DATA LOCAL INFILE 'C:/Users/ctr20/Documents/dbdata/player.csv'
+LOAD DATA LOCAL INFILE './data/player.csv'
 INTO TABLE Player
 FIELDS TERMINATED BY ','
 ENCLOSED BY '"'
@@ -120,7 +120,7 @@ SELECT COUNT(*) FROM Player;
 -- 8. MarketValue  (depends on Player)
 -- ------------------------------------------------------------
 DELETE FROM MarketValue;
-LOAD DATA LOCAL INFILE 'C:/Users/ctr20/Documents/dbdata/marketvalue.csv'
+LOAD DATA LOCAL INFILE './data/marketvalue.csv'
 INTO TABLE MarketValue
 FIELDS TERMINATED BY ','
 ENCLOSED BY '"'
@@ -136,7 +136,7 @@ select count(*) from MarketValue;
 -- 9. Match  (depends on League, Club x2)
 -- ------------------------------------------------------------
 DELETE FROM `Match`;
-LOAD DATA LOCAL INFILE 'C:/Users/ctr20/Documents/dbdata/match.csv'
+LOAD DATA LOCAL INFILE './data/match.csv'
 INTO TABLE `Match`
 FIELDS TERMINATED BY ','
 ENCLOSED BY '"'
@@ -156,7 +156,7 @@ select count(*) from `Match`;
 -- 10. Transfer  (depends on Player, Club x2)
 -- ------------------------------------------------------------
 DELETE FROM Transfer;
-LOAD DATA LOCAL INFILE 'C:/Users/ctr20/Documents/dbdata/transfer.csv'
+LOAD DATA LOCAL INFILE './data/transfer.csv'
 INTO TABLE Transfer
 FIELDS TERMINATED BY ','
 ENCLOSED BY '"'
@@ -171,7 +171,7 @@ select count(*) from `Transfer`;
 -- 11. SeasonPerformance  (depends on Player, League)
 -- ------------------------------------------------------------
 DELETE FROM SeasonPerformance;
-LOAD DATA LOCAL INFILE 'C:/Users/ctr20/Documents/dbdata/seasonperformance.csv'
+LOAD DATA LOCAL INFILE './data/seasonperformance.csv'
 INTO TABLE SeasonPerformance
 FIELDS TERMINATED BY ','
 ENCLOSED BY '"'
@@ -190,7 +190,7 @@ select count(*) from `SeasonPerformance`;
 -- 12. MatchPerformance  (depends on Match, Player)
 -- ------------------------------------------------------------
 DELETE FROM MatchPerformance;
-LOAD DATA LOCAL INFILE 'C:/Users/ctr20/Documents/dbdata/matchperformance.csv'
+LOAD DATA LOCAL INFILE './data/matchperformance.csv'
 INTO TABLE MatchPerformance
 FIELDS TERMINATED BY ','
 ENCLOSED BY '"'
@@ -204,7 +204,7 @@ select * from `MatchPerformance`;
 -- 13. User  (no FK dependencies)
 -- ------------------------------------------------------------
 DELETE FROM user;
-LOAD DATA LOCAL INFILE 'C:/Users/ctr20/Documents/dbdata/user.csv'
+LOAD DATA LOCAL INFILE './data/user.csv'
 INTO TABLE user
 FIELDS TERMINATED BY ','
 ENCLOSED BY '"'
@@ -216,17 +216,4 @@ select * from `user`;
 
 
 
--- Johnny's path
--- 'C:/Users/ctr20/Documents/dbdata/country.csv'
--- 'C:/Users/ctr20/Documents/dbdata/league.csv'
--- 'C:/Users/ctr20/Documents/dbdata/stadium.csv'
--- 'C:/Users/ctr20/Documents/dbdata/position.csv'
--- 'C:/Users/ctr20/Documents/dbdata/coach.csv'
--- 'C:/Users/ctr20/Documents/dbdata/club.csv'
--- 'C:/Users/ctr20/Documents/dbdata/player.csv'
--- 'C:/Users/ctr20/Documents/dbdata/marketvalue.csv'
--- 'C:/Users/ctr20/Documents/dbdata/match.csv'
--- 'C:/Users/ctr20/Documents/dbdata/transfer.csv'
--- 'C:/Users/ctr20/Documents/dbdata/seasonperformance.csv'
--- 'C:/Users/ctr20/Documents/dbdata/matchperformance.csv'
--- 'C:/Users/ctr20/Documents/dbdata/user.csv'
+-- CSV files are located in the ./data/ directory relative to project root

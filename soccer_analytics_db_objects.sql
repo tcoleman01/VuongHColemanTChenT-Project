@@ -372,7 +372,7 @@ BEGIN
       AND p.last_name = p_last_name
     ORDER BY mv.market_value_date DESC;
 END//
-DELIMITER 
+DELIMITER ;
 
 --  testing
 CALL sp_player_market_value('Toni', 'Kroos');

@@ -28,6 +28,51 @@ USER_USER=user
 USER_PASS=user123
 ```
 
+## Loading the Database (Run These in Order)
+
+From your terminal, `cd` into the project root first:
+
+```bash
+cd /path/to/VuongHColemanTChenT-Project
+```
+
+**Step 1 — Create tables:**
+```bash
+mysql -u root -p < soccer_analytics_db_schema.sql
+```
+
+**Step 2 — Load stored procedures and triggers:**
+```bash
+mysql -u root -p soccer_analytics_db < soccer_analytics_db_objects.sql
+```
+> If this fails on `DELIMITER`, use `SOURCE` instead (see Troubleshooting below).
+
+**Step 3 — Enable local file loading (required once per MySQL install):**
+```bash
+mysql -u root -p -e "SET GLOBAL local_infile = 1;"
+```
+
+**Step 4 — Load CSV data:**
+```bash
+mysql -u root -p --local-infile=1 < soccer_analytics_db_loader.sql
+```
+
+### Troubleshooting
+
+**`DELIMITER` error on step 2** — use the MySQL `SOURCE` command instead:
+```bash
+mysql -u root -p
+```
+Then inside the MySQL prompt:
+```sql
+USE soccer_analytics_db;
+SOURCE /full/path/to/VuongHColemanTChenT-Project/soccer_analytics_db_objects.sql;
+```
+
+**`Loading local data is disabled` error on step 4** — make sure you ran step 3 first, and that you included `--local-infile=1` in the step 4 command.
+
+---
+
 ## MySQL Setup Checklist
 Use this if you’re setting up MySQL on a new machine.
 
